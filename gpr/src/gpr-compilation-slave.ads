@@ -22,10 +22,19 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Containers.Vectors;
+with Ada.Strings.Unbounded;
+
 with GNAT.OS_Lib;
+with GNAT.Sockets;
+
 with GPR.Compilation.Protocol;
+with GPR.Compilation.Sync;
 
 package GPR.Compilation.Slave is
+
+   use Ada;
+   use Ada.Strings.Unbounded;
 
    use GPR.Compilation;
    use GPR.Compilation.Protocol;
@@ -72,5 +81,43 @@ package GPR.Compilation.Slave is
    --  Returns the maximum number of processes supported by the compilation
    --  engine. This is the sum of the parallel local builds as specified by
    --  the -j option and all the sum of the processes supported by each slaves.
+
+   --  ???????????????????????????????????????????????????????????????????
+   --  ??? following routines/types are exposed here to be shared with
+   --  ??? LibGPR2. Should be moved into LibGPR2 body when LibGPR will
+   --  ??? be discontinued.
+   --  ???????????????????????????????????????????????????????????????????
+
+   Root_Dir     : Unbounded_String;
+   --  Root directory from where the sources are to be synchronized with the
+   --  slaves. This is by default the directory containing the main project
+   --  file. The value is changed with the Root_Dir attribute value of the
+   --  project file's Remote package.
+
+   type Slave_Data is record
+      Host : Unbounded_String;
+      Port : GNAT.Sockets.Port_Type;
+   end record;
+
+   No_Slave_Data : constant Slave_Data :=
+                     (Port => GNAT.Sockets.Port_Type'Last, others => <>);
+
+   package Slaves_N is new Containers.Vectors (Positive, Slave_Data);
+
+   Slaves_Data : Slaves_N.Vector;
+
+   procedure Register_Remote_Slave
+     (S_Data                     : Slave_Data;
+      Project_Name               : String;
+      Excluded_Patterns          : Sync.Str_Vect.Vector;
+      Included_Patterns          : Sync.Str_Vect.Vector;
+      Included_Artifact_Patterns : Sync.Str_Vect.Vector;
+      Synchronize                : Boolean);
+   --  Register a slave living on Host for the given project name. User is
+   --  used when calling rsync, it is the remote machine user name, if empty
+   --  the local user name is used.
+
+   procedure Start_Waiting_Task;
+   --  Start the remote waiting task if needed
 
 end GPR.Compilation.Slave;

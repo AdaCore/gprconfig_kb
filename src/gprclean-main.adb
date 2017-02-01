@@ -31,7 +31,7 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gpr_Build_Util;             use Gpr_Build_Util;
 with GPR;                        use GPR;
-with GPR.Compilation.Slave;      use GPR.Compilation.Slave;
+with GPR.Compilation.Slave;      use GPR.Compilation;
 with GPR.Conf;                   use GPR.Conf;
 with GPR.Env;
 with GPR.Err;
@@ -801,7 +801,7 @@ begin
          "no project file specified and no default project file");
    end if;
 
-   --  Check consistency of out-of-tree build options.
+   --  Check consistency of out-of-tree build options
 
    if Root_Dir /= null and then Build_Tree_Dir = null then
       Fail_Program
@@ -958,7 +958,7 @@ begin
          --  Clean-up remote slaves
 
          if Distributed_Mode then
-            Clean_Up_Remote_Slaves (Tree, Prj);
+            Slave.Clean_Up_Remote_Slaves (Tree, Prj);
          end if;
       end Do_Clean;
 

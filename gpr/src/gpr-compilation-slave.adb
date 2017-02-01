@@ -46,18 +46,6 @@ with GPR.Util;                      use GPR.Util;
 
 package body GPR.Compilation.Slave is
 
-   type Slave_Data is record
-      Host : Unbounded_String;
-      Port : Port_Type;
-   end record;
-
-   No_Slave_Data : constant Slave_Data :=
-                     (Port => Port_Type'Last, others => <>);
-
-   package Slaves_N is new Containers.Vectors (Positive, Slave_Data);
-
-   Slaves_Data : Slaves_N.Vector;
-
    type Slave is record
       Sock          : Integer;
       Data          : Slave_Data;
@@ -106,15 +94,6 @@ package body GPR.Compilation.Slave is
 
    Compiler_Path : constant OS_Lib.String_Access :=
                      Locate_Exec_On_Path ("gnatls");
-
-   Project_Name : Unbounded_String;
-   --  Current project name being compiled
-
-   Root_Dir     : Unbounded_String;
-   --  Root directory from where the sources are to be synchronized with the
-   --  slaves. This is by default the directory containing the main project
-   --  file. The value is changed with the Root_Dir attribute value of the
-   --  project file's Remote package.
 
    Remote_Process : Shared_Counter;
    Slaves_Sockets : Socket_Set_Type;
@@ -418,6 +397,81 @@ package body GPR.Compilation.Slave is
       end loop;
    end Record_Slaves;
 
+   ---------------------------
+   -- Register_Remote_Slave --
+   ---------------------------
+
+   procedure Register_Remote_Slave
+     (S_Data                     : Slave_Data;
+      Project_Name               : String;
+      Excluded_Patterns          : Sync.Str_Vect.Vector;
+      Included_Patterns          : Sync.Str_Vect.Vector;
+      Included_Artifact_Patterns : Sync.Str_Vect.Vector;
+      Synchronize                : Boolean)
+   is
+      S   : Slave;
+      IAP : Unbounded_String;
+
+   begin
+      for P of Included_Artifact_Patterns loop
+         if IAP /= Null_Unbounded_String then
+            Append (IAP, "|");
+         end if;
+         Append (IAP, P);
+      end loop;
+
+      S := Connect_Slave
+        (S_Data, Project_Name,
+         Sync                       => True,
+         Included_Artifact_Patterns => To_String (IAP));
+
+      Set (Slaves_Sockets, Sock (S.Channel));
+
+      --  Sum the Max_Process values
+
+      Max_Processes := Max_Processes + S.Max_Processes;
+
+      if Opt.Verbosity_Level > Opt.Low then
+         Put ("Register slave " & To_String (S_Data.Host) & ",");
+         Put (Integer'Image (S.Max_Processes));
+         Put_Line (" process(es)");
+         Put_Line ("  location: " & To_String (S.Root_Dir));
+      end if;
+
+      --  Let's double check that Root_Dir and Projet_Name are not empty,
+      --  this is a safety check to avoid rsync detroying remote environment
+      --  as rsync is using the --delete options.
+
+      if Length (S.Root_Dir) = 0 then
+         Put_Line ("error: Root_Dir cannot be empty");
+         OS_Exit (1);
+      end if;
+
+      if Project_Name = "" then
+         Put_Line ("error: Project_Name cannot be empty");
+         OS_Exit (1);
+      end if;
+
+      if Synchronize then
+         GPR.Compilation.Sync.To_Slave
+           (Channel           => S.Channel,
+            Root_Dir          => To_String (Root_Dir),
+            Included_Patterns => Included_Patterns,
+            Excluded_Patterns => Excluded_Patterns);
+      end if;
+
+      --  Now that all slave's data is known and set, record it
+
+      S.Sock := To_C (Sock (S.Channel));
+
+      Slaves.Insert (S);
+
+   exception
+      when Host_Error =>
+         raise Constraint_Error
+           with "cannot connect to " & To_String (S_Data.Host);
+   end Register_Remote_Slave;
+
    ----------------------------
    -- Register_Remote_Slaves --
    ----------------------------
@@ -427,13 +481,6 @@ package body GPR.Compilation.Slave is
       Project : Project_Id)
    is
       use type Containers.Count_Type;
-
-      procedure Register_Remote_Slave
-        (S_Data       : Slave_Data;
-         Project_Name : String);
-      --  Register a slave living on Host for the given project name. User is
-      --  used when calling rsync, it is the remote machine user name, if empty
-      --  the local user name is used.
 
       Start, Stop : Calendar.Time;
 
@@ -467,81 +514,10 @@ package body GPR.Compilation.Slave is
          end loop;
       end Insert;
 
-      ---------------------------
-      -- Register_Remote_Slave --
-      ---------------------------
-
-      procedure Register_Remote_Slave
-        (S_Data       : Slave_Data;
-         Project_Name : String)
-      is
-         S   : Slave;
-         IAP : Unbounded_String;
-
-      begin
-         for P of Included_Artifact_Patterns loop
-            if IAP /= Null_Unbounded_String then
-               Append (IAP, "|");
-            end if;
-            Append (IAP, P);
-         end loop;
-
-         S := Connect_Slave
-           (S_Data, Project_Name,
-            Sync                       => True,
-            Included_Artifact_Patterns => To_String (IAP));
-
-         Set (Slaves_Sockets, Sock (S.Channel));
-
-         --  Sum the Max_Process values
-
-         Max_Processes := Max_Processes + S.Max_Processes;
-
-         if Opt.Verbosity_Level > Opt.Low then
-            Put ("Register slave " & To_String (S_Data.Host) & ",");
-            Put (Integer'Image (S.Max_Processes));
-            Put_Line (" process(es)");
-            Put_Line ("  location: " & To_String (S.Root_Dir));
-         end if;
-
-         --  Let's double check that Root_Dir and Projet_Name are not empty,
-         --  this is a safety check to avoid rsync detroying remote environment
-         --  as rsync is using the --delete options.
-
-         if Length (S.Root_Dir) = 0 then
-            Put_Line ("error: Root_Dir cannot be empty");
-            OS_Exit (1);
-         end if;
-
-         if Project_Name = "" then
-            Put_Line ("error: Project_Name cannot be empty");
-            OS_Exit (1);
-         end if;
-
-         GPR.Compilation.Sync.To_Slave
-           (Channel           => S.Channel,
-            Root_Dir          => To_String (Root_Dir),
-            Included_Patterns => Included_Patterns,
-            Excluded_Patterns => Excluded_Patterns);
-
-         --  Now that all slave's data is known and set, record it
-
-         S.Sock := To_C (Sock (S.Channel));
-
-         Slaves.Insert (S);
-
-      exception
-         when Host_Error =>
-            raise Constraint_Error
-              with "cannot connect to " & To_String (S_Data.Host);
-      end Register_Remote_Slave;
-
       Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
       Pck  : Package_Id := Project.Decl.Packages;
 
    begin
-      Project_Name := To_Unbounded_String (Get_Name_String (Project.Name));
-
       Root_Dir := To_Unbounded_String
         (Containing_Directory (Get_Name_String (Project.Path.Display_Name)));
 
@@ -624,7 +600,13 @@ package body GPR.Compilation.Slave is
       Start := Calendar.Clock;
 
       for S of Slaves_Data loop
-         Register_Remote_Slave (S, To_String (Project_Name));
+         Register_Remote_Slave
+           (S,
+            Get_Name_String (Project.Name),
+            Excluded_Patterns,
+            Included_Patterns,
+            Included_Artifact_Patterns,
+            True);
       end loop;
 
       Sync.Wait;
@@ -640,9 +622,7 @@ package body GPR.Compilation.Slave is
       --  We are in remote mode, the initialization was successful, start tasks
       --  now.
 
-      if WR = null then
-         WR := new Wait_Remote;
-      end if;
+      Start_Waiting_Task;
    end Register_Remote_Slaves;
 
    ---------
@@ -916,6 +896,17 @@ package body GPR.Compilation.Slave is
       end Set_Rewrite_WD;
 
    end Slaves;
+
+   ------------------------
+   -- Start_Waiting_Task --
+   ------------------------
+
+   procedure Start_Waiting_Task is
+   begin
+      if WR = null then
+         WR := new Wait_Remote;
+      end if;
+   end Start_Waiting_Task;
 
    ------------------------------
    -- Unregister_Remote_Slaves --
