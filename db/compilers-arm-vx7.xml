@@ -3,28 +3,26 @@
 <!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
 <!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
 <!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
-<!ENTITY % vx6.ent SYSTEM "vx6.ent"> %vx6.ent;
+<!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
 ]>
 <gprconfig>
 
   <compiler_description>
-    <name>GCC-WRS6</name>
-    <executable prefix="1">cc(arm|pentium|ppc)</executable>
-
-    &version_from_wind_base;
+    <name>GCC-WRS7ARM</name>
+    <executable prefix="1">cc(arm)</executable>
+    &version_from_wrs7_gnu_cc;
     &languages_c;
-    &runtimes_vx6;
-    &target_from_wrs_gnu_cc;
+    &runtimes_vx7;
+    <target>arm-wrs-vxworks7</target>
   </compiler_description>
 
   <compiler_description>
-    <name>G++-WRS6</name>
-    <executable prefix="1">c\+\+(arm|pentium|ppc)</executable>
-
-    &version_from_wind_base;
+    <name>G++-WRS7ARM</name>
+    <executable prefix="1">c\+\+(arm)</executable>
+    &version_from_wrs7_gnu_cpp;
     &languages_cpp;
-    &runtimes_vx6;
-    &target_from_wrs_gnu_cpp;
+    &runtimes_vx7;
+    <target>arm-wrs-vxworks7</target>
   </compiler_description>
 
 </gprconfig>
