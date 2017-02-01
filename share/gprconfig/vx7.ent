@@ -1,0 +1,46 @@
+   <!ENTITY version_from_wrs7_gnu_cc
+    '<version>
+      <external>cc${PREFIX} --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
+     </version>'
+   >
+
+   <!ENTITY version_from_wrs7_gnu_cpp
+    '<version>
+      <external>c++${PREFIX} --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
+     </version>'
+   >
+
+   <!ENTITY runtimes_vx7
+    '<runtimes>kernel,rtp</runtimes>'
+   >
+
+  <!ENTITY config_wrs_rtp_base
+    '<config>
+   WRS_RTP_Base := external ("WRS_RTP_BASE", "&this_wrs_rtp_base;");
+   package Linker is
+      for Leading_Switches ("Ada") use
+        Linker &apos; Leading_Switches ("Ada")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C") use
+        Linker &apos; Leading_Switches ("C")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C++") use
+        Linker &apos; Leading_Switches ("C++")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+   end Linker;
+     </config>'
+  >
+
+  <!ENTITY configurations_vx7
+  '
+   <configuration>
+     &if_rtp;
+     &if_this_target;
+
+     &config_wrs_rtp_base;
+   </configuration>'
+  >
