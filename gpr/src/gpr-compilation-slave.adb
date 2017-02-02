@@ -422,7 +422,7 @@ package body GPR.Compilation.Slave is
 
       S := Connect_Slave
         (S_Data, Project_Name,
-         Sync                       => True,
+         Sync                       => Synchronize,
          Included_Artifact_Patterns => To_String (IAP));
 
       Set (Slaves_Sockets, Sock (S.Channel));
@@ -453,11 +453,12 @@ package body GPR.Compilation.Slave is
       end if;
 
       if Synchronize then
-         GPR.Compilation.Sync.To_Slave
+         Compilation.Sync.Send_Files
            (Channel           => S.Channel,
             Root_Dir          => To_String (Root_Dir),
             Included_Patterns => Included_Patterns,
-            Excluded_Patterns => Excluded_Patterns);
+            Excluded_Patterns => Excluded_Patterns,
+            Mode              => Sync.To_Slave);
       end if;
 
       --  Now that all slave's data is known and set, record it

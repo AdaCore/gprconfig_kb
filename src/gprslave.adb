@@ -1134,7 +1134,15 @@ procedure Gprslave is
 
                      elsif Kind (Cmd) = SY then
                         --  Synchronization requested
-                        null;
+                        declare
+                           Empty : Sync.Str_Vect.Vector;
+                        begin
+                           Compilation.Sync.Send_Files
+                             (Builder.Channel,
+                              Work_Directory (Builder),
+                              Empty, Empty,
+                              Mode => Sync.To_Master);
+                        end;
 
                      else
                         raise Constraint_Error with "unexpected command "

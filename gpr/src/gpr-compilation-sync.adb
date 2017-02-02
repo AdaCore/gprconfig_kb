@@ -39,9 +39,12 @@ package body GPR.Compilation.Sync is
    use Ada;
    use type Containers.Count_Type;
 
-   Default_Excluded_Patterns : Str_Vect.Vector;
+   Common_Excluded_Patterns : Str_Vect.Vector;
    --  Default excluded patterns to use when in excluded mode as opposed to
    --  include mode where we describe the patterns to include specifically.
+
+   Artifact_Excluded_Patterns : Str_Vect.Vector;
+   --  Artifacts patterns to exclude
 
    Max_Gpr_Sync : constant := 10;
    --  The number of parallele synchronization done for the gpr protocol. This
@@ -161,8 +164,7 @@ package body GPR.Compilation.Sync is
          type Regexp_Set is array (Containers.Count_Type range <>) of Regexp;
 
          I_Regexp : Regexp_Set (1 .. Job.Included_Patterns.Length);
-         E_Regexp : Regexp_Set (1 .. Job.Excluded_Patterns.Length
-                                       + Default_Excluded_Patterns.Length);
+         E_Regexp : Regexp_Set (1 .. Job.Excluded_Patterns.Length);
 
          procedure Process (Prefix : String);
 
@@ -267,10 +269,6 @@ package body GPR.Compilation.Sync is
             end loop;
 
             K := 1;
-            for P of Default_Excluded_Patterns loop
-               E_Regexp (K) := Compile (P, Glob => True);
-               K := K + 1;
-            end loop;
 
             for P of Job.Excluded_Patterns loop
                E_Regexp (K) := Compile (P, Glob => True);
@@ -485,15 +483,18 @@ package body GPR.Compilation.Sync is
       end loop;
    end Receive_Files;
 
-   --------------
-   -- To_Slave --
-   --------------
+   ----------------
+   -- Send_Files --
+   ----------------
 
-   procedure To_Slave
+   procedure Send_Files
      (Channel           : Protocol.Communication_Channel;
       Root_Dir          : String;
       Excluded_Patterns : Str_Vect.Vector;
-      Included_Patterns : Str_Vect.Vector) is
+      Included_Patterns : Str_Vect.Vector;
+      Mode              : Direction)
+   is
+      use type Str_Vect.Vector;
    begin
       --  Starts the tasks if not already done
 
@@ -505,8 +506,12 @@ package body GPR.Compilation.Sync is
         (Gpr_Data'
            (Channel,
             To_Unbounded_String (Root_Dir),
-            Excluded_Patterns, Included_Patterns));
-   end To_Slave;
+            Excluded_Patterns & Common_Excluded_Patterns
+            & (if Mode = To_Slave
+               then Artifact_Excluded_Patterns
+               else Str_Vect.Empty_Vector),
+            Included_Patterns));
+   end Send_Files;
 
    ----------
    -- Wait --
@@ -526,18 +531,19 @@ package body GPR.Compilation.Sync is
    end Wait;
 
 begin
-   Default_Excluded_Patterns.Append ("*.o");
-   Default_Excluded_Patterns.Append ("*.obj");
-   Default_Excluded_Patterns.Append ("*.ali");
-   Default_Excluded_Patterns.Append ("*.dll");
-   Default_Excluded_Patterns.Append ("*.so");
-   Default_Excluded_Patterns.Append ("*.so.*");
-   Default_Excluded_Patterns.Append ("*.exe");
-   Default_Excluded_Patterns.Append (".git");
-   Default_Excluded_Patterns.Append (".svn");
-   Default_Excluded_Patterns.Append (".hg");
-   Default_Excluded_Patterns.Append ("CVS");
-   Default_Excluded_Patterns.Append ("gnatinspect.db*");
-   Default_Excluded_Patterns.Append ("GNAT-TEMP*.TMP");
-   Default_Excluded_Patterns.Append ("*.lexch");
+   Common_Excluded_Patterns.Append (".git");
+   Common_Excluded_Patterns.Append (".svn");
+   Common_Excluded_Patterns.Append (".hg");
+   Common_Excluded_Patterns.Append ("CVS");
+   Common_Excluded_Patterns.Append ("gnatinspect.db*");
+   Common_Excluded_Patterns.Append ("GNAT-TEMP*.TMP");
+   Common_Excluded_Patterns.Append ("*.lexch");
+
+   Artifact_Excluded_Patterns.Append ("*.o");
+   Artifact_Excluded_Patterns.Append ("*.obj");
+   Artifact_Excluded_Patterns.Append ("*.ali");
+   Artifact_Excluded_Patterns.Append ("*.dll");
+   Artifact_Excluded_Patterns.Append ("*.so");
+   Artifact_Excluded_Patterns.Append ("*.so.*");
+   Artifact_Excluded_Patterns.Append ("*.exe");
 end GPR.Compilation.Sync;

@@ -25,7 +25,7 @@
 --  Synchronize data to/from the slave. The usage is:
 --
 --    On one side:
---       1. call To_Slave for every slave to be synchronized
+--       1. call Send_Files for every slave to be synchronized
 --       2. call Wait to wait for the synchronization to be terminated
 --
 --    On the other side:
@@ -41,11 +41,14 @@ package GPR.Compilation.Sync is
    package Str_Vect is
      new Ada.Containers.Indefinite_Vectors (Positive, String);
 
-   procedure To_Slave
+   type Direction is (To_Slave, To_Master);
+
+   procedure Send_Files
      (Channel           : Protocol.Communication_Channel;
       Root_Dir          : String;
       Excluded_Patterns : Str_Vect.Vector;
-      Included_Patterns : Str_Vect.Vector);
+      Included_Patterns : Str_Vect.Vector;
+      Mode              : Direction);
    --  Synchronize from the build master to the slave
 
    procedure Wait;
