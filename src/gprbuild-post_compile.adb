@@ -1728,10 +1728,13 @@ package body Gprbuild.Post_Compile is
                                     Section_Out := True;
                                  end if;
 
-                                 Put_Line
-                                   (Exchange_File,
-                                    "-L"
-                                    & Get_Name_String (P.Library_Dir.Name));
+                                 if P.Library_Dir.Name /= No_Path then
+                                    Put_Line
+                                      (Exchange_File,
+                                       "-L"
+                                       & Get_Name_String (P.Library_Dir.Name));
+                                 end if;
+
                                  Put_Line
                                    (Exchange_File,
                                     Get_Name_String (Elem.Value));
