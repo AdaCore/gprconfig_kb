@@ -116,6 +116,13 @@
   <!ENTITY configurations_vxworks_gpp
   '
   <configuration>
+    &if_ada_rtp;
+    &if_this_target;
+
+    &config_ada_rtp;
+  </configuration>
+
+  <configuration>
     &if_rtp;
     &if_this_target;
 

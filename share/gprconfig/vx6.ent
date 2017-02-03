@@ -13,11 +13,6 @@
   <!ENTITY config_rtp_cflags
     '<config>
    package Compiler is
-      for Leading_Required_Switches ("Ada") use
-        Compiler &apos; Leading_Required_Switches ("Ada") &amp; ("-mrtp");
-   end Compiler;
-
-   package Compiler is
       for Leading_Required_Switches ("C") use
         Compiler &apos; Leading_Required_Switches ("C") &amp; ("-mrtp")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h",
