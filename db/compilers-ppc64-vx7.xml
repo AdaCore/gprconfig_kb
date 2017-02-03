@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
+<!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
+]>
+<gprconfig>
+
+  <!-- Diab PPC64 C & C++ Compiler -->
+  <!-- check that the version is >= 5.9.6.0 -->
+  <compiler_description>
+    <name>DIABC-PPC64</name>
+    <executable>dcc</executable>
+    <version>
+      <external>dcc -V</external>
+      <grep regexp=".*dcc(.exe)? Rel ([0-9.]*)" group="2"></grep>
+      <must_match>5[.]9[.][6-9].*</must_match>
+    </version>
+    <languages>C,C++</languages>
+    &runtimes_vx7;
+    <target>powerpc64-wrs-vxworks7</target>
+  </compiler_description>
+
+</gprconfig>
