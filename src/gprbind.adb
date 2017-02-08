@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2016, AdaCore                     --
+--                     Copyright (C) 2006-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -586,7 +586,10 @@ begin
       Gnatbind_Options,
       Last_Gnatbind_Option);
 
-   if not Is_Regular_File (Ada_Compiler_Path.all) then
+   if Ada_Compiler_Path = null then
+      Fail_Program (null, "no Ada compiler path specified");
+
+   elsif not Is_Regular_File (Ada_Compiler_Path.all) then
       Fail_Program (null, "could not find the Ada compiler");
    end if;
 
@@ -638,9 +641,7 @@ begin
 
    Add (Dash_x, Gnatbind_Options, Last_Gnatbind_Option);
 
-   if Ada_Compiler_Path = null or else
-      Is_Absolute_Path (GNATBIND.all)
-   then
+   if Is_Absolute_Path (GNATBIND.all) then
       FULL_GNATBIND := GNATBIND;
 
    else
