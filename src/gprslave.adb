@@ -1538,17 +1538,19 @@ procedure Gprslave is
          Create (List, Args (Job.Cmd) (6).all, String'(1 => Opts_Sep));
 
          Execute  : declare
-            Project  : constant String :=
-                         Get_Arg (Builder, Args (Job.Cmd) (1).all);
-            Language : constant String := Args (Job.Cmd) (3).all;
-            Out_File : constant String :=
-                         Get_Output_File (Builder);
-            Obj_File : constant String := Args (Job.Cmd) (4).all;
-            Dep_File : constant String := Args (Job.Cmd) (5).all;
-            Env      : constant String :=
-                         Get_Arg (Builder, Args (Job.Cmd) (7).all);
-            O        : Argument_List := Get_Args (Builder, List);
-            Pid      : Process_Id;
+            Project   : constant String :=
+                          Get_Arg (Builder, Args (Job.Cmd) (1).all);
+            Language  : constant String := Args (Job.Cmd) (3).all;
+            Out_File  : constant String :=
+                          Get_Output_File (Builder);
+            Obj_File  : constant String := Args (Job.Cmd) (4).all;
+            Dep_File  : constant String := Args (Job.Cmd) (5).all;
+            Env       : constant String :=
+                          Get_Arg (Builder, Args (Job.Cmd) (7).all);
+            O         : Argument_List := Get_Args (Builder, List);
+            First_Opt : Positive := O'First;
+            Pid       : Process_Id;
+            Driver    : Unbounded_String;
          begin
             Output_Compilation (Builder, O (O'Last).all);
 
@@ -1559,12 +1561,36 @@ procedure Gprslave is
             --  It is critical to ensure that no IO is done while spawning
             --  the process.
 
+            --  If there is now language set, we are not calling a compiler
+            --  but a tool directly (gprbuild from GPRremote for example). In
+            --  this case the driver is taken from the first option in the
+            --  list.
+            --
+            --  When language is not null we compute the driver to be used
+            --  based on the project setting for this specific language.
+
+            if Language = "" then
+               declare
+                  Drv : OS_Lib.String_Access :=
+                          Locate_Exec_On_Path (O (O'First).all);
+               begin
+                  Driver := To_Unbounded_String (Drv.all);
+                  Free (Drv);
+               end;
+
+               --  And skip first option which was the driver
+
+               First_Opt := First_Opt + 1;
+
+            else
+               Driver := To_Unbounded_String
+                           (Get_Driver (Builder, Language, Project));
+            end if;
+
             Running.Start
               (Job      => Job,
-               Driver   => (if Language = ""
-                            then O (O'First).all
-                            else Get_Driver (Builder, Language, Project)),
-               Options  => O,
+               Driver   => To_String (Driver),
+               Options  => O (First_Opt .. O'Last),
                Out_File => Out_File,
                Obj_File => Obj_File,
                Dep_File => Dep_File,
