@@ -680,16 +680,15 @@ package body GPR.Compilation.Protocol is
       Env      : String;
       Filter   : access function (Str, Sep : String) return String := null)
    is
+      function Filter_Wrapper (Str, Sep : String) return String
+        is  (if Filter = null then Str else Filter (Str, Sep));
+
       R_Cmd : Unbounded_String;
    begin
       --  Options are serialized into a string and separated with Opts_Sep
 
       for K in Options'Range loop
-         if Filter /= null then
-            R_Cmd := R_Cmd & Filter (Options (K).all, WD_Path_Tag);
-         else
-            R_Cmd := R_Cmd & Options (K).all;
-         end if;
+         R_Cmd := R_Cmd & Filter_Wrapper (Options (K).all, WD_Path_Tag);
 
          if K /= Options'Last then
             R_Cmd := R_Cmd & Opts_Sep;
@@ -701,11 +700,11 @@ package body GPR.Compilation.Protocol is
       String'Output
         (Channel.Channel,
          Command_Kind'Image (EX)
-         & Filter (Project, WD_Path_Tag)
+         & Filter_Wrapper (Project, WD_Path_Tag)
          & Args_Sep & Dir & Args_Sep & Language
          & Args_Sep & Obj_Name & Args_Sep & Dep_Name
          & Args_Sep & To_String (R_Cmd)
-         & Args_Sep & Filter (Env, WD_Path_Tag));
+         & Args_Sep & Filter_Wrapper (Env, WD_Path_Tag));
    end Send_Exec;
 
    ---------------
