@@ -166,6 +166,9 @@ package GPR.Compilation.Protocol is
    --  the actual full path on their working environment. The Env string is a
    --  set of environment variables (name=value[;name=value]) to set before
    --  spawning the process.
+   --  If Language is empty, this is not a compilation based on a specific
+   --  language. In this case the command in Options (Options'First) is to be
+   --  executed as-is.
 
    procedure Send_File
      (Channel         : Communication_Channel;

@@ -1561,7 +1561,9 @@ procedure Gprslave is
 
             Running.Start
               (Job      => Job,
-               Driver   => Get_Driver (Builder, Language, Project),
+               Driver   => (if Language = ""
+                            then O (O'First).all
+                            else Get_Driver (Builder, Language, Project)),
                Options  => O,
                Out_File => Out_File,
                Obj_File => Obj_File,
