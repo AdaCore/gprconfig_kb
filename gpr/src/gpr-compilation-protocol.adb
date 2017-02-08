@@ -673,7 +673,7 @@ package body GPR.Compilation.Protocol is
      (Channel  : Communication_Channel;
       Project  : String;
       Dir      : String;
-      Command  : String;
+      Language : String;
       Options  : Argument_List;
       Obj_Name : String;
       Dep_Name : String;
@@ -702,7 +702,7 @@ package body GPR.Compilation.Protocol is
         (Channel.Channel,
          Command_Kind'Image (EX)
          & Filter (Project, WD_Path_Tag)
-         & Args_Sep & Dir & Args_Sep & Command
+         & Args_Sep & Dir & Args_Sep & Language
          & Args_Sep & Obj_Name & Args_Sep & Dep_Name
          & Args_Sep & To_String (R_Cmd)
          & Args_Sep & Filter (Env, WD_Path_Tag));

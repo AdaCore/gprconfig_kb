@@ -150,7 +150,7 @@ package GPR.Compilation.Protocol is
      (Channel  : Communication_Channel;
       Project  : String;
       Dir      : String;
-      Command  : String;
+      Language : String;
       Options  : GNAT.OS_Lib.Argument_List;
       Obj_Name : String;
       Dep_Name : String;
