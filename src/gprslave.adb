@@ -1600,9 +1600,9 @@ procedure Gprslave is
             Display
               (Builder, "  pid" & Integer'Image (Pid_To_Integer (Pid)),
                Is_Debug => True);
+            Display (Builder, "  obj_file " & Obj_File, Is_Debug => True);
             Display (Builder, "  dep_file " & Dep_File, Is_Debug => True);
             Display (Builder, "  out_file " & Out_File, Is_Debug => True);
-            Display (Builder, "  obj_file " & Obj_File, Is_Debug => True);
 
             for K in O'Range loop
                Free (O (K));
