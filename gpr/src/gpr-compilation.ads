@@ -83,8 +83,9 @@ package GPR.Compilation is
    --  job).
 
    type File_Data is record
-      Path_Name : Ada.Strings.Unbounded.Unbounded_String;
-      Timestamp : Time_Stamp_Type; -- YYYYMMDDhhmmss
+      Path_Name     : Ada.Strings.Unbounded.Unbounded_String;
+      Timestamp     : Time_Stamp_Type; -- YYYYMMDDhhmmss
+      Is_Executable : Boolean;
    end record;
 
    package File_Data_Set is new Ada.Containers.Vectors (Positive, File_Data);

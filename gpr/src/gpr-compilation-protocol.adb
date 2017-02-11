@@ -765,6 +765,8 @@ package body GPR.Compilation.Protocol is
             Append (Args, F.Path_Name);
             Append (Args, Args_Sep);
             Append (Args, String (F.Timestamp));
+            Append (Args, Args_Sep);
+            Append (Args, Boolean'Image (F.Is_Executable));
          end loop;
 
          String'Output

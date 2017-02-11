@@ -242,7 +242,9 @@ package body GPR.Compilation.Sync is
                           (To_Unbounded_String (Entry_Name),
                            To_Time_Stamp
                              (Modification_Time (File) -
-                              Duration (Time_Zones.UTC_Time_Offset) * 60.0)));
+                                Duration (Time_Zones.UTC_Time_Offset) * 60.0),
+                           OS_Lib.Is_Executable_File
+                             (Root_Dir & Directory_Separator & Entry_Name)));
                   end if;
                end if;
             end Check;
@@ -395,14 +397,17 @@ package body GPR.Compilation.Sync is
                   Total_File := Total_File + 1;
 
                   declare
-                     Path_Name  : constant String := Args (Cmd) (K).all;
-                     Full_Path  : constant String :=
-                                    Root_Dir & Directory_Separator & Path_Name;
-                     TS         : constant Time_Stamp_Type :=
-                                    Time_Stamp_Type
-                                      (Args (Cmd) (K + 1).all);
-                     File_Stamp : Time_Stamp_Type;
-                     Exists     : Boolean;
+                     Path_Name     : constant String := Args (Cmd) (K).all;
+                     Full_Path     : constant String :=
+                                       Root_Dir & Directory_Separator
+                                       & Path_Name;
+                     TS            : constant Time_Stamp_Type :=
+                                       Time_Stamp_Type
+                                         (Args (Cmd) (K + 1).all);
+                     Is_Executable : constant Boolean :=
+                                       Boolean'Value (Args (Cmd) (K + 2).all);
+                     File_Stamp    : Time_Stamp_Type;
+                     Exists        : Boolean;
                   begin
                      if Ada.Directories.Exists (Full_Path) then
                         File_Stamp :=
@@ -419,11 +424,12 @@ package body GPR.Compilation.Sync is
                      if not Exists or else File_Stamp /= TS then
                         To_Sync.Append
                           (File_Data'
-                             (To_Unbounded_String (Path_Name), TS));
+                             (To_Unbounded_String (Path_Name),
+                              TS, Is_Executable));
                      end if;
                   end;
 
-                  K := K + 2;
+                  K := K + 3;
                   exit Check_All_Files when K > Args (Cmd)'Length;
                end loop Check_All_Files;
 
@@ -455,6 +461,13 @@ package body GPR.Compilation.Sync is
 
                            Get_RAW_File_Content
                              (Channel, Full_Path, W.Timestamp);
+
+                           --  And mark file executable if needed
+
+                           if W.Is_Executable then
+                              GNAT.OS_Lib.Set_Executable (Full_Path);
+                           end if;
+
                         exception
                            when others =>
                               Display
