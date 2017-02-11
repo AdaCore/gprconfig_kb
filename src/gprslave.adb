@@ -2044,31 +2044,35 @@ procedure Gprslave is
                            D_File : constant String := R_Dir & Dep_File;
                            O_File : constant String := R_Dir & Obj_File;
                         begin
-                           if Exists (D_File)
+                           if Dep_File /= ""
+                             and then Exists (D_File)
                              and then Kind (D_File) = Ordinary_File
                            then
                               Send_File
                                 (Builder.Channel, D_File, Rewrite => True);
                            end if;
 
-                           if Exists (O_File) then
-                              Send_File
-                                (Builder.Channel, O_File, Rewrite => False);
+                           if Obj_File /= "" then
+                              if Exists (O_File) then
+                                 Send_File
+                                   (Builder.Channel, O_File, Rewrite => False);
+                              end if;
+
+                              --  We also check for any artifacts based on the
+                              --  user's patterns if any.
+
+                              for Artifact of
+                                Expand_Artifacts
+                                  (Root      => R_Dir,
+                                   Base_Name => Base_Name (Obj_File),
+                                   Patterns  =>
+                                     Builder.Included_Artifact_Patterns)
+                              loop
+                                 Send_File
+                                   (Builder.Channel, Artifact,
+                                    Rewrite => False);
+                              end loop;
                            end if;
-
-                           --  We also check for any artifacts based on the
-                           --  user's patterns if any.
-
-                           for Artifact of
-                             Expand_Artifacts
-                               (Root      => R_Dir,
-                                Base_Name => Base_Name (Obj_File),
-                                Patterns  =>
-                                  Builder.Included_Artifact_Patterns)
-                           loop
-                              Send_File
-                                (Builder.Channel, Artifact, Rewrite => False);
-                           end loop;
                         end;
                      end if;
                   end;
