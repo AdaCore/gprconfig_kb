@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2016, AdaCore                     --
+--                     Copyright (C) 2011-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -142,6 +142,14 @@ package body Gprbuild.Link is
       Table_Initial        => 200,
       Table_Increment      => 50);
    --  Directories to be put in the run path option
+
+   package Path_Options is new GNAT.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Integer,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 4,
+      Table_Increment      => 50);
+   --  Directories coming from the binder exchange file
 
    package Library_Dirs is new GNAT.HTable.Simple_HTable
      (Header_Num => GPR.Header_Num,
@@ -1456,6 +1464,9 @@ package body Gprbuild.Link is
       function Global_Archive_Name (For_Project : Project_Id) return String;
       --  Returns the name of the global archive for a project
 
+      procedure Add_Run_Path_Options;
+      --  Add the run path option switch. if there is one
+
       Linker_Name        : String_Access := null;
       Linker_Path        : String_Access;
       Min_Linker_Opts    : Name_List_Index;
@@ -1504,6 +1515,96 @@ package body Gprbuild.Link is
       Response_File_Name : Path_Name_Type := No_Path;
       Response_2         : Path_Name_Type := No_Path;
 
+      --------------------------
+      -- Add_Run_Path_Options --
+      --------------------------
+
+      procedure Add_Run_Path_Options is
+      begin
+         if Opt.Run_Path_Option
+           and then Main_Proj.Config.Run_Path_Option /= No_Name_List
+         then
+            for J in 1 .. Path_Options.Last loop
+               Add_Rpath (Path_Options.Table (J).all);
+               Add_Rpath (Shared_Libgcc_Dir (Path_Options.Table (J).all));
+            end loop;
+
+            if Rpaths.Last > 0 then
+               declare
+                  Nam_Nod : Name_Node :=
+                    Main_File.Tree.Shared.Name_Lists.Table
+                      (Main_Proj.Config.Run_Path_Option);
+                  Length  : Natural := 0;
+                  Arg     : String_Access := null;
+               begin
+                  if Main_Proj.Config.Run_Path_Origin /= No_Name
+                    and then
+                      Get_Name_String (Main_Proj.Config.Run_Path_Origin) /= ""
+                  then
+                     Rpaths_Relative_To
+                       (Main_Proj.Exec_Directory.Display_Name,
+                        Main_Proj.Config.Run_Path_Origin);
+                  end if;
+
+                  if Main_Proj.Config.Separate_Run_Path_Options then
+                     for J in 1 .. Rpaths.Last loop
+                        Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                          (Main_Proj.Config.Run_Path_Option);
+                        while Nam_Nod.Next /= No_Name_List loop
+                           Add_Argument
+                             (Get_Name_String (Nam_Nod.Name), True);
+                           Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                             (Nam_Nod.Next);
+                        end loop;
+
+                        Get_Name_String (Nam_Nod.Name);
+                        Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
+                        Add_Argument
+                          (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
+                     end loop;
+
+                  else
+                     while Nam_Nod.Next /= No_Name_List loop
+                        Add_Argument (Get_Name_String (Nam_Nod.Name), True);
+                        Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                          (Nam_Nod.Next);
+                     end loop;
+
+                     --  Compute the length of the argument
+
+                     Get_Name_String (Nam_Nod.Name);
+                     Length := Name_Len;
+
+                     for J in 1 .. Rpaths.Last loop
+                        Length := Length + Rpaths.Table (J)'Length + 1;
+                     end loop;
+
+                     Length := Length - 1;
+
+                     --  Create the argument
+
+                     Arg := new String (1 .. Length);
+                     Length := Name_Len;
+                     Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
+
+                     for J in 1 .. Rpaths.Last loop
+                        if J /= 1 then
+                           Length := Length + 1;
+                           Arg (Length) := Path_Separator;
+                        end if;
+
+                        Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
+                          := Rpaths.Table (J).all;
+                        Length := Length + Rpaths.Table (J)'Length;
+                     end loop;
+
+                     Add_Argument (Arg, Opt.Verbose_Mode);
+                  end if;
+               end;
+            end if;
+         end if;
+      end Add_Run_Path_Options;
+
       -------------------------
       -- Global_Archive_Name --
       -------------------------
@@ -1521,6 +1622,7 @@ package body Gprbuild.Link is
       --  that the same rpaths are not duplicated.
 
       Rpaths.Set_Last (0);
+      Path_Options.Set_Last (0);
 
       Linker_Needs_To_Be_Called := Opt.Force_Compilations;
 
@@ -1869,10 +1971,8 @@ package body Gprbuild.Link is
                                      Main_Proj.Config.Run_Path_Option /=
                                        No_Name_List
                                  then
-                                    Add_Rpath (Line (1 .. Last));
-                                    Add_Rpath
-                                      (Shared_Libgcc_Dir
-                                         (Line (1 .. Last)));
+                                    Path_Options.Append
+                                      (new String'(Line (1 .. Last)));
                                  end if;
 
                               when others =>
@@ -2527,82 +2627,7 @@ package body Gprbuild.Link is
 
          --  Add the run path option, if necessary
 
-         if Opt.Run_Path_Option
-           and then Main_Proj.Config.Run_Path_Option /= No_Name_List
-           and then Rpaths.Last > 0
-         then
-            declare
-               Nam_Nod : Name_Node :=
-                           Main_File.Tree.Shared.Name_Lists.Table
-                             (Main_Proj.Config.Run_Path_Option);
-               Length  : Natural := 0;
-               Arg     : String_Access := null;
-            begin
-               if Main_Proj.Config.Run_Path_Origin /= No_Name
-                 and then
-                   Get_Name_String (Main_Proj.Config.Run_Path_Origin) /= ""
-               then
-                  Rpaths_Relative_To
-                    (Main_Proj.Exec_Directory.Display_Name,
-                     Main_Proj.Config.Run_Path_Origin);
-               end if;
-
-               if Main_Proj.Config.Separate_Run_Path_Options then
-                  for J in 1 .. Rpaths.Last loop
-                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                       (Main_Proj.Config.Run_Path_Option);
-                     while Nam_Nod.Next /= No_Name_List loop
-                        Add_Argument
-                          (Get_Name_String (Nam_Nod.Name), True);
-                        Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                          (Nam_Nod.Next);
-                     end loop;
-
-                     Get_Name_String (Nam_Nod.Name);
-                     Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
-                     Add_Argument
-                       (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
-                  end loop;
-
-               else
-                  while Nam_Nod.Next /= No_Name_List loop
-                     Add_Argument (Get_Name_String (Nam_Nod.Name), True);
-                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                       (Nam_Nod.Next);
-                  end loop;
-
-                  --  Compute the length of the argument
-
-                  Get_Name_String (Nam_Nod.Name);
-                  Length := Name_Len;
-
-                  for J in 1 .. Rpaths.Last loop
-                     Length := Length + Rpaths.Table (J)'Length + 1;
-                  end loop;
-
-                  Length := Length - 1;
-
-                  --  Create the argument
-
-                  Arg := new String (1 .. Length);
-                  Length := Name_Len;
-                  Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
-
-                  for J in 1 .. Rpaths.Last loop
-                     if J /= 1 then
-                        Length := Length + 1;
-                        Arg (Length) := Path_Separator;
-                     end if;
-
-                     Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
-                       := Rpaths.Table (J).all;
-                     Length := Length + Rpaths.Table (J)'Length;
-                  end loop;
-
-                  Add_Argument (Arg, Opt.Verbose_Mode);
-               end if;
-            end;
-         end if;
+         Add_Run_Path_Options;
 
          --  Add the map file option, if supported and requested
 
