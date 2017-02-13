@@ -362,7 +362,7 @@ package body GPR.Compilation.Protocol is
       begin
          if C in
            "EX" | "AK" | "TS" | "ES" | "FL" | "FR" | "OK" | "KO"
-           | "CX" | "CU" | "DP" | "EC" | "PG" | "SY"
+           | "CX" | "CU" | "DP" | "EC" | "PG" | "SY" | "IR"
          then
             Result.Cmd := Command_Kind'Value (C);
 
@@ -470,6 +470,32 @@ package body GPR.Compilation.Protocol is
            with "Expected CX found " & Command_Kind'Image (Line.Cmd);
       end if;
    end Get_Context;
+
+   -----------------------
+   -- Get_Info_Response --
+   -----------------------
+
+   procedure Get_Info_Response
+     (Channel          : Communication_Channel;
+      Version_String   : out Unbounded_String;
+      Current_UTC_Time : out Stamps.Time_Stamp_Type;
+      GPR_Hash         : out Unbounded_String;
+      Success          : out Boolean)
+   is
+      Cmd : constant Command := Get_Command (Channel);
+   begin
+      if Cmd.Args'Length = 3
+        and then Cmd.Cmd in OK | KO
+      then
+         Version_String := To_Unbounded_String (Cmd.Args (1).all);
+         Current_UTC_Time := Stamps.Time_Stamp_Type (Cmd.Args (2).all);
+         GPR_Hash := To_Unbounded_String (Cmd.Args (3).all);
+         Success := (if Kind (Cmd) = KO then False);
+
+      else
+         Success := False;
+      end if;
+   end Get_Info_Response;
 
    -------------
    -- Get_Pid --
@@ -946,6 +972,32 @@ package body GPR.Compilation.Protocol is
             Minute => Formatting.Minute (T),
             Second => Formatting.Second (T)));
    end Set_File_Stamp;
+
+   -----------------------
+   -- Send_Info_Request --
+   -----------------------
+
+   procedure Send_Info_Request (Channel : Communication_Channel) is
+   begin
+      String'Output (Channel.Channel, Command_Kind'Image (IR));
+   end Send_Info_Request;
+
+   ------------------------
+   -- Send_Info_Response --
+   ------------------------
+
+   procedure Send_Info_Response
+     (Channel          : Communication_Channel;
+      Version_String   : String;
+      Current_UTC_Time : Stamps.Time_Stamp_Type;
+      GPR_Hash         : String) is
+   begin
+      String'Output
+        (Channel.Channel, Command_Kind'Image (OK) &
+         Version_String & Args_Sep &
+         String (Current_UTC_Time) & Args_Sep &
+         GPR_Hash);
+   end Send_Info_Response;
 
    -------------
    -- Send_Ko --

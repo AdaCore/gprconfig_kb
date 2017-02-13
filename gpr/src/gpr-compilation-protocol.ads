@@ -114,6 +114,7 @@ package GPR.Compilation.Protocol is
       EC,  -- end of compilation
       SI,  -- a signal as been detected (like EC but no ACK needed)
       SY,  -- synchronization requested
+      IR,  -- information requested
       PG); -- PING just to know if the slave is listening
 
    function Kind (Cmd : Command) return Command_Kind;
@@ -205,6 +206,17 @@ package GPR.Compilation.Protocol is
    procedure Send_Sync_Request (Channel : Communication_Channel);
    --  Send a sync request to the slave
 
+   procedure Send_Info_Request (Channel : Communication_Channel);
+   --  Send a info request to the slave
+
+   procedure Get_Info_Response
+     (Channel          : Communication_Channel;
+      Version_String   : out Unbounded_String;
+      Current_UTC_Time : out Stamps.Time_Stamp_Type;
+      GPR_Hash         : out Unbounded_String;
+      Success          : out Boolean);
+   --  Read and return the info sent from the slave
+
    --
    --  From GPRslave
    --
@@ -259,6 +271,13 @@ package GPR.Compilation.Protocol is
       Current_UTC_Time : Stamps.Time_Stamp_Type;
       GPR_Hash         : String);
    --  Send a ping response with some environment information
+
+   procedure Send_Info_Response
+     (Channel          : Communication_Channel;
+      Version_String   : String;
+      Current_UTC_Time : Stamps.Time_Stamp_Type;
+      GPR_Hash         : String);
+   --  Send an information response
 
    procedure Send_Output (Channel : Communication_Channel; File_Name : String);
    --  Send an output of a command

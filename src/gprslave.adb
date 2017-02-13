@@ -1144,6 +1144,15 @@ procedure Gprslave is
                               Mode => Sync.To_Master);
                         end;
 
+                     elsif Kind (Cmd) = IR then
+                        --  Information requested
+
+                        Send_Info_Response
+                          (Builder.Channel,
+                           GPR.Version.Gpr_Version_String,
+                           UTC_Time,
+                           "toto"); -- Gprslave.Hash.all);
+
                      else
                         raise Constraint_Error with "unexpected command "
                           & Command_Kind'Image (Kind (Cmd));
