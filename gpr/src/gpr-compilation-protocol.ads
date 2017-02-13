@@ -133,7 +133,7 @@ package GPR.Compilation.Protocol is
    Invalid_Pid : constant := -1;
 
    --
-   --  From gprbuild
+   --  From GPRbuild / GPRremote
    --
 
    procedure Send_Context
@@ -202,8 +202,11 @@ package GPR.Compilation.Protocol is
      (Channel : Communication_Channel; Project_Name : String);
    --  Send a clean-up requets to the slave
 
+   procedure Send_Sync_Request (Channel : Communication_Channel);
+   --  Send a sync request to the slave
+
    --
-   --  From gprslave
+   --  From GPRslave
    --
 
    procedure Get_Context
@@ -225,9 +228,6 @@ package GPR.Compilation.Protocol is
       Root_Directory : String;
       Clock_Status   : Boolean);
    --  Send the slave configuration to the build master
-
-   procedure Send_Sync_Request (Channel : Communication_Channel);
-   --  Send a sync request to the slave
 
    procedure Send_Ack
      (Channel : Communication_Channel; Pid : Remote_Id);
@@ -257,7 +257,7 @@ package GPR.Compilation.Protocol is
      (Channel          : Communication_Channel;
       Version_String   : String;
       Current_UTC_Time : Stamps.Time_Stamp_Type;
-      Gpr_Hash         : String);
+      GPR_Hash         : String);
    --  Send a ping response with some environment information
 
    procedure Send_Output (Channel : Communication_Channel; File_Name : String);

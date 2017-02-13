@@ -1020,13 +1020,13 @@ package body GPR.Compilation.Protocol is
      (Channel          : Communication_Channel;
       Version_String   : String;
       Current_UTC_Time : Stamps.Time_Stamp_Type;
-      Gpr_Hash         : String) is
+      GPR_Hash         : String) is
    begin
       String'Output
         (Channel.Channel, Command_Kind'Image (OK) &
          Version_String & ASCII.GS &
          String (Current_UTC_Time) & ASCII.GS &
-         Gpr_Hash);
+         GPR_Hash);
    end Send_Ping_Response;
 
    ---------------------------
