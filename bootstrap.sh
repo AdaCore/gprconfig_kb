@@ -88,4 +88,5 @@ done
 install -Dm0755 $bin_progs -t "$DESTDIR$prefix$bindir"
 install -Dm0755 $lib_progs -t "$DESTDIR$prefix$libexecdir"/gprbuild
 install -Dm0644 "$srcdir"/share/gprconfig/*.xml -t "$DESTDIR$prefix$datarootdir"/gprconfig
+install -Dm0644 "$srcdir"/share/gprconfig/*.ent -t "$DESTDIR$prefix$datarootdir"/gprconfig
 install -Dm0644 "$srcdir"/share/_default.gpr "$DESTDIR$prefix$datarootdir"/gpr/_default.gpr
