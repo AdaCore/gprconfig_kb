@@ -433,17 +433,34 @@ package body GPR.Compilation.Protocol is
    begin
       Is_Ping := False;
 
+      --  Note that to ensure GPRslave stays compatible with old
+      --  version of GNAT Pro and GPRbuild all parameters after the
+      --  6th must be optional when retrieving the context. Note doing
+      --  that will make GPRslave raise an exception instead of
+      --  reporting a proper non-compatible context.
+
       if Line.Cmd = CX
-        and then Line.Args'Length = 8
+        and then Line.Args'Length >= 6
       then
-         Target                     := To_Unbounded_String (Line.Args (1).all);
-         Project_Name               := To_Unbounded_String (Line.Args (2).all);
-         Build_Env                  := To_Unbounded_String (Line.Args (3).all);
-         Sync                       := Boolean'Value (Line.Args (4).all);
-         Timestamp                  := Time_Stamp_Type (Line.Args (5).all);
-         Version                    := To_Unbounded_String (Line.Args (6).all);
-         Hash                       := To_Unbounded_String (Line.Args (7).all);
-         Included_Artifact_Patterns := To_Unbounded_String (Line.Args (8).all);
+         Target       := To_Unbounded_String (Line.Args (1).all);
+         Project_Name := To_Unbounded_String (Line.Args (2).all);
+         Build_Env    := To_Unbounded_String (Line.Args (3).all);
+         Sync         := Boolean'Value (Line.Args (4).all);
+         Timestamp    := Time_Stamp_Type (Line.Args (5).all);
+         Version      := To_Unbounded_String (Line.Args (6).all);
+
+         if Line.Args'Length > 6 then
+            Hash := To_Unbounded_String (Line.Args (7).all);
+         else
+            Hash := Null_Unbounded_String;
+         end if;
+
+         if Line.Args'Length > 7 then
+            Included_Artifact_Patterns :=
+              To_Unbounded_String (Line.Args (8).all);
+         else
+            Included_Artifact_Patterns := Null_Unbounded_String;
+         end if;
 
       elsif Line.Cmd = PG then
          Is_Ping := True;
