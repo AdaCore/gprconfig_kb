@@ -4961,7 +4961,7 @@ package body GPR.Nmsc is
          --  Get the naming exceptions for all languages, but not for virtual
          --  projects.
 
-         if not Project.Virtual then
+         if not Project.Virtual and then Project.Source_Dirs /= Nil_String then
             for Kind in Spec_Or_Body loop
                Lang_Id := Project.Languages;
                while Lang_Id /= No_Language_Index loop
