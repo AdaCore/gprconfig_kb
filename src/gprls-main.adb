@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                    Copyright (C) 2015-2017, AdaCore                      --
+--                    Copyright (C) 2015-2016, AdaCore                      --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -32,6 +32,7 @@ with GPR.Tree;
 with GPR.Util;  use GPR.Util;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Util;       use Gpr_Util;
 with GPR_Version;    use GPR_Version;
 
 procedure Gprls.Main is
@@ -966,13 +967,13 @@ begin
    end if;
 
    if Load_Standard_Base then
-      Knowledge.Parse_Knowledge_Base (Project_Tree);
+      Gpr_Util.Knowledge.Parse_Knowledge_Base (Project_Tree);
    end if;
 
    if Target_Name = null then
       GPR.Env.Initialize_Default_Project_Path
         (Root_Environment.Project_Path,
-         Target_Name  => Knowledge.Normalized_Hostname,
+         Target_Name  => Gpr_Util.Knowledge.Normalized_Hostname,
          Runtime_Name => Runtime_Name_For (Snames.Name_Ada));
 
    else
@@ -1040,7 +1041,7 @@ begin
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Knowledge.Normalized_Hostname,
+         Normalized_Hostname        => Gpr_Util.Knowledge.Normalized_Hostname,
          Implicit_Project           => No_Project_File_Found);
 
    exception

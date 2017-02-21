@@ -2,7 +2,7 @@
  *                                                                          *
  *                             GPR TECHNOLOGY                               *
  *                                                                          *
- *                      Copyright (C) 1992-2017, AdaCore                    *
+ *                      Copyright (C) 1992-2015, AdaCore                    *
  *                                                                          *
  * This is  free  software;  you can redistribute it and/or modify it under *
  * terms of the  GNU  General Public License as published by the Free Soft- *
@@ -15,6 +15,7 @@
  * see <http://www.gnu.org/licenses/>.                                      *
  *                                                                          *
  ****************************************************************************/
+
 
 #ifdef __cplusplus
 extern "C" {

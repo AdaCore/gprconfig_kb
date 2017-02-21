@@ -44,15 +44,14 @@ with GNAT.Strings;
 with GNAT.Traceback.Symbolic; use GNAT.Traceback;
                               use GNAT.Traceback.Symbolic;
 
+with Gpr_Util;                      use Gpr_Util;
 with GPR_Version;
-with GPR.Compilation;               use GPR.Compilation;
-with GPR.Compilation.Protocol;      use GPR.Compilation.Protocol;
-with GPR.Compilation.Sync;          use GPR.Compilation.Sync;
-with GPR.Util;                      use GPR.Util;
-
+with Gprbuild.Compilation;          use Gprbuild.Compilation;
+with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
+with Gprbuild.Compilation.Sync;     use Gprbuild;
+with GprConfig.Knowledge;           use GprConfig.Knowledge;
 with GPR;                           use GPR;
 with GPR.Opt;                       use GPR.Opt;
-with GPR.Knowledge;                 use GPR.Knowledge;
 with GPR.Env;                       use GPR.Env;
 with GPR.Names;                     use GPR.Names;
 with GPR.Part;                      use GPR.Part;
@@ -1356,9 +1355,7 @@ procedure Gprslave is
               (Base,
                Selected_Targets_Set,
                Filters,
-               Compilers,
-               Target_Specified => False,
-               Selected_Target  => Null_Unbounded_String);
+               Compilers);
 
             --  Generate configuration project file
 

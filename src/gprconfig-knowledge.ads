@@ -1,24 +1,18 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                           GPR PROJECT MANAGER                            --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---          Copyright (C) 2006-2017, Free Software Foundation, Inc.         --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
--- This library is free software;  you can redistribute it and/or modify it --
--- under terms of the  GNU General Public License  as published by the Free --
--- Software  Foundation;  either version 3,  or (at your  option) any later --
--- version. This library is distributed in the hope that it will be useful, --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
+-- ware  Foundation;  either version 3,  or (at your option) any later ver- --
+-- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
--- TABILITY or FITNESS FOR A PARTICULAR PURPOSE.                            --
---                                                                          --
--- As a special exception under Section 7 of GPL version 3, you are granted --
--- additional permissions described in the GCC Runtime Library Exception,   --
--- version 3.1, as published by the Free Software Foundation.               --
---                                                                          --
--- You should have received a copy of the GNU General Public License and    --
--- a copy of the GCC Runtime Library Exception along with this program;     --
--- see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see    --
--- <http://www.gnu.org/licenses/>.                                          --
+-- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
 --                                                                          --
 ------------------------------------------------------------------------------
 
@@ -33,9 +27,9 @@ with Ada.Strings.Unbounded;
 
 with GNAT.Regpat;
 
-package GPR.Knowledge is
+with GPR; use GPR;
 
-   use Ada.Strings.Unbounded;
+package GprConfig.Knowledge is
 
    Generate_Error : exception;
    --  To be raised when an error occurs during generation of config files
@@ -127,7 +121,7 @@ package GPR.Knowledge is
    --  No_Name if Comp is null.
 
    package Compiler_Lists
-     is new Ada.Containers.Indefinite_Doubly_Linked_Lists (Compiler_Access);
+      is new Ada.Containers.Indefinite_Doubly_Linked_Lists (Compiler_Access);
    --  A list of compilers
 
    function Is_Selected (Comp : Compiler) return Boolean;
@@ -210,12 +204,10 @@ package GPR.Knowledge is
    --  Raised when the user has specified an invalid --config switch
 
    procedure Complete_Command_Line_Compilers
-     (Base             : in out Knowledge_Base;
-      On_Target        : Targets_Set_Id;
-      Filters          : Compiler_Lists.List;
-      Compilers        : in out Compiler_Lists.List;
-      Target_Specified : Boolean;
-      Selected_Target  : Unbounded_String);
+     (Base      : in out Knowledge_Base;
+      On_Target : Targets_Set_Id;
+      Filters   : Compiler_Lists.List;
+      Compilers : in out Compiler_Lists.List);
    --  In batch mode, the --config parameters indicate what compilers should be
    --  selected. Each of these switch selects the first matching compiler
    --  available, and all --config switch must match a compiler.
@@ -377,26 +369,26 @@ private
    end record;
 
    No_Compiler : constant Compiler :=
-     (Name          => No_Name,
-      Target        => No_Name,
-      Targets_Set   => Unknown_Targets_Set,
-      Executable    => No_Name,
-      Base_Name     => No_Name,
-      Path          => No_Name,
-      Variables     => Variables_Maps.Empty_Map,
-      Version       => No_Name,
-      Prefix        => No_Name,
-      Runtime       => No_Name,
-      Alt_Runtime   => No_Name,
-      Default_Runtime  => False,
-      Any_Runtime      => False,
-      Runtime_Dir   => No_Name,
-      Language_Case => No_Name,
-      Language_LC   => No_Name,
-      Selectable    => False,
-      Selected      => False,
-      Complete      => True,
-      Path_Order    => 0);
+                   (Name          => No_Name,
+                    Target        => No_Name,
+                    Targets_Set   => Unknown_Targets_Set,
+                    Executable    => No_Name,
+                    Base_Name     => No_Name,
+                    Path          => No_Name,
+                    Variables     => Variables_Maps.Empty_Map,
+                    Version       => No_Name,
+                    Prefix        => No_Name,
+                    Runtime       => No_Name,
+                    Alt_Runtime   => No_Name,
+                    Default_Runtime  => False,
+                    Any_Runtime      => False,
+                    Runtime_Dir   => No_Name,
+                    Language_Case => No_Name,
+                    Language_LC   => No_Name,
+                    Selectable    => False,
+                    Selected      => False,
+                    Complete      => True,
+                    Path_Order    => 0);
 
    type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
 
@@ -444,7 +436,7 @@ private
    subtype External_Value is External_Value_Nodes.List;
 
    Null_External_Value : constant External_Value :=
-     External_Value_Nodes.Empty_List;
+                           External_Value_Nodes.Empty_List;
 
    type Compiler_Description is record
       Name             : Name_Id := No_Name;
@@ -485,8 +477,8 @@ private
    end record;
 
    No_Compilers_Filter : constant Compilers_Filter :=
-     (Compiler => Compiler_Filter_Lists.Empty_List,
-      Negate   => False);
+                           (Compiler => Compiler_Filter_Lists.Empty_List,
+                            Negate   => False);
    --  a <compilers> filter, that matches if any of its <compiler> child
    --  matches.
 
@@ -538,4 +530,4 @@ private
    --  No_Compilers is the list of languages that require no compiler, and thus
    --  should not be searched on the PATH.
 
-end GPR.Knowledge;
+end GprConfig.Knowledge;

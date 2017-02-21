@@ -72,8 +72,7 @@ BUILDER=gprbuild -p -m $(GTARGET) $(RBD) -j${PROCESSORS} -XBUILD=${BUILD} ${GPRB
 INSTALLER=exe/gprinstall -p -f --target=$(TARGET) $(RBD) --prefix=${prefix}
 CLEANER=gprclean -q $(RBD)
 
-GPRBUILD_BUILDER=$(BUILDER) $(GPRBUILD_GPR) \
-	-XLIBRARY_TYPE=static -XXMLADA_BUILD=static
+GPRBUILD_BUILDER=$(BUILDER) $(GPRBUILD_GPR) -XLIBRARY_TYPE=static
 LIBGPR_BUILDER=$(BUILDER) $(GPR_GPR)
 LIBGPR_INSTALLER=gprinstall -p -f --target=$(TARGET)  $(RBD) --prefix=${prefix} $(GPR_GPR) -XBUILD=${BUILD} \
 	--install-name=gpr --build-var=LIBRARY_TYPE $(GTARGET)
@@ -134,37 +133,31 @@ complete: all install libgpr.install.static
 libgpr.build: $(foreach t, $(LIBGPR_TYPES), libgpr.build.$(t))
 
 libgpr.build.shared:
-	${BUILDER} -XLIBRARY_TYPE=relocatable \
-		-XXMLADA_BUILD=relocatable $(GPR_GPR)
+	${BUILDER} -XLIBRARY_TYPE=relocatable $(GPR_GPR)
 
 libgpr.build.static:
-	${BUILDER} -XLIBRARY_TYPE=static \
-		-XXMLADA_BUILD=static $(GPR_GPR)
+	${BUILDER} -XLIBRARY_TYPE=static $(GPR_GPR)
 
 libgpr.build.static-pic:
-	${BUILDER} -XLIBRARY_TYPE=static-pic \
-		-XXMLADA_BUILD=static-pic $(GPR_GPR)
+	${BUILDER} -XLIBRARY_TYPE=static-pic $(GPR_GPR)
 
 libgpr.install: $(foreach t, $(LIBGPR_TYPES), libgpr.install.$(t))
 
 libgpr.install.static:
 	$(LIBGPR_INSTALLER) \
 	   -XLIBRARY_TYPE=static \
-	   -XXMLADA_BUILD=static \
 	   --lib-subdir=lib/gpr/static \
 	   --build-name=static
 
 libgpr.install.static-pic:
 	$(LIBGPR_INSTALLER) \
 	   -XLIBRARY_TYPE=static-pic \
-	   -XXMLADA_BUILD=static-pic \
 	   --lib-subdir=lib/gpr/static-pic \
 	   --build-name=static-pic
 
 libgpr.install.shared:
 	$(LIBGPR_INSTALLER) \
 	   -XLIBRARY_TYPE=relocatable \
-	   -XXMLADA_BUILD=relocatable \
 	   --lib-subdir=lib/gpr/relocatable \
 	   --build-name=relocatable
 

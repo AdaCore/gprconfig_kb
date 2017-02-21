@@ -22,6 +22,7 @@ with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.MD5; use GNAT.MD5;
 
+with Gpr_Util;  use Gpr_Util;
 with GPR.Opt;
 with GPR.Osint; use GPR;
 with GPR.Util;  use GPR.Util;

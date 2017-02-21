@@ -38,7 +38,8 @@ with GPR.Snames;  use GPR.Snames;
 with GPR.Tempdir;
 with GPR.Util;    use GPR.Util;
 
-with GPR.Sdefault;
+with GprConfig.Sdefault;
+with Gpr_Util;    use Gpr_Util;
 
 with System.Case_Util; use System.Case_Util;
 with System.CRTL;
@@ -47,7 +48,7 @@ with System.Regexp;    use System.Regexp;
 
 package body GPRName is
 
-   use GPR.Util.Project_Output;
+   use Gpr_Util.Project_Output;
 
    --  Packages of project files where unknown attributes are errors
 
@@ -1079,7 +1080,7 @@ package body GPRName is
       GPR.Tree.Initialize (Root_Environment, Flags);
       GPR.Env.Initialize_Default_Project_Path
         (Root_Environment.Project_Path,
-         Target_Name => Sdefault.Hostname);
+         Target_Name => GprConfig.Sdefault.Hostname);
 
       GPR.Tree.Initialize (Tree);
 

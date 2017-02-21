@@ -29,7 +29,8 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gprexch;        use Gprexch;
 with Gpr_Build_Util; use Gpr_Build_Util;
-with GPR.Script;     use GPR.Script;
+with Gpr_Script;     use Gpr_Script;
+with Gpr_Util;       use Gpr_Util;
 with GPR;            use GPR;
 with GPR.ALI;        use GPR.ALI;
 with GPR.Names;      use GPR.Names;

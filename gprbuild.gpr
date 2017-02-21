@@ -32,7 +32,7 @@ project Gprbuild is
 
    Processors := external ("PROCESSORS", "0");
 
-   for Languages use ("Ada");
+   for Languages use ("Ada", "C");
 
    Main_Bin :=
        ("gprconfig-main.adb",

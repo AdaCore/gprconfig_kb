@@ -29,19 +29,22 @@ with GNAT.Table;
 with GPR;
 with GPR.Conf;
 with GPR.Env;
-with GPR.Names;          use GPR.Names;
+with GPR.Names;  use GPR.Names;
 with GPR.Opt;
-with GPR.Osint;          use GPR.Osint;
-with GPR.Snames;         use GPR.Snames;
-with GPR.Tree;           use GPR.Tree;
-with GPR.Util;           use GPR.Util;
+with GPR.Osint;  use GPR.Osint;
+with GPR.Snames; use GPR.Snames;
+with GPR.Tree;   use GPR.Tree;
+with GPR.Util;   use GPR.Util;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Util;       use Gpr_Util;
 with GPR_Version;    use GPR_Version;
 
 with System.Regexp; use System.Regexp;
 
 procedure GPRName.Main is
+
+   use Gpr_Util.Knowledge;
 
    Subdirs_Switch : constant String := "--subdirs=";
 
@@ -298,7 +301,7 @@ procedure GPRName.Main is
          --  normalize the target names. Unfortunately, if we have to spawn
          --  gprconfig, it will also have to parse that knowledge base on
          --  its own.
-         Knowledge.Parse_Knowledge_Base (Project_Tree);
+         Parse_Knowledge_Base (Project_Tree);
       end if;
 
       if Target_Name = null then
@@ -392,7 +395,7 @@ procedure GPRName.Main is
             Automatically_Generated    => Delete_Autoconf_File,
             Config_File_Path           => Configuration_Project_Path,
             Target_Name                => Target_Name.all,
-            Normalized_Hostname        => Knowledge.Normalized_Hostname);
+            Normalized_Hostname        => Normalized_Hostname);
       exception
          when E : GPR.Conf.Invalid_Config =>
             Fail_Program (Project_Tree, Exception_Message (E));

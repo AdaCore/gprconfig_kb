@@ -29,13 +29,14 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Table;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Script;     use Gpr_Script;
+with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR;            use GPR;
 with GPR.ALI;
 with GPR.Names;      use GPR.Names;
 with GPR.Opt;        use GPR.Opt;
 with GPR.Osint;      use GPR.Osint;
-with GPR.Script;     use GPR.Script;
 with GPR.Snames;
 with GPR.Tempdir;
 with GPR.Util;       use GPR.Util;
