@@ -145,7 +145,7 @@ libgpr.build.static-pic:
 	${BUILDER} -XLIBRARY_TYPE=static-pic \
 		-XXMLADA_BUILD=static-pic $(GPR_GPR)
 
-libgpr.install: $(foreach t, $(LIBGPR_TYPES), libgpr.install.$(t))
+libgpr.install: libgpr.uninstall $(foreach t, $(LIBGPR_TYPES), libgpr.install.$(t))
 
 libgpr.install.static:
 	$(LIBGPR_INSTALLER) \
