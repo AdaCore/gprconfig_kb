@@ -1754,13 +1754,15 @@ procedure Gprbuild.Main is
 
       Autoconfiguration := True;
 
+      Get_Command_Line_Arguments;
+
       declare
          Do_Not_Care : Boolean;
 
       begin
-         for Next_Arg in 1 .. Argument_Count loop
+         for Next_Arg in 1 .. Last_Command_Line_Argument loop
             declare
-               Arg : constant String := Argument (Next_Arg);
+               Arg : constant String := Command_Line_Argument (Next_Arg);
             begin
                if (Arg'Length >= Compiler_Subst_Option'Length
                      and then
@@ -1779,7 +1781,7 @@ procedure Gprbuild.Main is
 
          Scan_Args : for Next_Arg in 1 .. Argument_Count loop
             Scan_Arg
-              (Argument (Next_Arg),
+              (Command_Line_Argument (Next_Arg),
                Command_Line => True,
                Language     => No_Name,
                Success      => Do_Not_Care);

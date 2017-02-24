@@ -846,6 +846,24 @@ package GPR.Util is
       --  Write a String to Output_FD
    end Project_Output;
 
+   ----------------------------
+   -- Command Line Arguments --
+   ----------------------------
+
+   procedure Delete_Command_Line_Arguments;
+   --  Remove all previous command line arguments
+
+   procedure Get_Command_Line_Arguments;
+   --  Get the command line arguments, including those coming from argument
+   --  files.
+
+   function Last_Command_Line_Argument return Natural;
+   --  The number of command line arguments that have been read
+
+   function Command_Line_Argument (Rank : Positive) return String;
+   --  Return command line argument of rank Rank. If Rank is greater than
+   --  Last_Command_Line_Argument, return the empty string.
+
 private
    type Text_File_Data is record
       FD                  : File_Descriptor := Invalid_FD;

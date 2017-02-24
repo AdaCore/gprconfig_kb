@@ -5888,6 +5888,121 @@ package body GPR.Util is
 
    end Project_Output;
 
+   ----------------------------
+   -- Command Line Arguments --
+   ----------------------------
+
+   package Command_Line_Arguments is new GNAT.Table
+     (Table_Component_Type => Name_Id,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100);
+
+   -----------------------------------
+   -- Delete_Command_Line_Arguments --
+   -----------------------------------
+   procedure Delete_Command_Line_Arguments is
+   begin
+      Command_Line_Arguments.Set_Last (0);
+   end Delete_Command_Line_Arguments;
+
+   --------------------------------
+   -- Get_Command_Line_Arguments --
+   --------------------------------
+
+   procedure Get_Command_Line_Arguments is
+      File : File_Type;
+
+      procedure Read_File (Name : String);
+      --  Read argument file with name Name and put the arguments into table
+      --  Command_Line_Arguments.
+
+      ---------------
+      -- Read_File --
+      ---------------
+
+      procedure Read_File (Name : String) is
+      begin
+         begin
+            Open (File, In_File, Name);
+         exception
+            when others =>
+               Fail_Program
+                 (null,
+                  "could not open argument file """ & Name & '"');
+         end;
+
+         while not End_Of_File (File) loop
+            Get_Line (File, Name_Buffer, Name_Len);
+
+            if Name_Len /= 0 and then
+              (Name_Len = 1 or else Name_Buffer (1 .. 2) /= "--")
+            then
+               if Name_Buffer (1) = '@' then
+                  Fail_Program
+                    (null,
+                     "invalid argument """ &
+                       Name_Buffer (1 .. Name_Len) &
+                       """ in argument file");
+
+               else
+                  Command_Line_Arguments.Append (Name_Find);
+               end if;
+            end if;
+         end loop;
+
+         Close (File);
+      end Read_File;
+
+   begin
+      for J in 1 .. Argument_Count loop
+         declare
+            Arg : constant String := Argument (J);
+         begin
+            if Arg'Length /= 0 then
+               if Arg (Arg'First) = '@' then
+                  if Arg'Length = 1 then
+                     Fail_Program
+                       (null,
+                        "invalid argument '@' on the command line");
+                  else
+                     Read_File (Arg (Arg'First + 1 .. Arg'Last));
+                  end if;
+
+               else
+                  Name_Len := Arg'Length;
+                  Name_Buffer (1 .. Name_Len) := Arg;
+                  Command_Line_Arguments.Append (Name_Find);
+               end if;
+            end if;
+         end;
+      end loop;
+   end Get_Command_Line_Arguments;
+
+   --------------------------------
+   -- Last_Command_Line_Argument --
+   --------------------------------
+
+   function Last_Command_Line_Argument return Natural is
+   begin
+      return Command_Line_Arguments.Last;
+   end Last_Command_Line_Argument;
+
+   ---------------------------
+   -- Command_Line_Argument --
+   ---------------------------
+
+   function Command_Line_Argument (Rank : Positive) return String is
+   begin
+      if Rank > Command_Line_Arguments.Last then
+         return "";
+
+      else
+         return Get_Name_String (Command_Line_Arguments.Table (Rank));
+      end if;
+   end Command_Line_Argument;
+
 begin
    declare
       Ext : String_Access := GNAT.OS_Lib.Get_Target_Executable_Suffix;
