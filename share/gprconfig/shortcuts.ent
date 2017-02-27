@@ -4,3 +4,21 @@
    <!ENTITY languages_cpp
     '<languages>C++</languages>'
    >
+
+   <!ENTITY config_gnat_ar
+    '<config>
+   for Archive_Builder  use (Prefix_Ada &amp; "ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use (Prefix_Ada &amp; "ranlib");
+   for Archive_Suffix   use ".a";
+     </config>'
+   >
+
+   <!ENTITY configurations_gnat_ar
+    '<configuration>
+     &if_this_target;
+
+     &config_gnat_ar;
+     </configuration>'
+   >
+
