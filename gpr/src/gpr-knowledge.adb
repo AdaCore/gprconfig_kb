@@ -3730,7 +3730,7 @@ package body GPR.Knowledge is
       Filters          : Compiler_Lists.List;
       Compilers        : in out Compiler_Lists.List;
       Target_Specified : Boolean;
-      Selected_Target  : Unbounded_String)
+      Selected_Target  : in out Unbounded_String)
    is
       type Cursor_Array
         is array (Count_Type range <>) of Compiler_Lists.Cursor;
@@ -3984,7 +3984,7 @@ package body GPR.Knowledge is
             begin
                while Cur /= String_Lists.No_Element loop
                   Put_Verbose
-                    ("Attempting to fall back to target"
+                    ("Attempting to fall back to target "
                      & String_Lists.Element (Cur));
 
                   declare
@@ -4010,6 +4010,11 @@ package body GPR.Knowledge is
 
                      if Found_All then
                         Iter := Local_Iter;
+                        Selected_Target :=
+                          To_Unbounded_String (String_Lists.Element (Cur));
+                        Put_Verbose
+                          (String_Lists.Element (Cur)
+                          & " fallback target selected");
                         exit;
                      end if;
                   end;

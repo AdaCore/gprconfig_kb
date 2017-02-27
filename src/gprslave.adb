@@ -1369,13 +1369,17 @@ procedure Gprslave is
                Compilers.Append (Comp);
             end if;
 
-            Complete_Command_Line_Compilers
-              (Base,
-               Selected_Targets_Set,
-               Filters,
-               Compilers,
-               Target_Specified => False,
-               Selected_Target  => Null_Unbounded_String);
+            declare
+               Unused_Target : Unbounded_String := Null_Unbounded_String;
+            begin
+               Complete_Command_Line_Compilers
+                 (Base,
+                  Selected_Targets_Set,
+                  Filters,
+                  Compilers,
+                  Target_Specified => False,
+                  Selected_Target  => Unused_Target);
+            end;
 
             --  Generate configuration project file
 

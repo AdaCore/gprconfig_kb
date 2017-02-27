@@ -215,7 +215,7 @@ package GPR.Knowledge is
       Filters          : Compiler_Lists.List;
       Compilers        : in out Compiler_Lists.List;
       Target_Specified : Boolean;
-      Selected_Target  : Unbounded_String);
+      Selected_Target  : in out Unbounded_String);
    --  In batch mode, the --config parameters indicate what compilers should be
    --  selected. Each of these switch selects the first matching compiler
    --  available, and all --config switch must match a compiler.
