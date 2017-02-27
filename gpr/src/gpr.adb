@@ -2279,4 +2279,6 @@ package body GPR is
       Flags.Ignore_Missing_With := Value;
    end Set_Ignore_Missing_With;
 
+begin
+   Temp_Files_Table.Init (Temp_Files);
 end GPR;
