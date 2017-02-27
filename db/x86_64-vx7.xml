@@ -33,4 +33,6 @@
 
   &configurations_vx7;
 
+  &configurations_gnat_ar;
+
 </gprconfig>
