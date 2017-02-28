@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2003-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2003-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -33,6 +33,9 @@ package body GPR.Tempdir is
    Tmpdir_Needs_To_Be_Displayed : Boolean := True;
 
    Tmpdir   : constant String := "TMPDIR";
+   Temp     : constant String := "TEMP";
+   Tmp      : constant String := "TMP";
+
    Temp_Dir : String_Access   := new String'("");
 
    ----------------------
@@ -114,20 +117,32 @@ package body GPR.Tempdir is
    ------------------
 
    procedure Use_Temp_Dir (Status : Boolean) is
-      Dir : String_Access;
+      Dir : String_Access := null;
+
+      function Dir_Is_Temporary_Dir return Boolean is
+        (Dir /= null
+         and then Dir'Length > 0
+         and then Is_Absolute_Path (Dir.all)
+         and then Is_Directory (Dir.all));
 
    begin
       if Status then
          Dir := Getenv (Tmpdir);
+
+         if not Dir_Is_Temporary_Dir then
+            Free (Dir);
+            Dir := Getenv (Temp);
+
+            if not Dir_Is_Temporary_Dir then
+               Free (Dir);
+               Dir := Getenv (Tmp);
+            end if;
+         end if;
       end if;
 
       Free (Temp_Dir);
 
-      if Dir /= null
-        and then Dir'Length > 0
-        and then Is_Absolute_Path (Dir.all)
-        and then Is_Directory (Dir.all)
-      then
+      if Dir_Is_Temporary_Dir then
          Temp_Dir := new String'(Normalize_Pathname (Dir.all));
       else
          Temp_Dir := new String'("");
@@ -135,6 +150,19 @@ package body GPR.Tempdir is
 
       Free (Dir);
    end Use_Temp_Dir;
+
+   ------------------------------
+   -- Temporary_Directory_Path --
+   ------------------------------
+
+   function Temporary_Directory_Path return String is
+   begin
+      if Temp_Dir /= null then
+         return Temp_Dir.all;
+      else
+         return "";
+      end if;
+   end Temporary_Directory_Path;
 
 --  Start of elaboration for package Tempdir
 

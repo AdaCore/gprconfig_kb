@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2003-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2003-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -32,17 +32,24 @@ package GPR.Tempdir is
    procedure Create_Temp_File
      (FD   : out File_Descriptor;
       Name : out Path_Name_Type);
-   --  Create a temporary text file and return its file descriptor and
-   --  its path name as a Name_Id. If environment variable TMPDIR is defined
-   --  and its value is an absolute path, the temp file is created in the
-   --  directory designated by TMPDIR, otherwise, it is created in the current
-   --  directory. If temporary file cannot be created, FD gets the value
-   --  Invalid_FD and Name gets the value No_Name.
+   --  Create a temporary text file and return its file descriptor and its
+   --  path name as a Name_Id. If one of the environment variables TMPDIR, TEMP
+   --  or TMP is defined and its value is an absolute path, the temp file is
+   --  created in the directory designated by the first of these environment
+   --  variables that meet these conditions, otherwise, it is created in the
+   --  current directory. If temporary file cannot be created, FD gets the
+   --  value Invalid_FD and Name gets the value No_Name.
 
    procedure Use_Temp_Dir (Status : Boolean);
    --  Specify if the temp file should be created in the system temporary
    --  directory as specified by the corresponding environment variables. If
    --  Status is False, the temp files will be created into the current working
    --  directory.
+
+   function Temporary_Directory_Path return String;
+   --  Returns the full path of the temporary directory in use.
+   --  Returns an empty string if there is no temporary directory in use,
+   --  either because Use_Temp_Dir was called with Status set to False,
+   --  or none of the environment variables are defined.
 
 end GPR.Tempdir;
