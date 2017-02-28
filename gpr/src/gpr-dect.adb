@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1416,44 +1416,22 @@ package body GPR.Dect is
             declare
                Project_Name : constant Name_Id := Token_Name;
 
-               Clause       : Project_Node_Id :=
-                              First_With_Clause_Of (Current_Project, In_Tree);
                The_Project  : Project_Node_Id := Empty_Project_Node;
-               Extended     : constant Project_Node_Id :=
-                                Extended_Project_Of
-                                  (Project_Declaration_Of
-                                    (Current_Project, In_Tree),
-                                   In_Tree);
+
             begin
-               while Present (Clause) loop
-                  --  Only non limited imported projects may be used in a
-                  --  renames declaration.
+               --  Look for a possible project name
 
-                  The_Project :=
-                    Non_Limited_Project_Node_Of (Clause, In_Tree);
-                  exit when Present (The_Project)
-                    and then Name_Of (The_Project, In_Tree) = Project_Name;
-                  Clause := Next_With_Clause_Of (Clause, In_Tree);
-               end loop;
+               The_Project := Imported_Or_Extended_Project_Of
+                 (Current_Project, In_Tree, Project_Name);
 
-               if No (Clause) then
-                  --  As we have not found the project in the imports, we check
-                  --  if it's the name of an eventual extended project.
-
-                  if Present (Extended)
-                    and then Name_Of (Extended, In_Tree) = Project_Name
-                  then
-                     Set_Project_Of_Renamed_Package_Of
-                       (Package_Declaration, In_Tree, To => Extended);
-                  else
-                     Error_Msg_Name_1 := Project_Name;
-                     Error_Msg
-                       (Flags,
-                        "% is not an imported or extended project", Token_Ptr);
-                  end if;
-               else
+               if The_Project /= Empty_Project_Node then
                   Set_Project_Of_Renamed_Package_Of
                     (Package_Declaration, In_Tree, To => The_Project);
+               else
+                  Error_Msg_Name_1 := Project_Name;
+                  Error_Msg
+                    (Flags,
+                     "% is not an imported or extended project", Token_Ptr);
                end if;
             end;
 
