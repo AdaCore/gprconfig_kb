@@ -74,7 +74,7 @@ bin_progs="gprbuild gprconfig gprclean gprinstall gprname gprls"
 lib_progs="gprlib gprbind"
 
 # Build
-command $CC -c $CFLAGS "$srcdir"/src/gpr_imports.c
+command $CC -c $CFLAGS "$srcdir"/gpr/src/gpr_imports.c
 
 for bin in $bin_progs; do
     command $GNATMAKE $inc_flags "$bin"-main -o "$bin" $CFLAGS $GNATMAKEFLAGS -largs gpr_imports.o
