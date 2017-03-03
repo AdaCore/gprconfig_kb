@@ -7,13 +7,7 @@
 
 <!-- Local target-specific conditions -->
 
-<!ENTITY if_this_target
-    '<targets>
-       <!--  ??? To split in cpu-specific versions -->
-       <target name="^powerpc-wrs-vxworks$" />
-       <target name="^arm-wrs-vxworks$" />
-       <target name="^i586-wrs-vxworks$" />
-     </targets>'>
+<!ENTITY this_target 'powerpc-wrs-vxworks'>
 
 <!ENTITY if_these_c_compilers
     '<compilers>

@@ -3,24 +3,22 @@
 <!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
 <!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
 <!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
-<!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
+<!ENTITY % vx6.ent SYSTEM "vx6.ent"> %vx6.ent;
 
 <!-- Local target-specific conditions -->
 
-<!ENTITY this_target 'e500v2-wrs-vxworks7'>
+<!ENTITY this_target 'i586-wrs-vxworks'>
 
 <!ENTITY if_these_c_compilers
     '<compilers>
        <compiler name="GCC_Pro" />
-       <compiler name="GCC-WRS7E500V2" />
+       <compiler name="GCC-WRS6" />
      </compilers>'>
 
 <!ENTITY if_these_cpp_compilers
     '<compilers>
-       <compiler name="G++-WRS7E500V2" />
+       <compiler name="G++-WRS6" />
      </compilers>'>
-
-<!ENTITY this_wrs_rtp_base '0x80000000'>
 ]>
 <gprconfig>
 
@@ -28,8 +26,6 @@
 
   &configurations_vxworks_gpp;
 
-  &configurations_vx7;
-
-  &configurations_gnat_ar;
+  &configurations_vx6;
 
 </gprconfig>

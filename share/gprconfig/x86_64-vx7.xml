@@ -7,10 +7,7 @@
 
 <!-- Local target-specific conditions -->
 
-<!ENTITY if_this_target
-    '<targets>
-       <target name="^x86_64-wrs-vxworks7$" />
-     </targets>'>
+<!ENTITY this_target 'x86_64-wrs-vxworks7'>
 
 <!ENTITY if_these_c_compilers
     '<compilers>
