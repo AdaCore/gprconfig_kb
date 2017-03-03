@@ -7,10 +7,7 @@
 
 <!-- Local target-specific conditions -->
 
-<!ENTITY if_this_target
-    '<targets>
-       <target name="^arm-wrs-vxworks7$" />
-     </targets>'>
+<!ENTITY this_target 'arm-wrs-vxworks7'>
 
 <!ENTITY if_these_c_compilers
     '<compilers>
