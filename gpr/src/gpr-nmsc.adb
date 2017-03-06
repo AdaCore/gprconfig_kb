@@ -8875,11 +8875,15 @@ package body GPR.Nmsc is
          Id.Language.First_Source := Id.Next_In_Lang;
 
       else
-         while Source.Next_In_Lang /= Id loop
+         --  Do not crash if the source cannot be found
+
+         while Source /= No_Source and then Source.Next_In_Lang /= Id loop
             Source := Source.Next_In_Lang;
          end loop;
 
-         Source.Next_In_Lang := Id.Next_In_Lang;
+         if Source /= No_Source then
+            Source.Next_In_Lang := Id.Next_In_Lang;
+         end if;
       end if;
    end Remove_Source;
 
