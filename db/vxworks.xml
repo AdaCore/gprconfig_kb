@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<gprconfig>
+  <!-- This file has been removed on 20170306. Replaced by an empty file
+       for bootstrap: otherwise re-installing gprbuild on the same install
+       location will not remove the old vxworks.xml. -->
+  <configuration>
+    <config>
+    </config>
+  </configuration>
+</gprconfig>
