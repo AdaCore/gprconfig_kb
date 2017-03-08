@@ -30,6 +30,11 @@
        <compiler name="E500V2-VX6-GCC-WRS" />
      </compilers>'>
 
+<!ENTITY if_these_gnu_wrs_compilers
+    '<compilers>
+       <compiler name="E500V2-VX6-G++-WRS" />
+       <compiler name="E500V2-VX6-GCC-WRS" />
+     </compilers>'>
 ]>
 <gprconfig>
 

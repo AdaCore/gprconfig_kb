@@ -20,6 +20,12 @@
        <compiler name="G++-WRS7ARM" />
      </compilers>'>
 
+<!ENTITY if_these_gnu_wrs_compilers
+    '<compilers>
+       <compiler name="G++-WRS7ARM" />
+       <compiler name="GCC-WRS7ARM" />
+     </compilers>'>
+
 <!ENTITY this_wrs_rtp_base '0x80000000'>
 ]>
 <gprconfig>

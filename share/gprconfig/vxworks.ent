@@ -133,7 +133,7 @@
         Do the same thing for WRS compilers for consistency.  -->
 
    <configuration>
-     &if_these_c_compilers;
+     &if_these_gnu_wrs_compilers;
      &if_this_target;
 
      &config_mlongcall_c;
