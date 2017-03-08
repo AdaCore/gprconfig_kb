@@ -19,6 +19,12 @@
     '<compilers>
        <compiler name="G++-WRS6" />
      </compilers>'>
+
+<!ENTITY if_these_gnu_wrs_compilers
+    '<compilers>
+       <compiler name="GCC-WRS6" />
+       <compiler name="G++-WRS6" />
+     </compilers>'>
 ]>
 <gprconfig>
 
