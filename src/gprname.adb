@@ -1825,7 +1825,8 @@ package body GPRName is
             end if;
 
             if Dir_Name'Length >= 4
-              and then (Dir_Name (Last - 2 .. Last) = "/**")
+              and then Dir_Name (Last - 1 .. Last) = "**"
+              and then Is_Directory_Separator (Dir_Name (Last - 2))
             then
                Last := Last - 3;
                Recursively := True;
