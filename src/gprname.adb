@@ -1490,8 +1490,7 @@ package body GPRName is
                   --  the excluded expressions;
 
                   for Index in Excluded_Patterns'Range loop
-                     if
-                       Match (Canon (1 .. Last), Excluded_Patterns (Index))
+                     if Match (Canon (1 .. Last), Excluded_Patterns (Index))
                      then
                         Matched := Excluded;
                         exit;
@@ -1506,9 +1505,7 @@ package body GPRName is
                      Matched := No_Match;
 
                      for Index in Name_Patterns'Range loop
-                        if
-                          Match
-                            (Canon (1 .. Last), Name_Patterns (Index))
+                        if Match (Canon (1 .. Last), Name_Patterns (Index))
                         then
                            Matched := Match;
                            exit;
