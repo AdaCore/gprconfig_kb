@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1402,8 +1402,23 @@ package body GPR.Proc is
                      --  and there is no default.
 
                      if Value = No_Name then
+
+                        --  The name of the external reference needs to be
+                        --  displayed verbatim and between double quotes.
+
+                        Get_Name_String (Name);
+
+                        for J in reverse 1 .. Name_Len loop
+                           Name_Buffer (J * 2) := Name_Buffer (J);
+                           Name_Buffer (J * 2 - 1) := ''';
+                        end loop;
+
+                        Name_Len := Name_Len * 2;
+
                         Error_Msg
-                          (Env.Flags, "undefined external reference",
+                          (Env.Flags,
+                           "undefined external reference `" &
+                           Name_Buffer (1 .. Name_Len) & "`",
                            Location_Of
                              (The_Current_Term, From_Project_Node_Tree),
                            Project);
