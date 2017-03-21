@@ -51,7 +51,7 @@ with GPR.Script;                 use GPR.Script;
 with GPR.Snames;                 use GPR.Snames;
 with GPR.Tempdir;                use GPR.Tempdir;
 with GPR.Tree;                   use GPR.Tree;
-with GPR.Util;                   use GPR.Util;
+with GPR.Util.Aux;               use GPR.Util;
 with GPR.Version;                use GPR.Version;
 
 procedure Gprbuild.Main is
@@ -766,7 +766,8 @@ procedure Gprbuild.Main is
             Use_Temp_Dir (Status => False);
 
             declare
-               Hosts : constant String := Get_Slaves_Hosts (Project_Tree, Arg);
+               Hosts : constant String :=
+                         Aux.Get_Slaves_Hosts (Project_Tree, Arg);
             begin
                if Hosts = "" then
                   Fail_Program
@@ -2644,7 +2645,7 @@ begin
 
    if Slave_Env = null and then Distributed_Mode then
       Slave_Env :=
-        new String'(Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
+        new String'(Aux.Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
 
       if Slave_Env_Auto and not Opt.Quiet_Output then
          Put ("slave environment is ");

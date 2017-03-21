@@ -42,7 +42,7 @@ with GPR.Osint;
 with GPR.Proc;                   use GPR.Proc;
 with GPR.Snames;
 with GPR.Tree;                   use GPR.Tree;
-with GPR.Util;                   use GPR.Util;
+with GPR.Util.Aux;               use GPR.Util;
 with GPR.Version;                use GPR.Version;
 
 procedure Gprclean.Main is
@@ -314,7 +314,7 @@ procedure Gprclean.Main is
 
                declare
                   Hosts : constant String :=
-                    Get_Slaves_Hosts (Project_Tree, Switch);
+                            Aux.Get_Slaves_Hosts (Project_Tree, Switch);
                begin
                   if Hosts = "" then
                      Fail_Program
@@ -932,7 +932,7 @@ begin
 
    if Slave_Env = null and then Distributed_Mode then
       Slave_Env :=
-        new String'(Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
+        new String'(Aux.Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
 
       if Slave_Env_Auto and not Opt.Quiet_Output then
          Put_Line ("slave environment is " & Slave_Env.all);

@@ -29,7 +29,7 @@ with GPR.Debug;      use GPR.Debug;
 with GPR.Names;      use GPR.Names;
 with GPR.Script;     use GPR.Script;
 with GPR.Snames;     use GPR.Snames;
-with GPR.Util;       use GPR.Util;
+with GPR.Util.Aux;   use GPR.Util;
 
 package body Gprbuild.Link is
 
@@ -2744,7 +2744,7 @@ package body Gprbuild.Link is
                            List := Nam_Nod.Next;
                         end loop;
 
-                        Create_Response_File
+                        Aux.Create_Response_File
                           (Format            =>
                              Main_Proj.Config.Resp_File_Format,
                            Objects           => Arguments

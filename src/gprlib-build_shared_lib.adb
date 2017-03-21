@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2016, AdaCore                     --
+--                     Copyright (C) 2006-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -18,6 +18,8 @@
 
 --  This is the version of the body of procedure Build_Shared_Lib for most
 --  where shared libraries are supported.
+
+with GPR.Util.Aux;
 
 separate (Gprlib)
 procedure Build_Shared_Lib is
@@ -291,7 +293,7 @@ procedure Build_Shared_Lib is
                         Arguments (Last_Object + 1 .. Last_Arg);
 
          begin
-            Create_Response_File
+            Aux.Create_Response_File
               (Format            => Resp_File_Format,
                Objects           => Arguments (First_Object .. Last_Object),
                Other_Arguments   => Options,
@@ -357,7 +359,7 @@ procedure Build_Shared_Lib is
          if Library_Symbol_File /= null then
             --  The exported symbols are to be taken from the symbol file
 
-            Create_Export_Symbols_File
+            Aux.Create_Export_Symbols_File
               (Driver_Path         => "",
                Options             => OL_Options (1 .. Last_OL_Option),
                Sym_Matcher         => "",
@@ -391,7 +393,7 @@ procedure Build_Shared_Lib is
                     Generated_Objects.Table (K);
                end loop;
 
-               Create_Export_Symbols_File
+               Aux.Create_Export_Symbols_File
                  (Driver_Path         => Object_Lister.all,
                   Options             => OL_Options (1 .. Last_OL_Option),
                   Sym_Matcher         => Object_Lister_Matcher.all,
