@@ -29,6 +29,7 @@
     </targets>
     <hosts negate="true">
       <host name="^i686-pc-mingw32$" />
+      <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
    for Object_Lister use ("i686-pc-mingw32-nm", "-g", "--no-demangle");
@@ -46,6 +47,7 @@
       <target name="^x86_64-pc-mingw32$" />
     </targets>
     <hosts negate="true">
+      <host name="^i686-pc-mingw32$" />
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
@@ -65,6 +67,7 @@
     </targets>
     <hosts>
       <host name="^i686-pc-mingw32$" />
+      <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g", "--no-demangle");
@@ -82,6 +85,7 @@
       <target name="^x86_64-pc-mingw32$" />
     </targets>
     <hosts>
+      <host name="^i686-pc-mingw32$" />
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
@@ -270,6 +274,7 @@
     </targets>
     <hosts negate="true">
       <host name="^i686-pc-mingw32$" />
+      <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
    for Archive_Builder  use ("i686-pc-mingw32-ar", "cr");
@@ -285,6 +290,7 @@
     </targets>
     <hosts>
       <host name="^i686-pc-mingw32$" />
+      <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
    for Archive_Builder  use ("ar", "cr");
@@ -299,6 +305,7 @@
       <target name="^x86_64-pc-mingw32$" />
     </targets>
     <hosts negate="true">
+      <host name="^i686-pc-mingw32$" />
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
@@ -314,6 +321,7 @@
       <target name="^x86_64-pc-mingw32$" />
     </targets>
     <hosts>
+      <host name="^i686-pc-mingw32$" />
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
