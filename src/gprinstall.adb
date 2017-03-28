@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -94,5 +94,17 @@ package body Gprinstall is
    begin
       Free (P.V);
    end Free;
+
+   ------------------------
+   -- Sigint_Intercepted --
+   ------------------------
+
+   procedure Sigint_Intercepted is
+   begin
+      Text_IO.Put_Line ("*** Interrupted ***");
+      Delete_All_Temp_Files (Project_Tree.Shared);
+
+      OS_Exit (2);
+   end Sigint_Intercepted;
 
 end Gprinstall;

@@ -34,8 +34,8 @@ with GPR.Names;      use GPR.Names;
 with GPR.Opt;        use GPR.Opt;
 with GPR.Osint;      use GPR.Osint;
 with GPR.Proc;       use GPR.Proc;
-with GPR.Tree;       use GPR.Tree;
 with GPR.Snames;     use GPR.Snames;
+with GPR.Tree;       use GPR.Tree;
 with GPR.Util;       use GPR.Util;
 with GPR.Version;    use GPR.Version;
 
@@ -94,11 +94,6 @@ procedure Gprinstall.Main is
    procedure Install_Int_Handler (Handler : Sigint_Handler);
    pragma Import (C, Install_Int_Handler, "__gnat_install_int_handler");
    --  Called by Gnatmake to install the SIGINT handler below
-
-   procedure Sigint_Intercepted;
-   pragma Convention (C, Sigint_Intercepted);
-   --  Called when the program is interrupted by Ctrl-C to delete the
-   --  temporary mapping files and configuration pragmas files.
 
    ---------------
    -- Copyright --
@@ -537,17 +532,6 @@ procedure Gprinstall.Main is
       end if;
    end Scan_Arg;
 
-   ------------------------
-   -- Sigint_Intercepted --
-   ------------------------
-
-   procedure Sigint_Intercepted is
-   begin
-      Put_Line ("*** Interrupted ***");
-      Delete_All_Temp_Files (Project_Tree.Shared);
-      OS_Exit (1);
-   end Sigint_Intercepted;
-
    ----------------
    -- Initialize --
    ----------------
@@ -905,7 +889,7 @@ begin
 
    --  And install Ctrl-C handler
 
-   Install_Int_Handler (Sigint_Intercepted'Unrestricted_Access);
+   Install_Int_Handler (Gprinstall.Sigint_Intercepted'Access);
 
    --  Check command line arguments. These will be overridden when looking
    --  for the configuration file

@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2016, AdaCore                     --
+--                     Copyright (C) 2004-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -471,5 +471,10 @@ private
    procedure Display_Processes (Name : String);
    --  When -jnn, -v and -vP2 are used, display the number of currently spawned
    --  processes.
+
+   procedure Sigint_Intercepted;
+   pragma Convention (C, Sigint_Intercepted);
+   --  Called when the program is interrupted by Ctrl-C to delete the
+   --  temporary mapping files and configuration pragmas files.
 
 end Gprbuild;

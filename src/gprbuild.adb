@@ -20,9 +20,11 @@ with Ada.Text_IO;       use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with GPR.Names;  use GPR.Names;
-with GPR.Script; use GPR.Script;
-with GPR.Util;   use GPR.Util;
+with GPR.Compilation.Slave; use GPR.Compilation.Slave;
+with GPR.Names;             use GPR.Names;
+with GPR.Osint;             use GPR.Osint;
+with GPR.Script;            use GPR.Script;
+with GPR.Util;              use GPR.Util;
 
 package body Gprbuild is
 
@@ -693,6 +695,22 @@ package body Gprbuild is
 
       Exit_Code := Osint.E_Fatal;
    end Record_Failure;
+
+   ------------------------
+   -- Sigint_Intercepted --
+   ------------------------
+
+   procedure Sigint_Intercepted is
+   begin
+      Put_Line ("*** Interrupted ***");
+      Delete_All_Temp_Files (Project_Tree.Shared);
+
+      if Distributed_Mode then
+         Unregister_Remote_Slaves (From_Signal => True);
+      end if;
+
+      OS_Exit (2);
+   end Sigint_Intercepted;
 
    ---------------------------
    -- Test_If_Relative_Path --
