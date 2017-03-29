@@ -80,7 +80,7 @@ project Gprbuild is
    --------------
 
    package Compiler is
-      Common_Switches := ("-gnat12", "-gnaty", "-gnatQ", "-gnata");
+      Common_Switches := ("-gnat12", "-gnaty", "-gnatQ", "-gnata", "-gnateE");
 
       case Bld is
          when "debug" =>
