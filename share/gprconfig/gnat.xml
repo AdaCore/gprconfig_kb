@@ -120,13 +120,30 @@
   <!-- C Target -->
   <configuration>
    <compilers>
-    <compiler name="GNAT_C"/>
+     <compiler name="GNAT_C"/>
    </compilers>
    <config>
    package Compiler is
       for Object_File_Suffix        ("Ada") use ".c";
       for Leading_Required_Switches ("Ada") use
         Compiler'Leading_Required_Switches ("Ada") &amp; ("-gnatceg");
+   end Compiler;
+   </config>
+  </configuration>
+
+  <!-- Add -m32 on linux and windows 64bits hosts for C target -->
+  <configuration>
+   <compilers>
+     <compiler name="GNAT_C"/>
+   </compilers>
+   <hosts>
+     <host name="^x86_64-.*linux.*$" />
+     <host name="^x86_64-.*mingw.*$" />
+   </hosts>
+   <config>
+   package Compiler is
+      for Leading_Required_Switches ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("-m32");
    end Compiler;
    </config>
   </configuration>
