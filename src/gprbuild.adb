@@ -22,7 +22,6 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with GPR.Compilation.Slave; use GPR.Compilation.Slave;
 with GPR.Names;             use GPR.Names;
-with GPR.Osint;             use GPR.Osint;
 with GPR.Script;            use GPR.Script;
 with GPR.Util;              use GPR.Util;
 
