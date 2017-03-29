@@ -114,7 +114,7 @@ project Gprbuild is
    ------------
 
    package Binder is
-      Common_Switches := ("-E", "-static");
+      Common_Switches := ("-Es", "-static");
 
       case Bld is
          when "debug" =>

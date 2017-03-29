@@ -2658,7 +2658,7 @@ exception
          GPR.Compilation.Slave.Unregister_Remote_Slaves (From_Signal => True);
       end if;
 
-      Fail_Program (Project_Tree, Exception_Message (C));
+      Fail_Program (Project_Tree, Exception_Information (C));
 
    when E : others =>
       Fail_Program (Project_Tree, Exception_Information (E));

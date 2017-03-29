@@ -3284,7 +3284,7 @@ package body Gprbuild.Compile is
                      Slave_Initialized := True;
                   exception
                      when E : Constraint_Error =>
-                        Fail_Program (Project_Tree, Exception_Message (E));
+                        Fail_Program (Project_Tree, Exception_Information (E));
                   end;
                end if;
 
