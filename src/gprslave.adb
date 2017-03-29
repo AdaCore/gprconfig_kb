@@ -1091,6 +1091,8 @@ procedure Gprslave is
                              (Builder,
                               "register compilation " & Image (Id), True);
 
+                           Send_Ack (Builder.Channel, Id);
+
                            To_Run.Push
                              (Job_Data'(Cmd,
                               Id, OS_Lib.Invalid_Pid,
@@ -1099,8 +1101,6 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Sock (Builder), J_Created));
-
-                           Send_Ack (Builder.Channel, Id);
                         end Record_Job;
 
                      elsif Kind (Cmd) = FL then
