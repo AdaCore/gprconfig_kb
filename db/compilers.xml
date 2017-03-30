@@ -50,19 +50,6 @@
     </target>
   </compiler_description>
 
-  <compiler_description>
-    <name>GCC-WRS6LEON</name>
-    <executable prefix="1">cc(sparc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-6[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-6.*</must_match>
-    </version>
-    <languages>C</languages>
-    <runtimes>kernel</runtimes>
-    <target>leon-wrs-vxworks</target>
-  </compiler_description>
-
   <!-- VxWorks 6 Cert -->
   <!-- We need to distinguish version to correctly report runtimes.  -->
   <compiler_description>
@@ -132,20 +119,6 @@
     <target>powerpc-wrs-vxworksae</target>
   </compiler_description>
 
-  <!-- VxWorks 653 -->
-  <compiler_description>
-    <name>GCC-WRS653-X86</name>
-    <executable prefix="1">cc(pentium)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks653.*</must_match>
-    </version>
-    <languages>C</languages>
-    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>i586-wrs-vxworksae</target>
-  </compiler_description>
-
   <compiler_description>
     <name>GCC-WRS653-E500V2</name>
     <executable prefix="1">cc(ppc)</executable>
@@ -157,60 +130,6 @@
     <languages>C</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>e500v2-wrs-vxworksae</target>
-  </compiler_description>
-
-  <!-- VxWorks MILS -->
-  <compiler_description>
-    <name>GCC-WRSMILS</name>
-    <executable prefix="1">cc(ppc)</executable>
-    <version>
-      <external>cc${PREFIX} -v</external>
-      <grep regexp=".*(vxworksae).*" group="1"></grep>
-      <must_match>vxworksae</must_match>
-    </version>
-    <languages>C</languages>
-    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>powerpc-wrs-vxworksmils</target>
-  </compiler_description>
-
-  <compiler_description>
-    <name>GCC-WRSMILS-E500V2</name>
-    <executable prefix="1">cc(ppc)</executable>
-    <version>
-      <external>cc${PREFIX} -v</external>
-      <grep regexp=".*(vxworksae).*" group="1"></grep>
-      <must_match>vxworksae</must_match>
-    </version>
-    <languages>C</languages>
-    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>e500v2-wrs-vxworksmils</target>
-  </compiler_description>
-
-  <!-- VxWorks MILS HAE -->
-  <compiler_description>
-    <name>GCC-WRSMILSHAE</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-mils-hae-1.*</must_match>
-    </version>
-    <languages>C</languages>
-    <runtimes>zfp</runtimes>
-    <target>powerpc-wrs-vxworksmils</target>
-  </compiler_description>
-
-  <compiler_description>
-    <name>GCC-WRSMILSHAE-E500V2</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-mils-hae-1.*</must_match>
-    </version>
-    <languages>C</languages>
-    <runtimes>zfp</runtimes>
-    <target>e500v2-wrs-vxworksmils</target>
   </compiler_description>
 
   <!-- PikeOS -->
@@ -326,20 +245,6 @@
     </target>
   </compiler_description>
 
-  <!-- G++ for VxWorks 6 Leon-->
-  <compiler_description>
-    <name>G++-WRS6LEON</name>
-    <executable prefix="1">c\+\+(sparc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-6[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-6.*</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>kernel</runtimes>
-    <target>leon-wrs-vxworks</target>
-  </compiler_description>
-
   <!-- G++ for VxWorks 6 Cert -->
   <compiler_description>
     <name>G++-WRS6CERT</name>
@@ -385,19 +290,6 @@
   </compiler_description>
 
   <compiler_description>
-    <name>G++-WRS653-X86</name>
-    <executable prefix="1">c\+\+(ppc|pentium)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks653.*</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>i586-wrs-vxworksae</target>
-  </compiler_description>
-
-  <compiler_description>
     <name>G++-WRS653-E500V2</name>
     <executable prefix="1">c\+\+(ppc)</executable>
     <version>
@@ -408,127 +300,6 @@
     <languages>C++</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>e500v2-wrs-vxworksae</target>
-  </compiler_description>
-
-  <!-- G++ for VxWorks MILS -->
-  <compiler_description>
-    <name>G++-WRSMILS</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    <version>
-      <external>c++${PREFIX} -v</external>
-      <grep regexp=".*(vxworksae).*" group="1"></grep>
-      <must_match>vxworksae</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>powerpc-wrs-vxworksmils</target>
-  </compiler_description>
-
-  <compiler_description>
-    <name>G++-WRSMILS-E500V2</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    <version>
-      <external>c++${PREFIX} -v</external>
-      <grep regexp=".*(vxworksae).*" group="1"></grep>
-      <must_match>vxworksae</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>e500v2-wrs-vxworksmils</target>
-  </compiler_description>
-
-
-
-
-
-
-   <!-- G++ for WRS Linux -->
-   <compiler_description>
-     <name>G++-WRSLINUX</name>
-     <executable prefix="1">(powerpc-wrs-linux-gnu)-cpp</executable>
-     <version>
-       <external>${PREFIX}-cpp -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
-     </version>
-     <languages>C++</languages>
-     <runtimes>full</runtimes>
-    <target>
-      <external>${PREFIX}-cpp -dumpmachine</external>
-      <grep regexp="(.*)-gnu" group="1"></grep>
-    </target>
-   </compiler_description>
-
-   <compiler_description>
-     <name>G++-WRSLINUXE500V2</name>
-     <executable prefix="1">(powerpc-wrs-linux-gnu)-cpp</executable>
-     <version>
-       <external>${PREFIX}-cpp -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
-     </version>
-     <languages>C++</languages>
-     <runtimes>full</runtimes>
-     <target>e500v2-wrs-linux</target>
-   </compiler_description>
-
-   <!-- C for WRS Linux -->
-   <compiler_description>
-     <name>GCC-WRSLINUX</name>
-     <executable prefix="1">(powerpc-wrs-linux-gnu)-gcc</executable>
-     <version>
-       <external>${PREFIX}-cpp -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
-     </version>
-     <languages>C</languages>
-     <runtimes>full</runtimes>
-    <target>
-      <external>${PREFIX} -dumpmachine</external>
-      <grep regexp="(.*)-gnu" group="1"></grep>
-    </target>
-   </compiler_description>
-
-   <compiler_description>
-     <name>GCC-WRSLINUXE500V2</name>
-     <executable prefix="1">(powerpc-wrs-linux-gnu)-gcc</executable>
-     <version>
-       <external>${PREFIX}-cpp -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
-     </version>
-     <languages>C</languages>
-     <runtimes>full</runtimes>
-     <target>e500v2-wrs-linux</target>
-   </compiler_description>
-
-
-
-
-
-
-
-  <!-- G++ for VxWorks MILS HAE -->
-  <compiler_description>
-    <name>G++-WRSMILSHAE</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-mils-hae-1.*</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>zfp</runtimes>
-    <target>powerpc-wrs-vxworksmils</target>
-  </compiler_description>
-
-  <compiler_description>
-    <name>G++-WRSMILSHAE-E500V2</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-mils-hae-1.*</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>zfp</runtimes>
-    <target>e500v2-wrs-vxworksmils</target>
   </compiler_description>
 
   <!--  Assembler -->

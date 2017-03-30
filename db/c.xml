@@ -59,8 +59,6 @@
        <compiler name="GCC-WRS6CERT" language="C" />
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
        <compiler name="GCC-WRS6E500V2" language="C" />
-       <compiler name="GCC-WRS6LEON" language="C" />
-       <compiler name="GCC-WRS653-X86" language="C" />
        <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRS7ARM" language="C" />
@@ -68,10 +66,6 @@
        <compiler name="GCC-WRS7PPC" language="C" />
        <compiler name="GCC-WRS7X86" language="C" />
        <compiler name="GCC-WRS7X86_64" language="C" />
-       <compiler name="GCC-WRSMILS" language="C" />
-       <compiler name="GCC-WRSMILSHAE" language="C" />
-       <compiler name="GCC-WRSMILS-E500V2" language="C" />
-       <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -115,10 +109,8 @@
        <compiler name="GCC-WRS5" language="C" />
        <compiler name="GCC-WRS6" language="C" />
        <compiler name="GCC-WRS6E500V2" language="C" />
-       <compiler name="GCC-WRS6LEON" language="C" />
        <compiler name="GCC-WRS6CERT" language="C" />
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
-       <compiler name="GCC-WRS653-X86" language="C" />
        <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRS7ARM" language="C" />
@@ -126,10 +118,6 @@
        <compiler name="GCC-WRS7PPC" language="C" />
        <compiler name="GCC-WRS7X86" language="C" />
        <compiler name="GCC-WRS7X86_64" language="C" />
-       <compiler name="GCC-WRSMILS" language="C" />
-       <compiler name="GCC-WRSMILSHAE" language="C" />
-       <compiler name="GCC-WRSMILS-E500V2" language="C" />
-       <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
        <compiler name="LLVM" language="C" />
      </compilers>
      <config>
@@ -168,20 +156,14 @@
        <compiler name="GCC-MINGW32" language="C" />
        <compiler name="GCC-WRS6" language="C" />
        <compiler name="GCC-WRS6E500V2" language="C" />
-       <compiler name="GCC-WRS6LEON" language="C" />
        <compiler name="GCC-WRS6CERT" language="C" />
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
-       <compiler name="GCC-WRS653-X86" language="C" />
        <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRS7X86" language="C" />
        <compiler name="GCC-WRS7X86_64" language="C" />
        <compiler name="GCC-WRS7PPC" language="C" />
        <compiler name="GCC-WRS7E500V2" language="C" />
-       <compiler name="GCC-WRSMILS" language="C" />
-       <compiler name="GCC-WRSMILSHAE" language="C" />
-       <compiler name="GCC-WRSMILS-E500V2" language="C" />
-       <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
      </compilers>
      <config>
    package Compiler is
