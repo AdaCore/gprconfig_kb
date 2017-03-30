@@ -8,6 +8,7 @@
 <!-- Local target-specific conditions -->
 
 <!ENTITY this_target 'i586-wrs-vxworks'>
+<!ENTITY this_gnu_wrs_suffix 'pentium'>
 
 <!ENTITY if_these_c_compilers
     '<compilers>
