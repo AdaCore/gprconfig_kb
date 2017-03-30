@@ -37,23 +37,17 @@
 
    <configuration>
      <compilers>
-        <compiler name="G++-WRS653-X86" language="C++" />
         <compiler name="G++-WRS653-PPC" language="C++" />
         <compiler name="G++-WRS653-E500V2" language="C++" />
         <compiler name="G++-WRS5" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
         <compiler name="G++-WRS6E500V2" language="C++" />
-        <compiler name="G++-WRS6LEON" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
         <compiler name="G++-WRS6CERTE500V2" language="C++" />
         <compiler name="G++-WRS7ARM" language="C++" />
         <compiler name="G++-WRS7E500V2" language="C++" />
         <compiler name="G++-WRS7PPC" language="C++" />
         <compiler name="G++-WRS7X86" language="C++" />
-        <compiler name="G++-WRSMILS" language="C++" />
-        <compiler name="G++-WRSMILSHAE" language="C++" />
-        <compiler name="G++-WRSMILS-E500V2" language="C++" />
-        <compiler name="G++-WRSMILSHAE-E500V2" language="C++" />
     </compilers>
      <config>
    package Compiler is
@@ -77,16 +71,10 @@
      <compilers>
         <compiler name="G++" language="C++" />
         <compiler name="G++_Pro" language="C++" />
-        <compiler name="G++-WRS653-X86" language="C++" />
         <compiler name="G++-WRS653-PPC" language="C++" />
         <compiler name="G++-WRS653-E500V2" language="C++" />
-        <compiler name="G++-WRSMILS" language="C++" />
-        <compiler name="G++-WRSMILSHAE" language="C++" />
-        <compiler name="G++-WRSMILS-E500V2" language="C++" />
-        <compiler name="G++-WRSMILSHAE-E500V2" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
         <compiler name="G++-WRS6E500V2" language="C++" />
-        <compiler name="G++-WRS6LEON" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
         <compiler name="G++-WRS6CERTE500V2" language="C++" />
         <compiler name="G++-WRS7ARM" language="C++" />

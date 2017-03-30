@@ -61,7 +61,6 @@
      <targets>
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    Wind_Base := external ("WIND_BASE");
@@ -353,15 +352,11 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
-       <compiler name="GCC-WRS653-X86" language="C" />
        <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
-       <compiler name="GCC-WRSMILS" language="C" />
-       <compiler name="GCC-WRSMILS-E500V2" language="C" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    package Compiler is
@@ -376,28 +371,9 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" />
-       <compiler name="GCC-WRSMILSHAE" language="C" />
-       <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
-     </compilers>
-     <targets>
-       <target name="^.*-wrs-vxworksmils$" />
-     </targets>
-     <config>
-   package Compiler is
-      for Leading_Required_Switches ("C") use
-        Compiler'Leading_Required_Switches ("C")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/include");
-   end Compiler;
-     </config>
-   </configuration>
-
-   <configuration>
-     <compilers>
        <compiler name="GCC" runtime="^kernel$" />
        <compiler name="GCC" runtime="^kernel-sjlj$" />
        <compiler name="GCC" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6LEON" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERT" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="GCC" runtime="^zfp$" />
@@ -498,10 +474,8 @@
      <compilers>
        <compiler name="GCC-WRS6CERTE500V2" />
        <compiler name="GCC-WRS653-E500V2" />
-       <compiler name="GCC-WRSMILS-E500V2" />
        <compiler name="G++-WRS6CERTE500V2" />
        <compiler name="G++-WRS653-E500V2" />
-       <compiler name="G++-WRSMILS-E500V2" />
      </compilers>
      <config>
    package Compiler is
@@ -518,15 +492,11 @@
 
    <configuration>
      <compilers>
-        <compiler name="G++-WRS653-X86" language="C++" />
         <compiler name="G++-WRS653-PPC" language="C++" />
         <compiler name="G++-WRS653-E500V2" language="C++" />
-        <compiler name="G++-WRSMILS" language="C++" />
-        <compiler name="G++-WRSMILS-E500V2" language="C++" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    package Compiler is
@@ -539,42 +509,15 @@
      </config>
    </configuration>
 
-   <configuration>
-     <compilers>
-        <compiler name="G++-WRSMILSHAE" language="C++" />
-        <compiler name="G++-WRSMILSHAE-E500V2" language="C++" />
-     </compilers>
-     <targets>
-       <target name="^.*-wrs-vxworksmils$" />
-     </targets>
-     <config>
-   package Compiler is
-      for Leading_Required_Switches ("C++") use
-        Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/include");
-   end Compiler;
-     </config>
-   </configuration>
-
-   <!-- In Cert, 653 and MILS printf should not be considered as a builtin -->
+   <!-- In Cert and 653 printf should not be considered as a builtin -->
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" runtime="^zfp$" />
        <compiler name="GCC" language="C" runtime="cert" />
-       <compiler name="GCC-WRS653-X86" runtime="^zfp$" />
-       <compiler name="GCC-WRS653-X86" runtime="cert" />
        <compiler name="GCC-WRS653-PPC" runtime="^zfp$" />
        <compiler name="GCC-WRS653-PPC" runtime="cert" />
        <compiler name="GCC-WRS653-E500V2" runtime="^zfp$" />
        <compiler name="GCC-WRS653-E500V2" runtime="cert" />
-       <compiler name="GCC-WRSMILS" runtime="^zfp$" />
-       <compiler name="GCC-WRSMILS" runtime="cert" />
-       <compiler name="GCC-WRSMILS-E500V2" runtime="^zfp" />
-       <compiler name="GCC-WRSMILS-E500V2" runtime="cert" />
-       <compiler name="GCC-WRSMILSHAE" runtime="^zfp$" />
-       <compiler name="GCC-WRSMILSHAE" runtime="cert" />
-       <compiler name="GCC-WRSMILSHAE-E500V2" runtime="^zfp$" />
-       <compiler name="GCC-WRSMILSHAE-E500V2" runtime="cert" />
        <compiler name="GCC-WRS6CERT" runtime="^zfp$" />
        <compiler name="GCC-WRS6CERT" runtime="cert" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^zfp$" />
@@ -583,7 +526,6 @@
      <targets>
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    package Compiler is
@@ -598,16 +540,10 @@
      <compilers>
        <compiler name="G++" language="C++" runtime="^zfp$" />
        <compiler name="G++" language="C++" runtime="cert" />
-       <compiler name="G++-WRS653-X86" runtime="^zfp$" />
-       <compiler name="G++-WRS653-X86" runtime="cert" />
        <compiler name="G++-WRS653-PPC" runtime="^zfp$" />
        <compiler name="G++-WRS653-PPC" runtime="cert" />
        <compiler name="G++-WRS653-E500V2" runtime="^zfp$" />
        <compiler name="G++-WRS653-E500V2" runtime="cert" />
-       <compiler name="G++-WRSMILS" runtime="^zfp$" />
-       <compiler name="G++-WRSMILS" runtime="cert" />
-       <compiler name="G++-WRSMILS-E500V2" runtime="^zfp$" />
-       <compiler name="G++-WRSMILS-E500V2" runtime="cert" />
        <compiler name="G++-WRS6CERT" runtime="^zfp$" />
        <compiler name="G++-WRS6CERT" runtime="cert" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^zfp$" />
@@ -616,7 +552,6 @@
      <targets>
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    package Compiler is
@@ -627,11 +562,10 @@
      </config>
    </configuration>
 
-   <!-- vx653 & vxMILS executables have a .out extension.  -->
+   <!-- vx653 executables have a .out extension.  -->
    <configuration>
      <targets>
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    package Builder is

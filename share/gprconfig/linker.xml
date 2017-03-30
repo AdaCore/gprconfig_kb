@@ -258,18 +258,6 @@
 
   <configuration>
     <targets>
-      <target name="^i686-elinos-linux$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("i686-elinos-linux-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("i686-elinos-linux-ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
       <target name="^i686-pc-mingw32$" />
     </targets>
     <hosts negate="true">
@@ -328,18 +316,6 @@
    for Archive_Builder  use ("ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="^powerpc-elinos-linux$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("powerpc-elinos-linux-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-elinos-linux-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -569,18 +545,6 @@
 
    <configuration>
      <targets>
-       <target name="^e500v2-wrs-vxworksmils$" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("e500v2-wrs-vxworksmils-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("e500v2-wrs-vxworksmils-ranlib");
-   for Archive_Suffix   use ".a";
-     </config>
-   </configuration>
-
-   <configuration>
-     <targets>
        <target name="^i586-wrs-vxworksae$" />
      </targets>
      <config>
@@ -593,36 +557,12 @@
 
    <configuration>
      <targets>
-       <target name="^leon-wrs-vxworks$" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("leon-wrs-vxworks-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("leon-wrs-vxworks-ranlib");
-   for Archive_Suffix   use ".a";
-     </config>
-   </configuration>
-
-   <configuration>
-     <targets>
        <target name="^powerpc-wrs-vxworksae$" />
      </targets>
      <config>
    for Archive_Builder  use ("powerpc-wrs-vxworksae-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("powerpc-wrs-vxworksae-ranlib");
-   for Archive_Suffix   use ".a";
-     </config>
-   </configuration>
-
-   <configuration>
-     <targets>
-       <target name="^powerpc-wrs-vxworksmils$" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("powerpc-wrs-vxworksmils-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-wrs-vxworksmils-ranlib");
    for Archive_Suffix   use ".a";
      </config>
    </configuration>
@@ -682,45 +622,6 @@
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
-
-   <configuration>
-     <targets>
-       <target name="^powerpc-wrs-linux$" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("powerpc-wrs-linux-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-wrs-linux-ranlib");
-   for Archive_Suffix   use ".a";
-     </config>
-   </configuration>
-
-   <configuration>
-     <targets>
-       <target name="^e500v2-wrs-linux$" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("e500v2-wrs-linux-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("e500v2-wrs-linux-ranlib");
-   for Archive_Suffix   use ".a";
-     </config>
-   </configuration>
-
-  <configuration>
-    <compilers>
-       <compiler language="Ada" />
-    </compilers>
-    <targets>
-      <target name="^.*-wrs-linux.*$" />
-    </targets>
-    <config>
-   package Linker is
-      for Driver use Compiler'Driver ("Ada");
-   end Linker;
-    </config>
-  </configuration>
-
 
 <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
@@ -1287,7 +1188,6 @@
             definition in cross.xml).  -->
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
@@ -1315,7 +1215,6 @@
             definition in cross.xml).  -->
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
@@ -1342,7 +1241,6 @@
             definition in cross.xml).  -->
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <!-- As a special exception, on ARM, rts-rtp is smp-based. -->
     <config>
@@ -1415,7 +1313,6 @@
             definition in cross.xml).  -->
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is

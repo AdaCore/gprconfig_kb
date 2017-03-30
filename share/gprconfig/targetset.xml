@@ -337,13 +337,6 @@
     <target>e500v2-vx6-linux</target>
   </targetset>
 
-  <targetset>
-    <!-- leon-vx6-.* -->
-    <target>leon-vx6</target>
-    <target>leon-wrs-vxworks</target>
-    <target>leon-vx6-linux</target>
-  </targetset>
-
   <!-- ppc-vx653-.*  (vxworks 653) -->
   <targetset>
     <target>ppc-vx653</target>
@@ -357,27 +350,6 @@
     <target>e500v2-vx653</target>
     <target>e500v2-vx653-windows</target>
     <target>e500v2-wrs-vxworksae</target>
-  </targetset>
-
-  <!-- ppc-vxmils-.*  (vxworks MILS) -->
-  <targetset>
-    <target>ppc-vxmils</target>
-    <target>ppc-vxmils-windows</target>
-    <target>powerpc-wrs-vxworksmils</target>
-  </targetset>
-
-  <!-- e500v2-vxmils-.*  (vxworks MILS) -->
-  <targetset>
-    <target>e500v2-vxmils</target>
-    <target>e500v2-vxmils-windows</target>
-    <target>e500v2-wrs-vxworksmils</target>
-  </targetset>
-
-  <!-- x86-vx653-.*  (vxworks 653) -->
-  <targetset>
-    <target>x86-vx653</target>
-    <target>x86-vx653-windows</target>
-    <target>i.86-wrs-vxworksae</target>
   </targetset>
 
   <!-- ppc-elf-.*  -->
@@ -444,12 +416,14 @@
     <target>arm-linux-androideabi</target>
   </targetset>
 
-  <!-- ppc-pikeos  -->
+  <!-- arm-pikeos  -->
 
   <targetset>
     <target>arm-pikeos</target>
     <target>arm-.*-pikeos</target>
   </targetset>
+
+  <!-- ppc-pikeos  -->
 
   <targetset>
     <target>ppc-pikeos</target>

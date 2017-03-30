@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+<gprconfig>
+
+   <!-- G++ for WRS Linux -->
+   <compiler_description>
+     <name>G++-WRSLINUX</name>
+     <executable prefix="1">(powerpc-wrs-linux-gnu)-cpp</executable>
+     <version>
+       <external>${PREFIX}-cpp -v</external>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+     </version>
+     <languages>C++</languages>
+     <runtimes>full</runtimes>
+    <target>
+      <external>${PREFIX}-cpp -dumpmachine</external>
+      <grep regexp="(.*)-gnu" group="1"></grep>
+    </target>
+   </compiler_description>
+
+   <compiler_description>
+     <name>G++-WRSLINUXE500V2</name>
+     <executable prefix="1">(powerpc-wrs-linux-gnu)-cpp</executable>
+     <version>
+       <external>${PREFIX}-cpp -v</external>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+     </version>
+     <languages>C++</languages>
+     <runtimes>full</runtimes>
+     <target>e500v2-wrs-linux</target>
+   </compiler_description>
+
+   <!-- C for WRS Linux -->
+   <compiler_description>
+     <name>GCC-WRSLINUX</name>
+     <executable prefix="1">(powerpc-wrs-linux-gnu)-gcc</executable>
+     <version>
+       <external>${PREFIX}-cpp -v</external>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+     </version>
+     <languages>C</languages>
+     <runtimes>full</runtimes>
+    <target>
+      <external>${PREFIX} -dumpmachine</external>
+      <grep regexp="(.*)-gnu" group="1"></grep>
+    </target>
+   </compiler_description>
+
+   <compiler_description>
+     <name>GCC-WRSLINUXE500V2</name>
+     <executable prefix="1">(powerpc-wrs-linux-gnu)-gcc</executable>
+     <version>
+       <external>${PREFIX}-cpp -v</external>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+     </version>
+     <languages>C</languages>
+     <runtimes>full</runtimes>
+     <target>e500v2-wrs-linux</target>
+   </compiler_description>
+
+</gprconfig>
