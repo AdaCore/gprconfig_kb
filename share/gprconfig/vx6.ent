@@ -10,6 +10,38 @@
     '<runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>'
    >
 
+   <!ENTITY gnat_pre_6.4
+     '<compiler language="Ada" version="3.16" />
+      <compiler language="Ada" version="5.00" />
+      <compiler language="Ada" version="5.01" />
+      <compiler language="Ada" version="5.02" />
+      <compiler language="Ada" version="5.03" />
+      <compiler language="Ada" version="5.04" />
+      <compiler language="Ada" version="6.0" />
+      <compiler language="Ada" version="6.1" />
+      <compiler language="Ada" version="6.2" />
+      <compiler language="Ada" version="6.3" />
+      <compiler language="Ada" version="6.4" />'
+   >
+
+  <!ENTITY if_gnat_pre_6.4
+   '<compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+      &gnat_pre_6.4;
+    </compilers>'
+  >
+
+  <!ENTITY if_gnat_post_6.4
+   '<compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers negate="true" >
+      &gnat_pre_6.4;
+    </compilers>'
+  >
+
   <!ENTITY config_rtp_cflags
     '<config>
    package Compiler is
@@ -46,8 +78,38 @@
      </config>'
   >
 
+  <!ENTITY config_wrs_ar
+    '<config>
+   for Archive_Builder  use ("ar" &amp; "&this_gnu_wrs_suffix;", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlib" &amp; "&this_gnu_wrs_suffix;");
+   for Archive_Suffix   use ".a";
+     </config>'
+  >
+
   <!ENTITY configurations_vx6
   '
+   <configuration>
+    &if_gnat_pre_6.4;
+    &if_this_target;
+
+    &config_wrs_ar;
+   </configuration>
+
+   <configuration>
+    &if_gnat_post_6.4;
+    &if_this_target;
+
+    &config_gnat_ar;
+   </configuration>
+
+   <configuration>
+    &if_no_ada;
+    &if_this_target;
+
+    &config_gnat_ar;
+   </configuration>
+
    <configuration>
      &if_rtp;
      &if_this_target;

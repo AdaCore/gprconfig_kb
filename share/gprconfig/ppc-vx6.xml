@@ -8,6 +8,7 @@
 <!-- Local target-specific conditions -->
 
 <!ENTITY this_target 'powerpc-wrs-vxworks'>
+<!ENTITY this_gnu_wrs_suffix 'ppc'>
 
 <!ENTITY if_these_c_compilers
     '<compilers>

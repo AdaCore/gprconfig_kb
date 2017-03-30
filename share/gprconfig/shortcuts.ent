@@ -5,6 +5,12 @@
     '<languages>C++</languages>'
    >
 
+   <!ENTITY if_no_ada
+   '<compilers negate="true" >
+       <compiler language="Ada" />
+    </compilers>'
+   >
+
    <!ENTITY if_this_target
     '<targets>
        <target name="^&this_target;$" />
