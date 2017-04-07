@@ -374,7 +374,8 @@ to contribute new knowledge.
 The location of the knowledge base is :file:`$prefix/share/gprconfig`,
 where :file:`$prefix` is the directory in which GPRconfig was
 installed. Any file with extension :file:`.xml` in this directory will
-be parsed automatically by GPRconfig at startup.
+be parsed automatically by GPRconfig at startup after sorting
+them alphabetically.
 
 All files must have the following format:
 
