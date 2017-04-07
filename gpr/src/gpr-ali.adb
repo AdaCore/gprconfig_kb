@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 1992-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -699,6 +699,17 @@ package body GPR.ALI is
       --  Acquire main program line if present
 
       if C = 'M' then
+         Checkc (' ');
+         Skip_Space;
+
+         C := Getc;
+
+         if C = 'F' then
+            ALIs.Table (Id).Main_Program := Func;
+         elsif C = 'P' then
+            ALIs.Table (Id).Main_Program := Proc;
+         end if;
+
          Skip_Next_Line;
          C := Getc;
       end if;

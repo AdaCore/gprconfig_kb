@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2015-2016, AdaCore                     --
+--                     Copyright (C) 2015-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -53,6 +53,9 @@ private
 
    Save_Verbose : Boolean := False;
    Save_Verbosity_Level : Verbosity_Level_Type;
+
+   Very_Verbose_Mode : Boolean := False;
+   --  Set to True with switch -V
 
    Project_Search_Path : constant String := "Project Search Path:";
    --  Label displayed in verbose mode before the directories in the project
@@ -215,5 +218,41 @@ private
    Project_Tree : constant Project_Tree_Ref :=
                     new Project_Tree_Data (Is_Root_Tree => True);
    --  The project tree
+
+   type Path_Record;
+   type Path_Access is access Path_Record;
+   type Path_record is record
+      Path : String_Access := null;
+      Next : Path_Access   := null;
+   end record;
+
+   type Paths is record
+      First : Path_Access := null;
+      Last  : Path_Access := null;
+   end record;
+   No_Paths : constant Paths := (null, null);
+
+   procedure Add (Path : String; To : in out Paths);
+
+   procedure Get_Runtime_Source_Dirs
+     (Project    : Project_Id;
+      Tree       : Project_Tree_Ref;
+      With_State : in out Paths);
+
+   procedure Get_All_Runtime_Source_Dirs is
+      new For_Every_Project_Imported (Paths, Get_Runtime_Source_Dirs);
+
+   package GNATDIST is
+
+      --  Any modification to this subunit requires synchronization with the
+      --  GNATDIST sources.
+
+      procedure Output_ALI (FNS : File_Name_Source);
+      --  Output the unit information for GNATDIST
+
+      procedure Output_No_ALI (FNS : File_Name_Source);
+      --  Indicate that an ALI file cannot be found
+
+   end GNATDIST;
 
 end Gprls;
