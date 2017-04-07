@@ -26,6 +26,7 @@ with Ada.Unchecked_Deallocation;
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
+with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
 with Ada.Exceptions;            use Ada.Exceptions;
@@ -68,6 +69,9 @@ package body GPR.Knowledge is
 
    package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
      (String, Unbounded_String, Ada.Strings.Hash_Case_Insensitive, "=");
+
+   package String_Sets is new Ada.Containers.Indefinite_Ordered_Sets
+     (String);
 
    procedure Unchecked_Free is new Ada.Unchecked_Deallocation
      (Pattern_Matcher, Pattern_Matcher_Access);
@@ -1137,10 +1141,14 @@ package body GPR.Knowledge is
       Reader    : Schema.Dom_Readers.Tree_Reader;
       Input     : File_Input;
       Schema    : Schema_Reader;
+      In_Files  : String_Sets.Set;
+      Cur       : String_Sets.Cursor;
+      Shortname : GNAT.Strings.String_Access;
 
       Dir : constant String :=
         Normalize_Pathname (Directory, Case_Sensitive => False);
 
+      use String_Sets;
    begin
       --  Do not parse several times the same database directory
 
@@ -1208,9 +1216,19 @@ package body GPR.Knowledge is
 
       while More_Entries (Search) loop
          Get_Next_Entry (Search, File);
+         In_Files.Include (Full_Name (File));
+      end loop;
 
-         Put_Verbose ("Parsing file " & Full_Name (File));
-         Open (Full_Name (File), Input);
+      End_Search (Search);
+
+      Cur := In_Files.First;
+      while Cur /= String_Sets.No_Element loop
+
+         Shortname := new String'
+           (GNAT.Directory_Operations.Base_Name (String_Sets.Element (Cur)));
+
+         Put_Verbose ("Parsing file " & String_Sets.Element (Cur));
+         Open (String_Sets.Element (Cur), Input);
          Parse (Reader, Input);
          Close (Input);
          File_Node := DOM.Core.Documents.Get_Element (Get_Tree (Reader));
@@ -1225,7 +1243,7 @@ package body GPR.Knowledge is
                   if Parse_Compiler_Info then
                      Parse_Compiler_Description
                        (Base        => Base,
-                        File        => Simple_Name (File),
+                        File        => Shortname.all,
                         Description => N);
                   end if;
 
@@ -1233,25 +1251,26 @@ package body GPR.Knowledge is
                   if Parse_Compiler_Info then
                      Parse_Configuration
                        (Append_To   => Base.Configurations,
-                        File        => Simple_Name (File),
+                        File        => Shortname.all,
                         Description => N);
                   end if;
 
                elsif Node_Name (N) = "targetset" then
                   Parse_Targets_Set
                     (Append_To   => Base.Targets_Sets,
-                     File        => Simple_Name (File),
+                     File        => Shortname.all,
                      Description => N);
 
                elsif Node_Name (N) = "fallback_targets" then
                   Parse_Fallback_Targets_Set
                     (Append_To   => Base.Fallback_Targets_Sets,
-                     File        => Simple_Name (File),
+                     File        => Shortname.all,
                      Description => N);
 
                else
                   Put_Line (Standard_Error,
-                            "Unknown XML tag in " & Simple_Name (File) & ": "
+                            "Unknown XML tag in "
+                            & Shortname.all & ": "
                             & Node_Name (N));
                   raise Invalid_Knowledge_Base;
                end if;
@@ -1260,13 +1279,17 @@ package body GPR.Knowledge is
             end loop;
          else
             Put_Line (Standard_Error,
-                      "Invalid toplevel XML tag in " & Simple_Name (File));
+                      "Invalid toplevel XML tag in "
+                      & Shortname.all);
          end if;
 
          Free (Reader);
+         GNAT.Strings.Free (Shortname);
+
+         Next (Cur);
       end loop;
 
-      End_Search (Search);
+      In_Files.Clear;
 
    exception
       when Ada.Directories.Name_Error =>
