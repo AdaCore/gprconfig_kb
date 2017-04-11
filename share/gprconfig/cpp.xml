@@ -5,19 +5,6 @@
 
    <configuration>
      <compilers>
-        <compiler language="C++" />
-     </compilers>
-     <config>
-   package Naming is
-      for Spec_Suffix ("C++") use ".hh";
-      for Body_Suffix ("C++") use ".cpp";
-   end Naming;
-   for Inherit_Source_Path ("C++") use ("C");
-     </config>
-   </configuration>
-
-   <configuration>
-     <compilers>
         <compiler name="G++" language="C++" />
         <compiler name="G++_Pro" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
@@ -27,11 +14,6 @@
    package Compiler is
       for Driver              ("C++") use "${PATH(c++)}${PREFIX(c++)}g++";
    end Compiler;
-
-   package Clean is
-      for Source_Artifact_Extensions ("C++") use (".gli");
-      for Object_Artifact_Extensions ("C++") use (".s", "ci", ".gcno", ".su");
-   end Clean;
      </config>
    </configuration>
 

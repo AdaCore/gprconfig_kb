@@ -5,18 +5,6 @@
 
    <configuration>
      <compilers>
-       <compiler language="C" />
-     </compilers>
-     <config>
-   package Naming is
-      for Spec_Suffix ("C") use ".h";
-      for Body_Suffix ("C") use ".c";
-   end Naming;
-     </config>
-   </configuration>
-
-   <configuration>
-     <compilers>
        <compiler name="GCC" language="C" />
        <compiler name="GCC_Pro" language="C" />
        <compiler name="GCC-28" language="C" />
@@ -28,11 +16,6 @@
    package Compiler is
       for Driver              ("C") use "${PATH(c)}${PREFIX(c)}gcc";
    end Compiler;
-
-   package Clean is
-      for Source_Artifact_Extensions ("C")   use (".gli");
-      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno", ".su");
-   end Clean;
      </config>
    </configuration>
 
@@ -44,11 +27,6 @@
    package Compiler is
       for Driver              ("C") use "${PATH(c)}${PREFIX(c)}gcc";
    end Compiler;
-
-   package Clean is
-      for Source_Artifact_Extensions ("C")   use (".gli");
-      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno", ".su");
-   end Clean;
      </config>
    </configuration>
 
@@ -124,7 +102,6 @@
    package Compiler is
       for Leading_Required_Switches   ("C") use
          ("-c", "-x", "c") &amp; Compiler'Leading_Required_Switches ("C");
-      --  for Include_Path        ("C") use "CPATH";
       for Include_Switches        ("C") use ("-I");
       for Max_Command_Line_Length use "8192";
       for Response_File_Format    ("C") use "GCC_GNU";

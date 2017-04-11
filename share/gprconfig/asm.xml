@@ -8,10 +8,6 @@
        <compiler name="GCC-ASM" language="Asm_Cpp" />
      </compilers>
      <config>
-   package Naming is
-      for Body_Suffix ("Asm_Cpp") use ".S";
-   end Naming;
-
    package Compiler is
       for Driver            ("Asm_Cpp") use "${PATH(asm_cpp)}${PREFIX(asm_cpp)}gcc";
       for Leading_Required_Switches ("Asm_Cpp") use
@@ -28,11 +24,6 @@
        <compiler name="GCC-ASM" language="Asm" />
      </compilers>
      <config>
-
-   package Naming is
-      for Body_Suffix ("Asm") use ".s";
-   end Naming;
-
    package Compiler is
       for Driver            ("Asm") use "${PATH(asm)}${PREFIX(asm)}gcc";
       for Leading_Required_Switches ("Asm") use
@@ -49,11 +40,6 @@
        <compiler name="GCC-ASM" language="Asm2" />
      </compilers>
      <config>
-
-   package Naming is
-      for Body_Suffix ("Asm2") use ".asm";
-   end Naming;
-
    package Compiler is
       for Driver            ("Asm2") use "${PATH(asm2)}${PREFIX(asm2)}gcc";
       for Leading_Required_Switches ("Asm2") use

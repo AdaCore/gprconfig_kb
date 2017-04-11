@@ -9,10 +9,6 @@
        <compiler name="GCC-CYGMING" language="Fortran" />
      </compilers>
      <config>
-   package Naming is
-      for Body_Suffix ("Fortran") use ".f";
-   end Naming;
-
    package Compiler is
       for Driver            ("Fortran") use "${PATH(fortran)}g77";
       for Leading_Required_Switches ("Fortran") use
@@ -45,10 +41,6 @@
        <compiler name="GCC-MINGW32" language="Fortran" />
      </compilers>
      <config>
-   package Naming is
-      for Body_Suffix ("Fortran") use ".f";
-   end Naming;
-
    package Compiler is
       for Driver            ("Fortran") use "${PATH(fortran)}${PREFIX(fortran)}gfortran";
       for Leading_Required_Switches ("Fortran") use

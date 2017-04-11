@@ -170,7 +170,7 @@
      <config>
    package Linker is
       for Required_Switches use
-	Linker'Required_Switches &amp; ("-mrtp");
+         Linker'Required_Switches &amp; ("-mrtp");
    end Linker;
      </config>
    </configuration>
@@ -268,7 +268,7 @@
 
    package Linker is
       for Required_Switches use
-	Linker'Required_Switches
+        Linker'Required_Switches
         &amp; ("-L" &amp; Pikeos_Target_Files &amp; "/scripts",
                "-L" &amp; Pikeos_Target_Files &amp; "/lib");
    end Linker;
