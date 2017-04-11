@@ -11,13 +11,6 @@
     <compiler name="GNAAMP" />
    </compilers>
    <config>
-   package Naming is
-      for Spec_Suffix ("Ada") use ".ads";
-      for Body_Suffix ("Ada") use ".adb";
-      for Casing use "lowercase";
-      for Dot_Replacement use "-";
-   end Naming;
-
    package Compiler is
       for Driver                   ("Ada") use "gnaamp";
       for Language_Kind            ("Ada") use "unit_based";
@@ -66,13 +59,6 @@
   <configuration>
    &filter_gnat;
    <config>
-   package Naming is
-      for Spec_Suffix ("Ada") use ".ads";
-      for Body_Suffix ("Ada") use ".adb";
-      for Casing use "lowercase";
-      for Dot_Replacement use "-";
-   end Naming;
-
    package Compiler is
       for Driver                   ("Ada") use "${PATH(ada)}${PREFIX(ada)}gcc";
       for Language_Kind            ("Ada") use "unit_based";
@@ -92,12 +78,6 @@
       for Driver         ("Ada") use
           "${GPRCONFIG_PREFIX}libexec/gprbuild/gprbind";
    end Binder;
-
-   package Clean is
-      for Source_Artifact_Extensions ("Ada")
-         use (".dg", ".rep");
-      for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno", ".su");
-   end Clean;
 
    for Toolchain_Version ("Ada") use "GNAT ${VERSION(ada)}";
    for Runtime_Dir       ("Ada") use "${RUNTIME_DIR(ada)}";

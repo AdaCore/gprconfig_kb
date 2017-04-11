@@ -1,0 +1,45 @@
+<?xml version="1.0" ?>
+<gprconfig>
+   <!--  This package provides default settings for GNAT toolchains -->
+
+   <configuration>
+     <config>
+   package Naming is
+
+      for Spec_Suffix ("Ada") use ".ads";
+      for Body_Suffix ("Ada") use ".adb";
+
+      for Body_Suffix ("Asm") use ".s";
+      for Body_Suffix ("Asm2") use ".asm";
+      for Body_Suffix ("Asm_Cpp") use ".S";
+
+      for Body_Suffix ("C") use ".c";
+      for Spec_Suffix ("C") use ".h";
+
+      for Spec_Suffix ("C++") use ".hh";
+      for Body_Suffix ("C++") use ".cpp";
+
+      for Body_Suffix ("Fortran") use ".f";
+
+      for Casing use "lowercase";
+      for Dot_Replacement use "-";
+
+   end Naming;
+
+   for Inherit_Source_Path ("C++") use ("C");
+
+   package Clean is
+      for Source_Artifact_Extensions ("Ada") use (".dg", ".rep");
+      for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno", ".su");
+
+      for Source_Artifact_Extensions ("C")   use (".gli");
+      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno", ".su");
+
+      for Source_Artifact_Extensions ("C++") use (".gli");
+      for Object_Artifact_Extensions ("C++") use (".s", "ci", ".gcno", ".su");
+   end Clean;
+
+     </config>
+   </configuration>
+
+</gprconfig>
