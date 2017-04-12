@@ -892,6 +892,10 @@ begin
       Closure    := False;
       Dependable := False;
 
+      if Number_File_Names > 0 then
+         All_Projects := True;
+      end if;
+
    elsif Closure then
       Dependable := False;
    end if;
