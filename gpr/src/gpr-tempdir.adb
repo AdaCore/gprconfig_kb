@@ -28,6 +28,8 @@ with GPR.Names;  use GPR.Names;
 with GPR.Opt;    use GPR.Opt;
 with GPR.Output; use GPR.Output;
 
+with GNAT.Strings;
+
 package body GPR.Tempdir is
 
    Tmpdir_Needs_To_Be_Displayed : Boolean := True;
@@ -36,7 +38,18 @@ package body GPR.Tempdir is
    Temp     : constant String := "TEMP";
    Tmp      : constant String := "TMP";
 
-   Temp_Dir : String_Access   := new String'("");
+   Windows_List : constant GNAT.Strings.String_List (1 .. 4) :=
+     (new String'("C:\TEMP"),
+      new String'("C:\TMP"),
+      new String'("\TEMP"),
+      new String'("\TMP"));
+
+   Other_List : constant GNAT.Strings.String_List (1 .. 3) :=
+     (new String'("/tmp"),
+      new String'("/var/tmp"),
+      new String'("/usr/tmp"));
+
+   Temp_Dir : String_Access := new String'("");
 
    ----------------------
    -- Create_Temp_File --
@@ -126,17 +139,22 @@ package body GPR.Tempdir is
          and then Is_Directory (Dir.all));
 
    begin
-      if Status then
-         Dir := Getenv (Tmpdir);
+      if not Status then
+         Temp_Dir := new String'("");
+         return;
+      end if;
+
+      --  Checking environment variables.
+
+      Dir := Getenv (Tmpdir);
+
+      if not Dir_Is_Temporary_Dir then
+         Free (Dir);
+         Dir := Getenv (Temp);
 
          if not Dir_Is_Temporary_Dir then
             Free (Dir);
-            Dir := Getenv (Temp);
-
-            if not Dir_Is_Temporary_Dir then
-               Free (Dir);
-               Dir := Getenv (Tmp);
-            end if;
+            Dir := Getenv (Tmp);
          end if;
       end if;
 
@@ -144,11 +162,40 @@ package body GPR.Tempdir is
 
       if Dir_Is_Temporary_Dir then
          Temp_Dir := new String'(Normalize_Pathname (Dir.all));
-      else
-         Temp_Dir := new String'("");
+         Free (Dir);
+         return;
       end if;
 
-      Free (Dir);
+      if GPR.Opt.Target_Value = null or else GPR.Opt.Target_Value.all = "" then
+         Temp_Dir := new String'("");
+         Free (Dir);
+         return;
+      end if;
+
+      if Directory_Separator = '\' then
+
+         for I in Windows_List'Range loop
+            Dir := Windows_List (I);
+            if Dir_Is_Temporary_Dir then
+               Temp_Dir := new String'(Normalize_Pathname (Dir.all));
+               return;
+            end if;
+         end loop;
+
+      else
+
+         for I in Other_List'Range loop
+            Dir := Other_List (I);
+            if Dir_Is_Temporary_Dir then
+               Temp_Dir := new String'(Normalize_Pathname (Dir.all));
+               return;
+            end if;
+         end loop;
+
+      end if;
+
+      Temp_Dir := new String'(Get_Current_Dir);
+
    end Use_Temp_Dir;
 
    ------------------------------
