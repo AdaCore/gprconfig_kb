@@ -166,12 +166,6 @@ package body GPR.Tempdir is
          return;
       end if;
 
-      if GPR.Opt.Target_Value = null or else GPR.Opt.Target_Value.all = "" then
-         Temp_Dir := new String'("");
-         Free (Dir);
-         return;
-      end if;
-
       if Directory_Separator = '\' then
 
          for I in Windows_List'Range loop
