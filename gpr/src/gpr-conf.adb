@@ -30,7 +30,6 @@ with GNAT.HTable;    use GNAT.HTable;
 with GNAT.Table;
 
 with GPR.Env;
-with GPR.Err;
 with GPR.Names;  use GPR.Names;
 with GPR.Opt;    use GPR.Opt;
 with GPR.Output; use GPR.Output;
@@ -39,6 +38,7 @@ with GPR.Proc;   use GPR.Proc;
 with GPR.Tree;   use GPR.Tree;
 with GPR.Util;   use GPR.Util;
 with GPR.Snames; use GPR.Snames;
+with GPR.Tempdir;
 
 package body GPR.Conf is
 
@@ -919,61 +919,8 @@ package body GPR.Conf is
             Db_Switches     : Argument_List_Access;
             Args            : Argument_List (1 .. 7);
             Arg_Last        : Positive;
-            Obj_Dir_Exists  : Boolean := True;
 
          begin
-            --  Check if the object directory exists. If Setup_Projects is True
-            --  (-p) and directory does not exist, attempt to create it.
-            --  Otherwise, if directory does not exist, fail without calling
-            --  gprconfig.
-
-            if not Is_Directory (Obj_Dir)
-              and then (Setup_Projects or else Subdirs /= null)
-            then
-               begin
-                  Create_Path (Obj_Dir);
-
-                  if not Quiet_Output then
-                     if Verbose_Mode then
-                        Write_Str ("object directory """);
-                        Write_Str (Obj_Dir);
-                        Write_Str (""" created for project ");
-                        Write_Line
-                          (Get_Name_String (Conf_Project.Display_Name));
-
-                     else
-                        Display
-                          (Section  => Setup,
-                           Command  => "mkdir",
-                           Argument =>
-                             "object directory for project " &
-                             Get_Name_String (Conf_Project.Display_Name));
-                     end if;
-                  end if;
-
-               exception
-                  when others =>
-                     Raise_Invalid_Config
-                       ("could not create object directory " & Obj_Dir);
-               end;
-            end if;
-
-            if not Is_Directory (Obj_Dir) then
-               case Env.Flags.Require_Obj_Dirs is
-                  when Error =>
-                     Raise_Invalid_Config
-                       ("object directory " & Obj_Dir & " does not exist");
-
-                  when Warning =>
-                     GPR.Err.Error_Msg
-                       (Env.Flags,
-                        "?object directory " & Obj_Dir & " does not exist");
-                     Obj_Dir_Exists := False;
-
-                  when Silent =>
-                     null;
-               end case;
-            end if;
 
             --  Get the config switches. This should be done only now, as some
             --  runtimes may have been found in the Builder switches.
@@ -998,24 +945,13 @@ package body GPR.Conf is
                   Current_Dir : constant String := Current_Directory;
 
                begin
-                  --  The object directory may be read-only. if possible, use
-                  --  another directory for the temporary project file.
 
-                  declare
-                     Tmpdir : String_Access := Getenv ("TMPDIR");
-                  begin
-                     if (Tmpdir = null or else Tmpdir'Length = 0) and then
-                       Is_Directory ("/tmp")
-                     then
-                        Set_Directory ("/tmp");
-                     elsif Obj_Dir_Exists and then
-                           Is_Writable_File (Obj_Dir)
-                     then
-                        Set_Directory (Obj_Dir);
-                     end if;
-
-                     Free (Tmpdir);
-                  end;
+                  if Is_Directory (GPR.Tempdir.Temporary_Directory_Path) then
+                     Set_Directory (GPR.Tempdir.Temporary_Directory_Path);
+                  else
+                     Raise_Invalid_Config
+                       ("No temp dir specified");
+                  end if;
 
                   GPR.Env.Create_Temp_File
                     (Shared    => Project_Tree.Shared,
@@ -1672,6 +1608,13 @@ package body GPR.Conf is
       Target_Try_Again : Boolean := True;
       Config_Try_Again : Boolean;
 
+      Fallback_Try_Again : Boolean := True;
+
+      Store_Setup_Projects  : Boolean;
+      Store_Flags : Processing_Flags;
+
+      N_Hostname : String_Access := new String'(Normalized_Hostname);
+
       Finalization : GPR.Part.Errout_Mode :=
                        GPR.Part.Always_Finalize;
 
@@ -1718,12 +1661,21 @@ package body GPR.Conf is
       --  Record Target_Value and Target_Origin
 
       if Target_Name = "" then
-         Opt.Target_Value  := new String'(Normalized_Hostname);
+         Opt.Target_Value  := new String'(N_Hostname.all);
          Opt.Target_Origin := Default;
          Native_Target := True;
+
+         Store_Flags := Env.Flags;
+         Set_Require_Obj_Dirs (Env.Flags, Silent);
+         Set_Check_Configuration_Only (Env.Flags, True);
+         Store_Setup_Projects := Setup_Projects;
+         Setup_Projects := False;
       else
          Opt.Target_Value  := new String'(Target_Name);
          Opt.Target_Origin := Specified;
+
+         --  Target specified explicitly, no point for fallback check.
+         Fallback_Try_Again := False;
       end if;
 
       <<Parse_Again>>
@@ -1806,7 +1758,7 @@ package body GPR.Conf is
          return;
       end if;
 
-      if not Setup_Projects then
+      if not Fallback_Try_Again and then not Setup_Projects then
          --  Check if attribute Create_Missing_Dirs is specified with value
          --  "true".
 
@@ -1856,6 +1808,12 @@ package body GPR.Conf is
                   Opt.Target_Value :=
                     new String'(Get_Name_String (Variable.Value));
                   Target_Try_Again := False;
+
+                  --  Target explicitely spexified in the project file,
+                  --  undo fallback preparations.
+                  Fallback_Try_Again := False;
+                  Env.Flags := Store_Flags;
+                  Setup_Projects := Store_Setup_Projects;
                   goto Parse_Again;
 
                else
@@ -1885,13 +1843,46 @@ package body GPR.Conf is
          Automatically_Generated    => Auto_Generated,
          Config_File_Path           => Config_File_Path,
          Target_Name                => Target_Name,
-         Normalized_Hostname        => Normalized_Hostname,
+         Normalized_Hostname        => N_Hostname.all,
          On_Load_Config             => On_Load_Config,
          On_New_Tree_Loaded         => On_New_Tree_Loaded,
          Do_Phase_1                 => False);
 
       if Auto_Generated then
          Automatically_Generated := True;
+      end if;
+
+      if Main_Project /= No_Project then
+         if Auto_Generated and then Fallback_Try_Again then
+            declare
+               Variable : constant Variable_Value :=
+                 Value_Of
+                   (Name_Target,
+                    Main_Project.Decl.Attributes,
+                    Project_Tree.Shared);
+            begin
+               if Native_Target and then
+                 Opt.Target_Value.all /= Get_Name_String (Variable.Value)
+               then
+                  Free (N_Hostname);
+                  N_Hostname := new String'(Get_Name_String (Variable.Value));
+                  Free (Opt.Target_Value);
+                  Opt.Target_Value  := new String'(N_Hostname.all);
+               end if;
+            end;
+
+         end if;
+
+         if Fallback_Try_Again then
+            Success          := False;
+            Target_Try_Again := True;
+            Fallback_Try_Again := False;
+            Env.Flags := Store_Flags;
+            Setup_Projects := Store_Setup_Projects;
+            Warn_For_RTS := False;
+
+            goto Parse_Again;
+         end if;
       end if;
 
       --  Exit if there was an error. Otherwise, if Config_Try_Again is True,

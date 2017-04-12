@@ -2702,6 +2702,16 @@ package GPR is
       Value : Boolean);
    --  Set the value of component Ignore_Missing_With in Flags to Value
 
+   procedure Set_Require_Obj_Dirs
+     (Flags : in out Processing_Flags;
+      Value : Error_Warning);
+   --  Set the value of component Require_Object_Dirs in Flags to Value
+
+   procedure Set_Check_Configuration_Only
+     (Flags : in out Processing_Flags;
+      Value : Boolean);
+   --  Set the value of component Check_Configuration_Only in Flags to Value
+
    Gprbuild_Flags   : constant Processing_Flags;
    Gprinstall_Flags : constant Processing_Flags;
    Gprclean_Flags   : constant Processing_Flags;

@@ -49,7 +49,6 @@ with GPR.Err;
 with GPR.Opt;                    use GPR.Opt;
 with GPR.Script;                 use GPR.Script;
 with GPR.Snames;                 use GPR.Snames;
-with GPR.Tempdir;                use GPR.Tempdir;
 with GPR.Tree;                   use GPR.Tree;
 with GPR.Util.Aux;               use GPR.Util;
 with GPR.Version;                use GPR.Version;
@@ -755,10 +754,6 @@ procedure Gprbuild.Main is
             end if;
 
             Distributed_Mode := True;
-
-            --  In distributed mode we do not want to use temp directories
-
-            Use_Temp_Dir (Status => False);
 
             declare
                Hosts : constant String :=

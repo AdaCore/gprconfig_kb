@@ -2267,6 +2267,18 @@ package body GPR is
         (Root_Project, Root_Tree, Project_Context'(False, False));
    end For_Project_And_Aggregated_Context;
 
+   --------------------------
+   -- Set_Require_Obj_Dirs --
+   --------------------------
+
+   procedure Set_Require_Obj_Dirs
+     (Flags : in out Processing_Flags;
+      Value : Error_Warning)
+   is
+   begin
+      Flags.Require_Obj_Dirs := Value;
+   end Set_Require_Obj_Dirs;
+
    -----------------------------
    -- Set_Ignore_Missing_With --
    -----------------------------
@@ -2278,6 +2290,18 @@ package body GPR is
    begin
       Flags.Ignore_Missing_With := Value;
    end Set_Ignore_Missing_With;
+
+   ----------------------------------
+   -- Set_Check_Configuration_Only --
+   ----------------------------------
+
+   procedure Set_Check_Configuration_Only
+     (Flags : in out Processing_Flags;
+      Value : Boolean)
+   is
+   begin
+      Flags.Check_Configuration_Only := Value;
+   end Set_Check_Configuration_Only;
 
 begin
    Temp_Files_Table.Init (Temp_Files);
