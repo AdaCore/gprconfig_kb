@@ -1754,7 +1754,7 @@ procedure Gprbuild.Main is
             end;
          end loop;
 
-         Scan_Args : for Next_Arg in 1 .. Argument_Count loop
+         Scan_Args : for Next_Arg in 1 .. Last_Command_Line_Argument loop
             Scan_Arg
               (Command_Line_Argument (Next_Arg),
                Command_Line => True,
