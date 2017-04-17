@@ -1001,42 +1001,46 @@ package body Gprls is
 
          Write_Eol;
 
-         Output_Afile (Afile);
+         if Afile /= No_File then
+            Output_Afile (Afile);
+         end if;
 
-         Source_2 := Source_Files_Htable.Get
-           (Project_Tree.Source_Files_HT, Sfile);
+         if Sfile /= No_File then
+            Source_2 := Source_Files_Htable.Get
+              (Project_Tree.Source_Files_HT, Sfile);
 
-         if Source_2 /= No_Source then
-            Output_Sfile (Source_2);
+            if Source_2 /= No_Source then
+               Output_Sfile (Source_2);
 
-         else
-            if Runtime_Source_Dirs = No_Paths then
-               Get_All_Runtime_Source_Dirs
-                 (GPR.Util.Main_Project, Project_Tree, Runtime_Source_Dirs);
+            else
+               if Runtime_Source_Dirs = No_Paths then
+                  Get_All_Runtime_Source_Dirs
+                    (GPR.Util.Main_Project, Project_Tree, Runtime_Source_Dirs);
+               end if;
+
+               Path := Runtime_Source_Dirs.First;
+
+               declare
+                  Fname : constant String := Get_Name_String (Sfile);
+
+               begin
+                  while Path /= null loop
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Path.Path.all);
+                     Add_Char_To_Name_Buffer (Directory_Separator);
+                     Add_Str_To_Name_Buffer (Fname);
+
+                     if Is_Regular_File (Name_Buffer (1 .. Name_Len)) then
+                        Sfile := Name_Find;
+                        exit;
+                     end if;
+
+                     Path := Path.Next;
+                  end loop;
+               end;
+
+               Output_Sfile (Sfile);
             end if;
-
-            Path := Runtime_Source_Dirs.First;
-
-            declare
-               Fname : constant String := Get_Name_String (Sfile);
-
-            begin
-               while Path /= null loop
-                  Name_Len := 0;
-                  Add_Str_To_Name_Buffer (Path.Path.all);
-                  Add_Char_To_Name_Buffer (Directory_Separator);
-                  Add_Str_To_Name_Buffer (Fname);
-
-                  if Is_Regular_File (Name_Buffer (1 .. Name_Len)) then
-                     Sfile := Name_Find;
-                     exit;
-                  end if;
-
-                  Path := Path.Next;
-               end loop;
-            end;
-
-            Output_Sfile (Sfile);
          end if;
 
          N_Indents := N_Indents - 1;
