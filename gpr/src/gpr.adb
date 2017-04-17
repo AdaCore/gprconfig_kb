@@ -2303,6 +2303,18 @@ package body GPR is
       Flags.Check_Configuration_Only := Value;
    end Set_Check_Configuration_Only;
 
+   ------------------------------
+   -- Set_Missing_Source_Files --
+   ------------------------------
+
+   procedure Set_Missing_Source_Files
+     (Flags : in out Processing_Flags;
+      Value : Error_Warning)
+   is
+   begin
+      Flags.Missing_Source_Files := Value;
+   end Set_Missing_Source_Files;
+
 begin
    Temp_Files_Table.Init (Temp_Files);
 end GPR;

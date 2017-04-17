@@ -2712,6 +2712,11 @@ package GPR is
       Value : Boolean);
    --  Set the value of component Check_Configuration_Only in Flags to Value
 
+   procedure Set_Missing_Source_Files
+     (Flags : in out Processing_Flags;
+      Value : Error_Warning);
+   --  Set the value of component Missing_Source_Files in Flags to Value
+
    Gprbuild_Flags   : constant Processing_Flags;
    Gprinstall_Flags : constant Processing_Flags;
    Gprclean_Flags   : constant Processing_Flags;

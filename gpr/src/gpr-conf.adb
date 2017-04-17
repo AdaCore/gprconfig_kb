@@ -1668,6 +1668,7 @@ package body GPR.Conf is
          Store_Flags := Env.Flags;
          Set_Require_Obj_Dirs (Env.Flags, Silent);
          Set_Check_Configuration_Only (Env.Flags, True);
+         Set_Missing_Source_Files (Env.Flags, Silent);
          Store_Setup_Projects := Setup_Projects;
          Setup_Projects := False;
       else
