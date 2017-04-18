@@ -65,6 +65,11 @@ with Gpr_Build_Util;  use Gpr_Build_Util;
 package body GPR.Util is
    use Ada.Containers;
 
+   Gprls_Mode : Boolean := False;
+   --  When True, an ALI file may be found in an extending project, even if
+   --  the corresponding object file is not found in the same project.
+   --  This is only for gprls.
+
    Program_Name : String_Access := null;
 
    package Source_Info_Table is new GNAT.Table
@@ -1715,8 +1720,13 @@ package body GPR.Util is
                                Resolve_Links => Opt.Follow_Links_For_Files,
                                Directory     => Obj_Dir);
             begin
-               Source.Dep_Path := Create_Name (Dep_Path);
-               Source.Dep_TS   := Unknown_Attributes;
+               if (not Gprls_Mode)
+                 or else Obj_Proj.Extends = No_Project
+                 or else Is_Regular_File (Dep_Path)
+               then
+                  Source.Dep_Path := Create_Name (Dep_Path);
+                  Source.Dep_TS   := Unknown_Attributes;
+               end if;
             end;
          end if;
 
@@ -1831,6 +1841,58 @@ package body GPR.Util is
 
             Obj_Proj := Obj_Proj.Extended_By;
          end loop;
+
+         if Source.Language.Config.Dependency_Kind /= None
+            and then Source.Dep_Path = No_Path
+         then
+            --  If we we have not found a dependency file in the object
+            --  project, it means that the Source.Project is extended and that
+            --  we are in gprls node. We need to look for an actual dependency
+            --  file in the extended projects. If none is found, the dependency
+            --  file is set in the ultimate extending project.
+
+            Obj_Proj := Source.Project;
+
+            while Obj_Proj /= No_Project loop
+               if Obj_Proj.Object_Directory /= No_Path_Information then
+                  declare
+                     Dir : constant String :=
+                       Get_Name_String
+                         (Obj_Proj.Object_Directory.Display_Name);
+
+                     Dep_Path_Name : constant String :=
+                       Normalize_Pathname
+                         (Name          => Get_Name_String (Source.Dep_Name),
+                          Resolve_Links => Opt.Follow_Links_For_Files,
+                          Directory     => Dir);
+
+                     Dep_Path : constant Path_Name_Type :=
+                       Create_Name (Dep_Path_Name);
+
+                     Stamp : Time_Stamp_Type := Empty_Time_Stamp;
+
+                  begin
+                     if Source.Kind /= Spec
+                       or else Source.Unit = No_Unit_Index
+                       or else Source.Unit.File_Names (Impl) = No_Source
+                     then
+                        Stamp := File_Stamp (Dep_Path);
+                     end if;
+
+                     if Stamp /= Empty_Time_Stamp
+                       or else
+                         (Source.Dep_Path = No_Path
+                          and then Obj_Proj.Extended_By = No_Project)
+                     then
+                        Source.Dep_Path := Dep_Path;
+                        Source.Dep_TS   := Unknown_Attributes;
+                     end if;
+                  end;
+               end if;
+
+               Obj_Proj := Obj_Proj.Extended_By;
+            end loop;
+         end if;
 
       elsif Source.Language.Config.Dependency_Kind = Makefile then
          declare
@@ -5322,6 +5384,15 @@ package body GPR.Util is
 
       Free (Gpr_Verbosity);
    end Set_Default_Verbosity;
+
+   --------------------
+   -- Set_Gprls_Mode --
+   --------------------
+
+   procedure Set_Gprls_Mode is
+   begin
+      Gprls_Mode := True;
+   end Set_Gprls_Mode;
 
    ---------------
    -- Knowledge --

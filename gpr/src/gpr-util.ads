@@ -49,6 +49,9 @@ package GPR.Util is
    procedure Write_Program_Name;
    --  Display the name of the executable in error mesages
 
+   procedure Set_Gprls_Mode;
+   --  Set Gprls_Mode to True
+
    --------------
    -- Closures --
    --------------

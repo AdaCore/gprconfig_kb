@@ -1040,6 +1040,8 @@ begin
       end if;
    end if;
 
+   Set_Gprls_Mode;
+
    declare
       Iter : Source_Iterator := For_Each_Source (Project_Tree);
       Source : GPR.Source_Id;

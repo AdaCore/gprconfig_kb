@@ -911,10 +911,16 @@ package body Gprls is
             Output_Token (T_Spec);
             Write_Eol;
             Output_Sfile (Unit.File_Names (Spec));
-         else
+
+         elsif Unit.File_Names (Impl) /= No_Source then
             Output_Token (T_Body);
             Write_Eol;
             Output_Sfile (Unit.File_Names (Impl));
+
+         elsif Unit.File_Names (Spec) /= No_Source then
+            Output_Token (T_Body);
+            Write_Eol;
+            Output_Sfile (Unit.File_Names (Spec));
          end if;
 
          --  Output Flags
