@@ -1690,6 +1690,8 @@ package body GPR.Util is
       Always : Boolean := False)
    is
 
+      Main_Source_File : File_Name_Type := Source.File;
+
       procedure Set_Object_Project
         (Obj_Dir  : String;
          Obj_Proj : Project_Id;
@@ -1775,13 +1777,25 @@ package body GPR.Util is
       if Source.Language.Config.Object_Generated
         and then Is_Compilable (Source)
       then
-         --  First, get the correct object file name and dependency file name
-         --  if the source is in a multi-unit file.
+         --  First, get the correct object file name and dependency file
+
+         if Source.Unit /= No_Unit_Index
+           and then Source.Kind = Spec
+           and then Other_Part (Source) /= No_Source
+         then
+            Main_Source_File := Other_Part (Source).File;
+            Source.Object :=
+              Object_Name
+                (Main_Source_File, Source.Language.Config.Object_File_Suffix);
+            Source.Dep_Name :=
+              Dependency_Name
+                (Source.Object, Source.Language.Config.Dependency_Kind);
+         end if;
 
          if Source.Index /= 0 then
             Source.Object :=
               Object_Name
-                (Source_File_Name   => Source.File,
+                (Source_File_Name   => Main_Source_File,
                  Source_Index       => Source.Index,
                  Index_Separator    =>
                    Source.Language.Config.Multi_Unit_Object_Separator,

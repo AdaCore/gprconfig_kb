@@ -1016,7 +1016,7 @@ package body Gprls is
               (Project_Tree.Source_Files_HT, Sfile);
 
             if Source_2 /= No_Source then
-               Output_Sfile (Source_2);
+               Output_Sfile (Sfile);
 
             else
                if Runtime_Source_Dirs = No_Paths then
