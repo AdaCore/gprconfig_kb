@@ -2922,6 +2922,8 @@ are valid:
          end Builder;
      end Agg;
 
+  .. code-block:: gpr
+
      with "c.gpr";
      project A is
          package Builder is
@@ -2937,12 +2939,16 @@ are valid:
          end Compiler;
      end A;
 
+  .. code-block:: gpr
+
      with "c.gpr";
      project B is
          package Compiler is
             for Default_Switches ("Ada") use ("-O0");
          end Compiler;
      end B;
+
+  .. code-block:: gpr
 
      project C is
          package Compiler is
