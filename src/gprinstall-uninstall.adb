@@ -63,9 +63,9 @@ package body Gprinstall.Uninstall is
       -----------------
 
       procedure Delete_File (Position : File_Set.Cursor) is
-         Name : constant String := File_Set.Element (Position);
+         Pathname : constant String := File_Set.Element (Position);
       begin
-         Do_Delete (Global_Prefix_Dir.V.all & Name);
+         Do_Delete (Pathname);
       end Delete_File;
 
       ---------------
@@ -145,12 +145,19 @@ package body Gprinstall.Uninstall is
            and then Buffer (1 .. 2) /= Sig_Line
          then
             declare
-               F_Name : constant String := Buffer (Name_Range'First .. Last);
+               F_Name   : constant String := Buffer (Name_Range'First .. Last);
+               Pathname : constant String :=
+                            (if Exists (Global_Prefix_Dir.V.all & F_Name)
+                             then Global_Prefix_Dir.V.all & F_Name
+                             else Dir & DS & F_Name);
+               --  For upward compatibility we do check first for file
+               --  existence in the previous location.
+
             begin
                Expected_Digest := Buffer (MD5_Range);
 
-               if Exists (Global_Prefix_Dir.V.all & F_Name) then
-                  File_Digest := File_MD5 (Global_Prefix_Dir.V.all & F_Name);
+               if Exists (Pathname) then
+                  File_Digest := File_MD5 (Pathname);
                   Removed := False;
                else
                   Removed := True;
@@ -164,10 +171,10 @@ package body Gprinstall.Uninstall is
                  or else Force_Installations
                  or else Removed
                then
-                  Files.Include (F_Name);
+                  Files.Include (Pathname);
 
                else
-                  Changed.Include (F_Name);
+                  Changed.Include (Pathname);
                end if;
             end;
          end if;

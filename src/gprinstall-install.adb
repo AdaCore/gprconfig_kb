@@ -236,7 +236,9 @@ package body Gprinstall.Install is
       procedure Create_Project (Project : Project_Id);
       --  Create install project for the given project
 
-      procedure Add_To_Manifest (Pathname : String);
+      procedure Add_To_Manifest
+        (Pathname       : String;
+         Aggregate_Only : Boolean := False);
       --  Add filename to manifest
 
       function Get_Library_Filename return File_Name_Type;
@@ -297,28 +299,37 @@ package body Gprinstall.Install is
       -- Add_To_Manifest --
       ---------------------
 
-      procedure Add_To_Manifest (Pathname : String) is
-         Prefix_Len : constant Natural := Prefix_Dir.V'Length;
+      procedure Add_To_Manifest
+        (Pathname       : String;
+         Aggregate_Only : Boolean := False) is
       begin
-         if not Is_Open (Man) then
+         if not Aggregate_Only and then not Is_Open (Man) then
             Open_Check_Manifest (Man, Line_Manifest);
          end if;
 
          --  Append entry into manifest
 
          declare
-            Line : constant String :=
-                     File_MD5 (Pathname) & " "
-                     --  Remove the prefix, we want to store the pathname
-                     --  relative to the prefix of installation.
-                     & Pathname (Pathname'First + Prefix_Len .. Pathname'Last);
+            MD5  : constant String := File_MD5 (Pathname);
+            Path : constant String := Containing_Directory (Pathname);
+            File : constant String := Simple_Name (Pathname);
          begin
-            if Is_Open (Man) then
-               Put_Line (Man, Line);
+            if not Aggregate_Only and then Is_Open (Man) then
+               Put_Line
+                 (Man,
+                  MD5 & ' '
+                  & Util.Relative_Path
+                    (Path, Containing_Directory (Name (Man)))
+                  & File);
             end if;
 
             if Is_Open (Agg_Manifest) then
-               Put_Line (Agg_Manifest, Line);
+               Put_Line
+                 (Agg_Manifest,
+                  MD5 & ' '
+                  & Util.Relative_Path
+                    (Path, Containing_Directory (Name (Agg_Manifest)))
+                  & File);
             end if;
          end;
       end Add_To_Manifest;
@@ -2893,7 +2904,8 @@ package body Gprinstall.Install is
            (File : in out Text_IO.File_Type; Line : Text_IO.Count)
          is
             use type Ada.Containers.Count_Type;
-
+            Dir    : constant String :=
+                       Containing_Directory (Name (File)) & DS;
             Buffer : String (1 .. 4_096);
             Last   : Natural;
          begin
@@ -2914,7 +2926,7 @@ package body Gprinstall.Install is
                   --  Delete file
                   declare
                      Filename : constant String :=
-                                  Prefix_Dir.V.all
+                                  Dir
                                   & Buffer
                                       (GNAT.MD5.Message_Digest'Length + 2
                                         .. Last);
@@ -3085,20 +3097,12 @@ package body Gprinstall.Install is
          if Is_Open (Man) then
             if Is_Open (Agg_Manifest) then
                declare
-                  Prefix_Len : constant Natural := Prefix_Dir.V'Length;
-                  Filename   : constant String :=
-                                 Project_Dir & "manifests"
-                                   & DS & Simple_Name (Name (Man));
+                  Filename : constant String :=
+                               Project_Dir & "manifests"
+                               & DS & Simple_Name (Name (Man));
                begin
                   Close (Man);
-
-                  Put_Line
-                    (Agg_Manifest,
-                     File_MD5 (Filename) & " "
-                     --  Remove the prefix, we want to store the pathname
-                     --  relative to the prefix of installation.
-                     & Filename
-                         (Filename'First + Prefix_Len .. Filename'Last));
+                  Add_To_Manifest (Filename, Aggregate_Only => True);
                end;
 
             else

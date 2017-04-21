@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2014-2015, AdaCore                     --
+--                     Copyright (C) 2014-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -53,6 +53,7 @@ package body Gprinstall.DB is
 
       function Get_Stat (Manifest : String) return Stats is
 
+         Dir    : constant String := Containing_Directory (Manifest) & DS;
          File   : File_Type;
          Line   : String (1 .. 2048);
          Last   : Natural;
@@ -71,8 +72,7 @@ package body Gprinstall.DB is
             if Line (1 .. 2) /= Sig_Line then
                declare
                   Filename : constant String :=
-                               Global_Prefix_Dir.V.all
-                               & Line (Name_Range'First .. Last);
+                               Dir & Line (Name_Range'First .. Last);
                begin
                   if Exists (Filename) then
                      Result.N_Files := Result.N_Files + 1;
