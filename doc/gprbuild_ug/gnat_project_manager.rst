@@ -144,7 +144,7 @@ detailed later in this documentation. They are summarized here as a reference.
   values and avoid duplication in complex expressions. Variables can be initialized
   with external values coming from the environment.
   A frequent use of variables is to define `scenarios`.
-  See :ref:`External_Values`, :ref:`Scenarios_in_Projects`, and :ref:`Variables`.
+  See :ref:`External Values <External_Values>`, :ref:`Scenarios_in_Projects`, and :ref:`Variables`.
 
 **Source files** and **source directories**:
   A source file is associated with a language through a naming convention. For
@@ -3664,12 +3664,14 @@ Here are some specific examples:
 .. _Builtin_Functions:
 
 Built-in Functions
------------------
+------------------
 
 Built-in functions may be used in expression. The names of built-in functions
 are not reserved words and may also be used as variable names.
 In an expression, a built-in function is recognized if its name is immediately
 followed by an open parenthesis ('(').
+
+.. _External_Values:
 
 .. index:: external function
 
