@@ -29,7 +29,7 @@ texi_fsf = True  # Set to False when FSF doc is switched to sphinx by default
 
 numfig = True    # Allow automatic numbering of figures
 
-with open(gpr_version_spec, 'rb') as fd:
+with open(gpr_version_spec, 'r') as fd:
     gpr_version_content = fd.read()
 
 
