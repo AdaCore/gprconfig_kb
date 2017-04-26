@@ -310,6 +310,9 @@ package body Gprinstall.Install is
          --  Append entry into manifest
 
          declare
+            function N (Str : String) return String
+              is (Normalize_Pathname (Str, Case_Sensitive => False));
+
             MD5  : constant String := File_MD5 (Pathname);
             Path : constant String := Containing_Directory (Pathname);
             File : constant String := Simple_Name (Pathname);
@@ -319,7 +322,7 @@ package body Gprinstall.Install is
                  (Man,
                   MD5 & ' '
                   & Util.Relative_Path
-                    (Path, Containing_Directory (Name (Man)))
+                    (N (Path), Containing_Directory (N (Name (Man))))
                   & File);
             end if;
 
@@ -328,7 +331,7 @@ package body Gprinstall.Install is
                  (Agg_Manifest,
                   MD5 & ' '
                   & Util.Relative_Path
-                    (Path, Containing_Directory (Name (Agg_Manifest)))
+                    (N (Path), Containing_Directory (N (Name (Agg_Manifest))))
                   & File);
             end if;
          end;
