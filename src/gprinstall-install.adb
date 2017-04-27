@@ -2317,7 +2317,7 @@ package body Gprinstall.Install is
             procedure Naming_For (Pck : Package_Id) is
                A    : Array_Id := Pcks (Pck).Decl.Arrays;
                N, I : Name_Id;
-               E   : Array_Element_Id;
+               E    : Array_Element_Id;
             begin
                --  Arrays
 
