@@ -2304,11 +2304,30 @@ package body Gprinstall.Install is
             procedure Naming_For (Pck : Package_Id);
             --  Handle the naming scheme for this package
 
+            function Is_Language_Active (Lang : String) return Boolean;
+            --  Returns True if Lang is active in the installed project
+
             Seen : Seen_Set.Set;
             --  Records the attribute generated to avoid duplicate when
             --  handling aggregated projects.
 
             V    : String_Vector.Vector;
+            --  Contains the final result returned
+
+            Languages : constant String :=
+                          Characters.Handling.To_Lower (Get_Languages);
+            --  Languages for the generated projects
+
+            ------------------------
+            -- Is_Language_Active --
+            ------------------------
+
+            function Is_Language_Active (Lang : String) return Boolean is
+            begin
+               return Strings.Fixed.Index
+                 (Languages,
+                  Characters.Handling.To_Lower (Lang)) /= 0;
+            end Is_Language_Active;
 
             ----------------
             -- Naming_For --
@@ -2331,9 +2350,16 @@ package body Gprinstall.Install is
                      --  is a special case when a renaming is given for a
                      --  body. See Excluded_Name comments.
 
-                     if N /= Name_Body
-                       or else
-                         not Excluded_Naming.Contains (Get_Name_String (I))
+                     if (N /= Name_Body
+                         or else
+                           not Excluded_Naming.Contains (Get_Name_String (I)))
+                       and then
+                         (N not in Name_Spec_Suffix
+                                 | Name_Body_Suffix
+                                 | Name_Separate_Suffix
+                          or else Is_Language_Active
+                            (Get_Name_String
+                               (Tree.Shared.Array_Elements.Table (E).Index)))
                      then
                         declare
                            Decl : constant String := Image (N, E);
