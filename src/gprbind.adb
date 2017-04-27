@@ -531,7 +531,9 @@ begin
                   if not Is_Absolute_Path (File) then
                      declare
                         New_File : constant String :=
-                          Normalize_Pathname (File, Project_Dir);
+                          Normalize_Pathname
+                            (File, Project_Dir,
+                             Resolve_Links => False);
                      begin
                         Binding_Options_Table.Table (J) :=
                           new String'("-A=" & New_File);

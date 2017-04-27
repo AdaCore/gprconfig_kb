@@ -1107,7 +1107,8 @@ procedure Gprbuild.Main is
                  new String'
                    (Normalize_Pathname
                       (Arg (Relocate_Build_Tree_Option'Length + 2 .. Arg'Last),
-                       Current_Working_Dir) & Directory_Separator);
+                       Current_Working_Dir & Directory_Separator,
+                       Resolve_Links => Opt.Follow_Links_For_Dirs));
             end if;
 
             --  Out-of-tree compilation also imply -p (create missing dirs)
@@ -1123,8 +1124,9 @@ procedure Gprbuild.Main is
               new String'
                 (Normalize_Pathname
                    (Arg (Root_Dir_Option'Length + 2 .. Arg'Last),
-                    Current_Working_Dir)
-                & Dir_Separator);
+                    Current_Working_Dir,
+                    Resolve_Links => Opt.Follow_Links_For_Dirs) &
+                   Dir_Separator);
 
          elsif Command_Line and then Arg = "--no-sal-binding" then
             No_SAL_Binding := True;
@@ -1885,8 +1887,10 @@ procedure Gprbuild.Main is
       if Build_Tree_Dir /= null and then Root_Dir = null then
          Root_Dir := new String'
            (Ada.Directories.Containing_Directory
-              (Normalize_Pathname (Project_File_Name.all))
-            & Dir_Separator);
+              (Normalize_Pathname
+                   (Project_File_Name.all,
+                    Resolve_Links => Opt.Follow_Links_For_Files)) &
+            Dir_Separator);
       end if;
    end Initialize;
 

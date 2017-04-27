@@ -2009,7 +2009,10 @@ package body Gprbuild.Post_Compile is
                   if Last /= 0 then
                      declare
                         Dir : constant String :=
-                          Dir_Name (Normalize_Pathname (Line (1 .. Last)));
+                          Dir_Name
+                            (Normalize_Pathname
+                               (Line (1 .. Last),
+                                Resolve_Links => Opt.Follow_Links_For_Files));
 
                      begin
 
@@ -2859,15 +2862,17 @@ package body Gprbuild.Post_Compile is
                   if not Path_Found then
                      declare
                         Norm_Path : constant String :=
-                                      Normalize_Pathname
-                                        (Get_Name_String (Object_Path));
+                          Normalize_Pathname
+                            (Get_Name_String (Object_Path),
+                             Resolve_Links => Opt.Follow_Links_For_Dirs);
 
                      begin
                         for Index in 1 .. Library_Objs.Last loop
                            if Norm_Path =
                              Normalize_Pathname
                                (Get_Name_String
-                                    (Library_Objs.Table (Index).Path))
+                                  (Library_Objs.Table (Index).Path),
+                                Resolve_Links => Opt.Follow_Links_For_Dirs)
                            then
                               Library_Needs_To_Be_Built :=
                                 Object_TS /= Library_Objs.Table (Index).TS;

@@ -119,6 +119,14 @@ package body GPR.Part is
    --  need to have a virtual extending project, to avoid processing the same
    --  project twice.
 
+   package Resolved_Paths is new GNAT.HTable.Simple_HTable
+     (Header_Num => Header_Num,
+      Element    => Path_Name_Type,
+      No_Element => No_Path,
+      Key        => Path_Name_Type,
+      Hash       => GPR.Hash,
+      Equal      => "=");
+
    function Has_Circular_Dependencies
      (Flags               : Processing_Flags;
       Normed_Path_Name    : Path_Name_Type;
@@ -1323,13 +1331,18 @@ package body GPR.Part is
             Resolved_Path_Name := Canonical_Path_Name;
 
          else
-            Name_Len := 0;
-            Add_Str_To_Name_Buffer
-              (Normalize_Pathname
-                 (Canonical_Path,
-                  Resolve_Links => True,
-                  Case_Sensitive => False));
-            Resolved_Path_Name := Name_Find;
+            Resolved_Path_Name := Resolved_Paths.Get (Canonical_Path_Name);
+
+            if Resolved_Path_Name = No_Path then
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer
+                 (Normalize_Pathname
+                    (Canonical_Path,
+                     Resolve_Links => True,
+                     Case_Sensitive => False));
+               Resolved_Path_Name := Name_Find;
+               Resolved_Paths.Set (Canonical_Path_Name, Resolved_Path_Name);
+            end if;
          end if;
 
       end;

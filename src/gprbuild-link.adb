@@ -1329,6 +1329,7 @@ package body Gprbuild.Link is
       Exec : String :=
                Normalize_Pathname
                  (Get_Name_String (Exec_Dir),
+                  Resolve_Links  => Opt.Follow_Links_For_Dirs,
                   Case_Sensitive => False);
 
       Last_Exec : Positive;
@@ -1355,10 +1356,13 @@ package body Gprbuild.Link is
             Insensitive_Path : String :=
               Normalize_Pathname
                 (Rpaths.Table (Npath).all,
+                 Resolve_Links  => Opt.Follow_Links_For_Dirs,
                  Case_Sensitive => False);
 
             Path : constant String :=
-                     Normalize_Pathname (Rpaths.Table (Npath).all);
+              Normalize_Pathname
+                (Rpaths.Table (Npath).all,
+                 Resolve_Links => Opt.Follow_Links_For_Dirs);
 
          begin
             --  Replace all directory separators with '/' to ease search
@@ -1942,12 +1946,14 @@ package body Gprbuild.Link is
 
                               when Bound_Object_Files =>
                                  if Normalize_Pathname
-                                   (Line (1 .. Last),
-                                    Case_Sensitive => False) /=
+                                  (Line (1 .. Last),
+                                   Resolve_Links => Opt.Follow_Links_For_Files,
+                                   Case_Sensitive => False) /=
                                    Normalize_Pathname
-                                     (Get_Name_String
-                                          (Main_Source.Object_Path),
-                                      Case_Sensitive => False)
+                                  (Get_Name_String
+                                     (Main_Source.Object_Path),
+                                   Resolve_Links => Opt.Follow_Links_For_Files,
+                                   Case_Sensitive => False)
                                    and then
                                      not Is_In_Library_Project
                                        (Line (1 .. Last))

@@ -509,7 +509,8 @@ procedure Gprclean.Main is
                    (Normalize_Pathname
                       (Switch
                          (Root_Dir_Option'Length + 2 .. Switch'Last),
-                       Get_Current_Dir)
+                       Get_Current_Dir,
+                       Resolve_Links => False)
                     & Dir_Separator);
 
             elsif
@@ -814,7 +815,9 @@ begin
    if Build_Tree_Dir /= null and then Root_Dir = null then
       Root_Dir := new String'
         (Ada.Directories.Containing_Directory
-           (Normalize_Pathname (Project_File_Name.all))
+           (Normalize_Pathname
+              (Project_File_Name.all,
+               Resolve_Links => Opt.Follow_Links_For_Files))
          & Dir_Separator);
    end if;
 
