@@ -1102,45 +1102,44 @@ package body Gprbuild.Compile is
 
    procedure Print_Compilation_Outputs
      (For_Source : Source_Id;
-      Always     : Boolean := False) is
+      Always     : Boolean := False)
+   is
+      procedure Display_Content (Stream : File_Type; File_Path : String);
+      --  Display content of the given Filename
+
+      ---------------------
+      -- Display_Content --
+      ---------------------
+
+      procedure Display_Content (Stream : File_Type; File_Path : String) is
+         File : Ada.Text_IO.File_Type;
+         Line : String (1 .. 1_024);
+         Last : Natural;
+      begin
+         if OS_Lib.Is_Regular_File (File_Path) then
+            Open (File, In_File, File_Path);
+
+            while not End_Of_File (File) loop
+               Get_Line (File, Line, Last);
+               Put_Line (Stream, Line (1 .. Last));
+            end loop;
+
+            Close (File);
+         end if;
+      end Display_Content;
+
    begin
       if Complete_Output or else Always then
          declare
-            Proj : constant Project_Id :=
-              Ultimate_Extending_Project_Of (For_Source.Project);
+            Proj      : constant Project_Id :=
+                          Ultimate_Extending_Project_Of (For_Source.Project);
             File_Path : constant String :=
-              Get_Name_String (Proj.Object_Directory.Name) &
-              Directory_Separator &
-              Get_Name_String (For_Source.File);
-
-            File : Ada.Text_IO.File_Type;
-            Line : String (1 .. 1_000);
-            Last : Natural;
+                          Get_Name_String (Proj.Object_Directory.Name)
+                          & Directory_Separator
+                          & Get_Name_String (For_Source.File);
          begin
-            begin
-               Open (File, In_File, File_Path & ".stdout");
-
-               while not End_Of_File (File) loop
-                  Get_Line (File, Line, Last);
-                  Put_Line (Standard_Output, Line (1 .. Last));
-               end loop;
-
-               Close (File);
-
-               Open (File, In_File, File_Path & ".stderr");
-
-               while not End_Of_File (File) loop
-                  Get_Line (File, Line, Last);
-                  Put_Line (Standard_Error, Line (1 .. Last));
-               end loop;
-
-               Close (File);
-            exception
-                  --  Ignore any exception. Most likely it means that the
-                  --  files do no exist.
-
-               when others => null;
-            end;
+            Display_Content (Standard_Output, File_Path & ".stdout");
+            Display_Content (Standard_Error, File_Path & ".stderr");
          end;
       end if;
    end Print_Compilation_Outputs;
