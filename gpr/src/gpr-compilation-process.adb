@@ -326,6 +326,14 @@ package body GPR.Compilation.Process is
          end Run_Local;
 
       else
+         --  Even if the compilation is done remotely make sure that any
+         --  .stderr/.stdout from a previous local compilation are removed.
+
+         if Source /= "" then
+            Delete_File (Source & ".stdout", Success);
+            Delete_File (Source & ".stderr", Success);
+         end if;
+
          return Slave.Run
            (Project, Language, Options, Obj_Name, Dep_Name, Env);
       end if;
