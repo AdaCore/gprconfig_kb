@@ -39,8 +39,10 @@ SOURCE_DIR    := $(shell dirname "$(MAKEFILE_LIST)")
 # target options for cross-build
 ifeq ($(HOST),$(TARGET))
 GTARGET=
+INSTALLER=exe/$(LIB_INSTALLER)
 else
 GTARGET=--target=$(TARGET)
+INSTALLER=$(LIB_INSTALLER)
 endif
 
 # check for out-of-tree build
@@ -70,7 +72,6 @@ GPRBUILD_OPTIONS=
 
 BUILDER=gprbuild -p -m $(GTARGET) $(RBD) -j${PROCESSORS} -XBUILD=${BUILD} ${GPRBUILD_OPTIONS}
 LIB_INSTALLER=gprinstall -p -f --target=$(TARGET) $(RBD) --prefix=${prefix}
-INSTALLER=exe/$(LIB_INSTALLER)
 CLEANER=gprclean -q $(RBD)
 
 GPRBUILD_BUILDER=$(BUILDER) $(GPRBUILD_GPR) \
