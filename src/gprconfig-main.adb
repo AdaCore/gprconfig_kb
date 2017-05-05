@@ -409,6 +409,11 @@ begin
       end case;
    end loop;
 
+   if Selected_Target = Null_Unbounded_String then
+      --  Fallback targets do not make sense in context of --target=all.
+      Native_Target := False;
+   end if;
+
    Saved_Verbosity := Current_Verbosity;
    Current_Verbosity := Default;
 
