@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
+<!ENTITY % vx653.ent SYSTEM "vx653.ent"> %vx653.ent;
+]>
+<gprconfig>
+
+  <!-- WRS gcc -v or -dumpmachine have different results depending on
+       the version: on 2.3.0.1 and before, it would return
+       powerpc-wrs-vxworksae; on 2.4 and later it would return
+       powerpc-wrs-vxworks. That (plus the fact the e500v2 and ppc
+       compilers use the same executables: ccppc and c++ppc) makes
+       us specify one compiler description per CPU. In each of these
+       descriptions, the target is hard-coded instead of being deduced
+       from cc${PREFIX} -v.  -->
+
+  <compiler_description>
+    <name>GCC-WRS653-PPC</name>
+    <executable prefix="1">cc(ppc)</executable>
+
+    &version_from_wind_base_vx653;
+    &languages_c;
+    &runtimes_vx653;
+    <target>powerpc-wrs-vxworksae</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS653-PPC</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+
+    &version_from_wind_base_vx653;
+    &languages_cpp;
+    &runtimes_vx653;
+    <target>powerpc-wrs-vxworksae</target>
+  </compiler_description>
+
+</gprconfig>

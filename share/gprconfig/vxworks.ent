@@ -1,3 +1,19 @@
+   <!ENTITY version_from_wrs_gnu_cc_vx5
+    '<version>
+      <external>cc${PREFIX} -v</external>
+      <grep regexp=".*(tornado 2|VxWorks 5).*" group="1"></grep>
+      <must_match>(tornado 2|VxWorks 5)</must_match>
+     </version>'
+   >
+
+   <!ENTITY version_from_wrs_gnu_cpp_vx5
+    '<version>
+      <external>c++${PREFIX} -v</external>
+      <grep regexp=".*(tornado 2|VxWorks 5).*" group="1"></grep>
+      <must_match>(tornado 2|VxWorks 5)</must_match>
+     </version>'
+   >
+
    <!ENTITY target_from_wrs_gnu_cc
     '<target>
       <external>cc${PREFIX} -dumpmachine</external>
@@ -10,6 +26,13 @@
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>'
+   >
+
+   <!ENTITY config_wind_base
+    '<config>
+   Wind_Base := external ("WIND_BASE");
+   Wind_Usr := external ("WIND_USR", Wind_Base &amp; "/target/usr/");
+     </config>'
    >
 
    <!ENTITY config_mrtp
@@ -170,7 +193,7 @@
    -->
 
   <configuration>
-    &if_rtp;
+    &if_rtp_full;
     &if_this_target;
     <!-- vx6, vx7 and vx6cert -->
 

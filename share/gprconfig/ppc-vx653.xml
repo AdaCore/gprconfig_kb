@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
+<!ENTITY % vx653.ent SYSTEM "vx653.ent"> %vx653.ent;
+
+<!-- Local target-specific conditions -->
+
+<!ENTITY this_target 'powerpc-wrs-vxworksae'>
+<!ENTITY this_gnu_wrs_suffix 'ppc'>
+
+<!ENTITY if_these_c_compilers
+    '<compilers>
+       <compiler name="GCC_pro" />
+       <!--  ??? Eventually GCC_Pro will be replaced by a e500v2-vx6-specific
+       definition:
+       <compiler name="PPC-VX653-GCC-ADACORE" />
+       -->
+       <compiler name="GCC-WRS653-PPC" />
+     </compilers>'>
+
+<!ENTITY if_these_cpp_compilers
+    '<compilers>
+       <compiler name="G++-WRS653-PPC" />
+     </compilers>'>
+
+<!ENTITY if_these_wrs_compilers
+    '<compilers>
+       <compiler name="G++-WRS653-PPC" />
+       <compiler name="GCC-WRS653-PPC" />
+     </compilers>'>
+
+<!ENTITY if_these_gnu_wrs_compilers
+    '<compilers>
+       <compiler name="G++-WRS653-PPC" />
+       <compiler name="GCC-WRS653-PPC" />
+     </compilers>'>
+]>
+<gprconfig>
+
+  &environment;
+
+  &configurations_vx653;
+
+</gprconfig>
