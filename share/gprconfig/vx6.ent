@@ -87,11 +87,38 @@
      </config>'
   >
 
+  <!ENTITY config_wind_base
+    '<config>
+   Wind_Base := external ("WIND_BASE");
+   Wind_Usr := external ("WIND_USR", Wind_Base &amp; "/target/usr/");
+     </config>'
+  >
+
   <!ENTITY configurations_vx6
   '
+  <!--  Note: vx6 and vx6cert share the same target name, so
+   	in configurations chunks are added into vx6-specific
+        files if_this_target will match both vx6 and vx6cert.
+        A way to discriminate the two kind of platforms is to
+        use runtime names and compiler names.
+
+        For now, however, we still have one global target-independant
+        compiler for GNAT. So most of the following chuncks apply on
+        both vx6 and vx6cert. In order to ease the maintenance,
+        have a comment to make it explicit when they apply to both.
+   -->
+
+   <configuration>
+     &if_this_target;
+     <!-- vx6 and vx6cert -->
+
+     &config_wind_base;
+   </configuration>
+
    <configuration>
     &if_gnat_pre_6.4;
     &if_this_target;
+    <!-- vx6 and vx6cert -->
 
     &config_wrs_ar;
    </configuration>
@@ -99,6 +126,7 @@
    <configuration>
     &if_gnat_post_6.4;
     &if_this_target;
+    <!-- vx6 and vx6cert -->
 
     &config_gnat_ar;
    </configuration>
@@ -106,20 +134,23 @@
    <configuration>
     &if_no_ada;
     &if_this_target;
+    <!-- vx6 and vx6cert -->
 
     &config_gnat_ar;
    </configuration>
 
    <configuration>
-     &if_rtp;
+     &if_rtp_full;
      &if_this_target;
+     <!-- vx6 -->
 
      &config_rtp_cflags;
    </configuration>
 
    <configuration>
-     &if_kernel;
+     &if_kernel_full;
      &if_this_target;
+     <!-- vx6 -->
 
      &config_kernel_cflags;
    </configuration>'

@@ -68,25 +68,51 @@
        <target name="^.*-wrs-vxworks7$" />
      </targets>'>
 
+  <!ENTITY rtp_runtimes
+     '<compiler runtime="^rtp$" />
+      <compiler runtime="-rtp$" />
+      <compiler runtime="^rtp-" />
+      <compiler runtime="-rtp-" />'
+  >
+
   <!ENTITY if_rtp
     '<compilers>
-      <compiler runtime="^rtp$" />
-      <compiler runtime="^rtp-smp$" />
+      &rtp_runtimes;
      </compilers>'
   >
 
-  <!ENTITY if_kernel
+  <!ENTITY if_not_rtp
+    '<compilers negate="true">
+      &rtp_runtimes;
+     </compilers>'
+  >
+
+  <!-- Our naming scheme is such that the name of full rtp runtimes
+       start with a "rtp" token -->
+
+  <!ENTITY if_rtp_full
+    '<compilers>
+       <compiler runtime="^rtp$" />
+       <compiler runtime="^rtp-" />
+     </compilers>'
+  >
+
+  <!-- Our naming scheme is such that the name of full dkm runtimes
+       start with a "kernel" token -->
+
+  <!ENTITY if_kernel_full
     '<compilers>
        <compiler runtime="^kernel$" />
-       <compiler runtime="^kernel-sjlj$" />
-       <compiler runtime="^kernel-smp$" />
+       <compiler runtime="^kernel-" />
      </compilers>'
   >
 
   <!ENTITY if_ada_rtp
     '<compilers>
       <compiler name="GNAT" runtime="^rtp$" />
-      <compiler name="GNAT" runtime="^rtp-smp$" />
+      <compiler name="GNAT" runtime="-rtp$" />
+      <compiler name="GNAT" runtime="^rtp-" />
+      <compiler name="GNAT" runtime="-rtp-" />
      </compilers>'
   >
 
@@ -113,18 +139,64 @@
      </config>'
   >
 
+  <!ENTITY config_out_suffix
+    '<config>
+   package Builder is
+      for Executable_Suffix use ".out";
+   end Builder;
+     </config>'
+  >
+
+  <!ENTITY config_vxe_suffix
+    '<config>
+   package Builder is
+      for Executable_Suffix use ".vxe";
+   end Builder;
+     </config>'
+  >
+
   <!ENTITY configurations_vxworks_gpp
   '
+  <!--  Note: vx6 and vx6cert share the same target name, so
+   	in configurations chunks are added into vx6-specific
+        files if_this_target will match both vx6 and vx6cert.
+        A way to discriminate the two kind of platforms is to
+	use runtime names and compiler names.
+
+        For now, however, we still have one global target-independant
+        compiler for GNAT. So most of the following chuncks apply on
+        both vx6 and vx6cert. In order to ease the maintenance,
+        have a comment to make it explicit when they apply to both.
+   -->
+
+  <configuration>
+    &if_rtp;
+    &if_this_target;
+    <!-- vx6, vx7 and vx6cert -->
+
+    &config_vxe_suffix;
+  </configuration>
+
+  <configuration>
+    &if_not_rtp;
+    &if_this_target;
+    <!-- vx6, vx7 and vx6cert -->
+
+    &config_out_suffix;
+  </configuration>
+
   <configuration>
     &if_ada_rtp;
     &if_this_target;
+    <!-- vx6, vx7 and vx6cert -->
 
     &config_ada_rtp;
   </configuration>
 
   <configuration>
-    &if_rtp;
+    &if_rtp_full;
     &if_this_target;
+    <!-- vx6, vx7 and vx6cert -->
 
     &config_mrtp;
   </configuration>
@@ -135,6 +207,7 @@
    <configuration>
      &if_these_gnu_wrs_compilers;
      &if_this_target;
+     <!-- vx6 and vx7 -->
 
      &config_mlongcall_c;
    </configuration>
@@ -142,6 +215,7 @@
    <configuration>
      &if_these_cpp_compilers;
      &if_this_target;
+     <!-- vx6 and vx7 -->
 
      &config_mlongcall_cpp;
    </configuration>'

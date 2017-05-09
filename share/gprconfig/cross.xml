@@ -59,22 +59,11 @@
    <!-- Import WIND_BASE on VxWorks targets. (non-vx7 only) -->
    <configuration>
      <targets>
-       <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
      </targets>
      <config>
    Wind_Base := external ("WIND_BASE");
    Wind_Usr := external ("WIND_USR", Wind_Base &amp; "/target/usr/");
-     </config>
-   </configuration>
-
-   <!-- Import VSB_DIR on some VxWorks targets.  -->
-   <configuration>
-     <targets>
-       <target name="^.*-wrs-vxworks7$" />
-     </targets>
-     <config>
-   VSB_Dir := external ("VSB_DIR");
      </config>
    </configuration>
 
@@ -119,60 +108,6 @@
      <compilers><compiler runtime="rtp" /></compilers>
      <compilers><compiler runtime="^ravenscar-cert$" /></compilers>
      <config></config>
-   </configuration>
-
-   <!-- vxworks kernel executables have a .out extension -->
-   <configuration>
-     <compilers negate="true">
-       <compiler runtime="^rtp$" />
-       <compiler runtime="^rtp-smp$" />
-       <compiler runtime="^ravenscar-cert-rtp$" />
-     </compilers>
-     <targets>
-       <target name="^.*-wrs-vxworks$" />
-       <target name="^.*-wrs-vxworks7$" />
-     </targets>
-     <config>
-   package Builder is
-      for Executable_Suffix use ".out";
-   end Builder;
-     </config>
-   </configuration>
-
-   <!-- vx6/rtp executables have a .vxe extension -->
-   <configuration>
-     <compilers>
-       <compiler runtime="^rtp$" />
-       <compiler runtime="^rtp-smp$" />
-       <compiler runtime="^ravenscar-cert-rtp$" />
-     </compilers>
-     <targets>
-       <target name="^.*-wrs-vxworks$" />
-       <target name="^.*-wrs-vxworks7$" />
-     </targets>
-     <config>
-   package Builder is
-      for Executable_Suffix use ".vxe";
-   end Builder;
-     </config>
-   </configuration>
-
-   <configuration>
-     <compilers>
-       <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS6CERT" runtime="^rtp$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
-     </compilers>
-     <targets>
-       <target name="^.*-wrs-vxworks$" />
-     </targets>
-     <config>
-   package Linker is
-      for Required_Switches use
-         Linker'Required_Switches &amp; ("-mrtp");
-   end Linker;
-     </config>
    </configuration>
 
    <!-- mlongcall is passed by default in the case of GNAT.

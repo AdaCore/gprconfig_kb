@@ -35,8 +35,20 @@
      </config>'
   >
 
+  <!ENTITY config_vsb_dir
+    '<config>
+   VSB_Dir := external ("VSB_DIR");
+     </config>'
+  >
+
   <!ENTITY configurations_vx7
   '
+   <configuration>
+     &if_this_target;
+
+     &config_vsb_dir;
+   </configuration>
+
    <configuration>
      &if_rtp;
      &if_this_target;
