@@ -1,0 +1,27 @@
+   <!ENTITY version_from_wind_base_vx653
+    '<version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653.*</must_match>
+     </version>'
+   >
+
+   <!ENTITY runtimes_vx653
+    '<runtimes>full,cert,ravenscar-cert,zfp</runtimes>'
+   >
+
+  <!ENTITY configurations_vx653
+  '
+   <configuration>
+     &if_this_target;
+
+     &config_wind_base;
+   </configuration>
+
+   <configuration>
+    &if_this_target;
+
+    &config_gnat_ar;
+   </configuration>
+  '
+  >

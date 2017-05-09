@@ -27,4 +27,24 @@
     <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
+  <compiler_description>
+    <name>GCC-WRS6CERTE500V2</name>
+    <executable prefix="1">cc(ppc)</executable>
+
+    &version_from_wind_base_cert;
+    &languages_c;
+    &runtimes_vx6cert;
+    <target>e500v2-wrs-vxworks</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS6CERTE500V2</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+
+    &version_from_wind_base_cert;
+    &languages_cpp;
+    &runtimes_vx6cert;
+    <target>e500v2-wrs-vxworks</target>
+  </compiler_description>
+
 </gprconfig>

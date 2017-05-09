@@ -27,4 +27,42 @@
     &target_from_wrs_gnu_cpp;
   </compiler_description>
 
+  <!-- VxWorks 6 Cert -->
+  <compiler_description>
+    <name>GCC-WRS6CERT</name>
+    <executable prefix="1">cc(arm|pentium|ppc)</executable>
+    &version_from_wind_base_cert;
+    &languages_c;
+    &runtimes_vx6cert;
+    &target_from_wrs_gnu_cc;
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS6CERT</name>
+    <executable prefix="1">c\+\+(arm|pentium|ppc)</executable>
+    &version_from_wind_base_cert;
+    &languages_cpp;
+    &runtimes_vx6cert;
+    &target_from_wrs_gnu_cpp;
+  </compiler_description>
+
+  <!-- VxWorks 5 -->
+  <compiler_description>
+    <name>GCC-WRS5</name>
+    <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
+
+    &version_from_wrs_gnu_cc_vx5;
+    &languages_c;
+    &target_from_wrs_gnu_cc;
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS5</name>
+    <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
+
+    &version_from_wrs_gnu_cpp_vx5;
+    &languages_cpp;
+    &target_from_wrs_gnu_cpp;
+  </compiler_description>
+
 </gprconfig>

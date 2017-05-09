@@ -6,8 +6,22 @@
      </version>'
    >
 
+   <!ENTITY version_from_wind_base_cert
+    '<version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-cert-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-cert-6.*</must_match>
+     </version>'
+   >
+
    <!ENTITY runtimes_vx6
     '<runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>'
+   >
+
+   <!ENTITY runtimes_vx6cert
+    '<runtimes>
+      kernel,cert,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp
+     </runtimes>'
    >
 
    <!ENTITY gnat_pre_6.4
@@ -84,13 +98,6 @@
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("ranlib" &amp; "&this_gnu_wrs_suffix;");
    for Archive_Suffix   use ".a";
-     </config>'
-  >
-
-  <!ENTITY config_wind_base
-    '<config>
-   Wind_Base := external ("WIND_BASE");
-   Wind_Usr := external ("WIND_USR", Wind_Base &amp; "/target/usr/");
      </config>'
   >
 
