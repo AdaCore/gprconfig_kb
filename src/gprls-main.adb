@@ -283,10 +283,6 @@ procedure Gprls.Main is
                            then
                               Put ("   ");
                               Output_Source (D);
-
-                              if not Verbose_Mode then
-                                 New_Line;
-                              end if;
                            end if;
                         end loop;
                      end if;

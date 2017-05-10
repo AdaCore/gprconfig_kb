@@ -381,45 +381,14 @@ package body Gprls is
    end Output_Source;
 
    procedure Output_Source (Sdep_I : Sdep_Id) is
-      Stamp       : GPR.Stamps.Time_Stamp_Type;
-      Checksum    : Word;
-      Source      : GPR.Source_Id;
-      FS          : File_Name_Type;
-      Status      : File_Status;
-      Source_Name : String_Access;
-
+      FS : File_Name_Type;
    begin
-      if Sdep_I = No_Sdep_Id then
-         return;
-      end if;
-
-      Stamp    := Sdep.Table (Sdep_I).Stamp;
-      Checksum := Sdep.Table (Sdep_I).Checksum;
-      FS       := Sdep.Table (Sdep_I).Sfile;
-
-      Source := Source_Files_Htable.Get (Project_Tree.Source_Files_HT, FS);
-
-      if Print_Source then
-         Find_Status (Source, Stamp, Checksum, Status);
-         Get_Name_String (FS);
-
-         Source_Name := new String'(Name_Buffer (1 .. Name_Len));
-
-         if Verbose_Mode then
-            Put ("   Source => ");
-            Put (Source_Name.all);
-
-            Output_Status (Status, Verbose => True);
-            New_Line;
-
-         else
-            if not Selective_Output then
-               Put ("   ");
-               Output_Status (Status, Verbose => False);
-            end if;
-
-            Put_Line (Source_Name.all);
-         end if;
+      if Sdep_I /= No_Sdep_Id then
+         FS := Sdep.Table (Sdep_I).Sfile;
+         Output_Source
+           (Source_Files_Htable.Get
+              (Project_Tree.Source_Files_HT, FS),
+            Sdep_I);
       end if;
    end Output_Source;
 
