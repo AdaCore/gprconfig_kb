@@ -2020,6 +2020,7 @@ package body GPR.Util is
       To_Lower (Lower_Unit);
 
       return Lower_Unit = "ada"
+        or else Lower_Unit = "gnat"
         or else Lower_Unit = "interfaces"
         or else Lower_Unit = "system"
         or else Lower_Unit = "calendar"
@@ -2031,6 +2032,7 @@ package body GPR.Util is
         or else Lower_Unit = "sequential_io"
         or else Lower_Unit = "text_io"
         or else Starts_With (Lower_Unit, "ada.")
+        or else Starts_With (Lower_Unit, "gnat.")
         or else Starts_With (Lower_Unit, "system.")
         or else Starts_With (Lower_Unit, "interfaces.");
    end Is_Ada_Predefined_Unit;
