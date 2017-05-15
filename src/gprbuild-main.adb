@@ -49,6 +49,7 @@ with GPR.Err;
 with GPR.Opt;                    use GPR.Opt;
 with GPR.Script;                 use GPR.Script;
 with GPR.Snames;                 use GPR.Snames;
+with GPR.Tempdir;                use GPR.Tempdir;
 with GPR.Tree;                   use GPR.Tree;
 with GPR.Util.Aux;               use GPR.Util;
 with GPR.Version;                use GPR.Version;
@@ -2622,14 +2623,18 @@ begin
 
    --  Set slave-env
 
-   if Slave_Env = null and then Distributed_Mode then
-      Slave_Env :=
-        new String'(Aux.Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
+   if Distributed_Mode then
+      Use_Temp_Dir (Status => False);
 
-      if Slave_Env_Auto and not Opt.Quiet_Output then
-         Put ("slave environment is ");
-         Put (Slave_Env.all);
-         New_Line;
+      if Slave_Env = null then
+         Slave_Env :=
+           new String'(Aux.Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
+
+         if Slave_Env_Auto and not Opt.Quiet_Output then
+            Put ("slave environment is ");
+            Put (Slave_Env.all);
+            New_Line;
+         end if;
       end if;
    end if;
 
