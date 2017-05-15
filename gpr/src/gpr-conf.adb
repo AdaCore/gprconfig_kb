@@ -829,8 +829,8 @@ package body GPR.Conf is
                         Conf_Project.Decl.Attributes,
                         Shared);
 
-         Gprconfig_Path  : String_Access;
-         Success         : Boolean;
+         Gprconfig_Path : String_Access;
+         Success        : Boolean;
 
       begin
          Gprconfig_Path := Locate_Exec_On_Path (Gprconfig_Name);
@@ -921,7 +921,6 @@ package body GPR.Conf is
             Arg_Last        : Positive;
 
          begin
-
             --  Get the config switches. This should be done only now, as some
             --  runtimes may have been found in the Builder switches.
 
@@ -945,7 +944,6 @@ package body GPR.Conf is
                   Current_Dir : constant String := Current_Directory;
 
                begin
-
                   if Is_Directory (GPR.Tempdir.Temporary_Directory_Path) then
                      Set_Directory (GPR.Tempdir.Temporary_Directory_Path);
                   else
