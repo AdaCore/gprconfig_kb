@@ -1012,30 +1012,23 @@ package body Gpr_Build_Util is
                      if Base /= Main then
                         Is_Absolute := True;
 
-                        if Is_Absolute_Path (Main) then
+                        --  Always resolve links here, so that users can
+                        --  specify any name on the command line. If the
+                        --  project itself uses links, the user will be using
+                        --  -eL anyway, and thus files are also stored with
+                        --  resolved names.
+
+                        declare
+                           Absolute : constant String :=
+                             Normalize_Pathname
+                               (Name           => Main,
+                                Directory      => "",
+                                Resolve_Links  => True,
+                                Case_Sensitive => False);
+                        begin
+                           File.File := Create_Name (Absolute);
                            Main_Id := Create_Name (Base);
-
-                        --  Not an absolute path
-
-                        else
-                           --  Always resolve links here, so that users can be
-                           --  specify any name on the command line. If the
-                           --  project itself uses links, the user will be
-                           --  using -eL anyway, and thus files are also stored
-                           --  with resolved names.
-
-                           declare
-                              Absolute : constant String :=
-                                           Normalize_Pathname
-                                             (Name           => Main,
-                                              Directory      => "",
-                                              Resolve_Links  => True,
-                                              Case_Sensitive => False);
-                           begin
-                              File.File := Create_Name (Absolute);
-                              Main_Id := Create_Name (Base);
-                           end;
-                        end if;
+                        end;
                      end if;
 
                      --  If no project or tree was specified for the main, it
