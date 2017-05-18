@@ -4763,7 +4763,7 @@ package body Gprbuild.Post_Compile is
                                  No_Create => Proj.Is_Aggregated);
                            end if;
 
-                           if not Is_Static (Proj.Proj);
+                           if not Is_Static (Proj.Proj) then
                               Shared_Libs := true;
                            end if;
 
