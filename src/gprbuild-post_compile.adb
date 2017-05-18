@@ -4764,7 +4764,7 @@ package body Gprbuild.Post_Compile is
                            end if;
 
                            if not Is_Static (Proj.Proj) then
-                              Shared_Libs := true;
+                              Shared_Libs := True;
                            end if;
 
                         end if;
