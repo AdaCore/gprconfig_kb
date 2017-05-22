@@ -193,7 +193,7 @@
    -->
 
   <configuration>
-    &if_rtp_full;
+    &if_rtp;
     &if_this_target;
     <!-- vx6, vx7 and vx6cert -->
 
