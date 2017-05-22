@@ -939,16 +939,15 @@ package body GPR.Conf is
 
             if Conf_File_Name'Length = 0 then
                declare
-                  Path_FD   : File_Descriptor;
-                  Path_Name : Path_Name_Type;
                   Current_Dir : constant String := Current_Directory;
+                  Path_FD     : File_Descriptor;
+                  Path_Name   : Path_Name_Type;
 
                begin
                   if Is_Directory (GPR.Tempdir.Temporary_Directory_Path) then
                      Set_Directory (GPR.Tempdir.Temporary_Directory_Path);
                   else
-                     Raise_Invalid_Config
-                       ("No temp dir specified");
+                     Raise_Invalid_Config ("No temp dir specified");
                   end if;
 
                   GPR.Env.Create_Temp_File
@@ -976,8 +975,8 @@ package body GPR.Conf is
 
             Arg_Last := 3;
 
-            if Selected_Target /= null and then
-               Selected_Target.all /= ""
+            if Selected_Target /= null
+              and then Selected_Target.all /= ""
             then
                Args (4) :=
                   new String'("--target=" & Selected_Target.all);
@@ -1032,8 +1031,8 @@ package body GPR.Conf is
                --  Display no message if we are creating auto.cgpr, unless in
                --  verbose mode.
 
-               if Config_File_Name'Length > 0 or else
-                 Opt.Verbosity_Level > Opt.Low
+               if Config_File_Name'Length > 0
+                 or else Opt.Verbosity_Level > Opt.Low
                then
                   Write_Str ("creating ");
                   Write_Str (Simple_Name (Args (3).all));
@@ -1497,8 +1496,8 @@ package body GPR.Conf is
 
       --  Parse the configuration file
 
-      if Opt.Verbosity_Level > Opt.Low and then
-        Config_File_Path /= null
+      if Opt.Verbosity_Level > Opt.Low
+        and then Config_File_Path /= null
       then
          Write_Str  ("Checking configuration ");
          Write_Line (Config_File_Path.all);
@@ -1673,7 +1672,7 @@ package body GPR.Conf is
          Opt.Target_Value  := new String'(Target_Name);
          Opt.Target_Origin := Specified;
 
-         --  Target specified explicitly, no point for fallback check.
+         --  Target specified explicitly, no point for fallback check
          Fallback_Try_Again := False;
       end if;
 
@@ -1860,8 +1859,9 @@ package body GPR.Conf is
                     Main_Project.Decl.Attributes,
                     Project_Tree.Shared);
             begin
-               if Native_Target and then
-                 Opt.Target_Value.all /= Get_Name_String (Variable.Value)
+               if Native_Target
+                 and then
+                  Opt.Target_Value.all /= Get_Name_String (Variable.Value)
                then
                   Free (N_Hostname);
                   N_Hostname := new String'(Get_Name_String (Variable.Value));
