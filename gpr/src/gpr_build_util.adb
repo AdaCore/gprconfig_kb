@@ -2012,72 +2012,85 @@ package body Gpr_Build_Util is
                exit when Source = No_Source;
                Proj := Ultimate_Extending_Project_Of (Source.Project);
 
-               if Is_Allowed_Language (Source.Language.Name)
-                 and then Is_Compilable (Source)
-                 and then (All_Projects
-                            or else Is_Extending (Project, Source.Project))
-                 and then not Source.Locally_Removed
-                 and then Source.Replaced_By = No_Source
-                 and then not Proj.Externally_Built
-                 and then Source.Kind /= Sep
-                 and then Source.Path /= No_Path_Information
-               then
-                  if Source.Kind = Impl
-                    or else (Source.Unit /= No_Unit_Index
-                              and then Source.Kind = Spec
-                              and then (Other_Part (Source) = No_Source
-                                          or else
-                                        Other_Part (Source).Locally_Removed))
+               if not Proj.Externally_Built then
+                  --  Fail if no compiler
+
+                  if Is_Allowed_Language (Source.Language.Name)
+                    and then Source.Language.Config.Compiler_Driver = No_File
                   then
-                     if (Unit_Based
-                          or else Source.Unit = No_Unit_Index
-                          or else Source.Project.Library
-                          or else Context.In_Aggregate_Lib
-                          or else Project.Qualifier = Aggregate_Library)
-                       and then not Is_Subunit (Source)
+                     Fail_Program
+                       (Tree,
+                        "no compiler for source """ &
+                          Get_Name_String (Source.File) & '"');
+                  end if;
+
+                  if Is_Allowed_Language (Source.Language.Name)
+                    and then Is_Compilable (Source)
+                    and then (All_Projects
+                              or else Is_Extending (Project, Source.Project))
+                    and then not Source.Locally_Removed
+                    and then Source.Replaced_By = No_Source
+                    and then Source.Kind /= Sep
+                    and then Source.Path /= No_Path_Information
+                  then
+                     if Source.Kind = Impl
+                       or else (Source.Unit /= No_Unit_Index
+                                and then Source.Kind = Spec
+                                and then (Other_Part (Source) = No_Source
+                                          or else
+                                          Other_Part (Source).Locally_Removed))
                      then
-                        OK := True;
-                        Closure := False;
-
-                        if Source.Unit /= No_Unit_Index
-                          and then
-                            (Source.Project.Library
-                              or else Project.Qualifier = Aggregate_Library
-                              or else Context.In_Aggregate_Lib)
-                          and then Source.Project.Standalone_Library /= No
+                        if (Unit_Based
+                            or else Source.Unit = No_Unit_Index
+                            or else Source.Project.Library
+                            or else Context.In_Aggregate_Lib
+                            or else Project.Qualifier = Aggregate_Library)
+                          and then not Is_Subunit (Source)
                         then
-                           --  Check if the unit is in the interface
+                           OK := True;
+                           Closure := False;
 
-                           OK := False;
+                           if Source.Unit /= No_Unit_Index
+                             and then
+                               (Source.Project.Library
+                                or else Project.Qualifier = Aggregate_Library
+                                or else Context.In_Aggregate_Lib)
+                             and then Source.Project.Standalone_Library /= No
+                           then
+                              --  Check if the unit is in the interface
 
-                           declare
-                              List    : String_List_Id;
-                              Element : String_Element;
+                              OK := False;
 
-                           begin
-                              List := Source.Project.Lib_Interface_ALIs;
-                              while List /= Nil_String loop
-                                 Element :=
-                                   Project_Tree.Shared.String_Elements.Table
-                                     (List);
+                              declare
+                                 List    : String_List_Id;
+                                 Element : String_Element;
 
-                                 if Element.Value = Name_Id (Source.Dep_Name)
-                                 then
-                                    OK := True;
-                                    Closure := True;
-                                    exit;
-                                 end if;
+                              begin
+                                 List := Source.Project.Lib_Interface_ALIs;
+                                 while List /= Nil_String loop
+                                    Element :=
+                                      Project_Tree.Shared.String_Elements.Table
+                                        (List);
 
-                                 List := Element.Next;
-                              end loop;
-                           end;
-                        end if;
+                                    if Element.Value =
+                                       Name_Id (Source.Dep_Name)
+                                    then
+                                       OK := True;
+                                       Closure := True;
+                                       exit;
+                                    end if;
 
-                        if OK then
-                           Queue.Insert
-                             (Source => (Tree    => Tree,
-                                         Id      => Source,
-                                         Closure => Closure));
+                                    List := Element.Next;
+                                 end loop;
+                              end;
+                           end if;
+
+                           if OK then
+                              Queue.Insert
+                                (Source => (Tree    => Tree,
+                                            Id      => Source,
+                                            Closure => Closure));
+                           end if;
                         end if;
                      end if;
                   end if;

@@ -5123,6 +5123,14 @@ package body GPR.Util is
          return;
       end if;
 
+      --  Fail if no compiler
+
+      if Source.Language.Config.Compiler_Driver = No_File then
+         Fail_Program
+           (Tree,
+            "no compiler for """ & Get_Name_String (Source.File) & '"');
+      end if;
+
       --  No need to compile if there is no "compiler"
 
       if Length_Of_Name (Source.Language.Config.Compiler_Driver) = 0 then

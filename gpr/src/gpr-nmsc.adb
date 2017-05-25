@@ -1132,9 +1132,6 @@ package body GPR.Nmsc is
       Lang_Index : Language_Ptr := No_Language_Index;
       --  The index of the language data being checked
 
-      Prev_Index : Language_Ptr := No_Language_Index;
-      --  The index of the previous language
-
       procedure Process_Project_Level_Simple_Attributes;
       --  Process the simple attributes at the project level
 
@@ -3107,19 +3104,10 @@ package body GPR.Nmsc is
                Error_Msg_Name_1 := Lang_Index.Display_Name;
                Error_Msg
                  (Data.Flags,
-                  "?\no compiler specified for language %%" &
-                    ", ignoring all its sources",
+                  "?\no compiler specified for language %%",
                   No_Location, Project);
 
-               if Lang_Index = Project.Languages then
-                  Project.Languages := Lang_Index.Next;
-               else
-                  Prev_Index.Next := Lang_Index.Next;
-               end if;
-
             elsif Lang_Index.Config.Kind = Unit_Based then
-               Prev_Index := Lang_Index;
-
                --  For unit based languages, Dot_Replacement, Spec_Suffix and
                --  Body_Suffix need to be specified.
 
@@ -3148,8 +3136,6 @@ package body GPR.Nmsc is
                end if;
 
             else
-               Prev_Index := Lang_Index;
-
                --  For file based languages, either Spec_Suffix or Body_Suffix
                --  need to be specified.
 
