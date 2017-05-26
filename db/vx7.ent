@@ -18,23 +18,6 @@
     '<runtimes>kernel,rtp</runtimes>'
    >
 
-  <!ENTITY config_wrs_rtp_base
-    '<config>
-   WRS_RTP_Base := external ("WRS_RTP_BASE", "&this_wrs_rtp_base;");
-   package Linker is
-      for Leading_Switches ("Ada") use
-        Linker &apos; Leading_Switches ("Ada")
-        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
-      for Leading_Switches ("C") use
-        Linker &apos; Leading_Switches ("C")
-        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
-      for Leading_Switches ("C++") use
-        Linker &apos; Leading_Switches ("C++")
-        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
-   end Linker;
-     </config>'
-  >
-
   <!ENTITY config_vsb_dir
     '<config>
    VSB_Dir := external ("VSB_DIR");

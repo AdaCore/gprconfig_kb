@@ -147,18 +147,60 @@
    </configuration>
 
    <configuration>
-     &if_rtp_full;
+     &if_rtp;
      &if_this_target;
-     <!-- vx6 -->
+     <!-- vx6 and vx6cert -->
 
      &config_rtp_cflags;
    </configuration>
 
    <configuration>
+    &if_ravenscar_cert_rtp;
+    &if_this_target;
+    <!-- vx6cert -->
+
+    &config_wrs_rtp_base;
+   </configuration>
+
+   <configuration>
      &if_kernel_full;
      &if_this_target;
-     <!-- vx6 -->
+     <!-- vx6 and vx6cert -->
 
      &config_kernel_cflags;
-   </configuration>'
+   </configuration>
+
+   <configuration>
+     &if_zfp;
+     &if_this_target;
+     <!-- vx6cert -->
+
+     &config_kernel_cflags;
+   </configuration>
+
+   <configuration>
+     &if_ravenscar_cert;
+     &if_this_target;
+     <!-- vx6cert -->
+
+     &config_kernel_cflags;
+   </configuration>
+
+   <!-- In Cert and 653 printf should not be considered as a builtin -->
+   <configuration>
+     &if_zfp;
+     &if_this_target;
+     <!-- vx6cert -->
+
+     &config_no_builtin;
+   </configuration>
+
+   <configuration>
+     &if_cert_based;
+     &if_this_target;
+     <!-- vx6cert -->
+
+     &config_no_builtin;
+   </configuration>
+  '
   >

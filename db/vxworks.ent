@@ -85,6 +85,23 @@
      </config>'
    >
 
+  <!ENTITY config_wrs_rtp_base
+    '<config>
+   WRS_RTP_Base := external ("WRS_RTP_BASE", "&this_wrs_rtp_base;");
+   package Linker is
+      for Leading_Switches ("Ada") use
+        Linker &apos; Leading_Switches ("Ada")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C") use
+        Linker &apos; Leading_Switches ("C")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C++") use
+        Linker &apos; Leading_Switches ("C++")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+   end Linker;
+     </config>'
+  >
+
   <!ENTITY if_target_gpp
     '<targets>
        <target name="^.*-wrs-vxworks$" />
@@ -107,6 +124,30 @@
   <!ENTITY if_not_rtp
     '<compilers negate="true">
       &rtp_runtimes;
+     </compilers>'
+  >
+
+  <!ENTITY if_ravenscar_cert_rtp
+    '<compilers>
+       <compiler runtime="^ravenscar-cert-rtp$" />
+     </compilers>'
+  >
+
+  <!ENTITY if_ravenscar_cert
+    '<compilers>
+       <compiler runtime="^ravenscar-cert$" />
+     </compilers>'
+  >
+
+  <!ENTITY if_cert_based
+    '<compilers>
+       <compiler runtime="cert" />
+     </compilers>'
+  >
+
+  <!ENTITY if_zfp
+    '<compilers>
+       <compiler runtime="^zfp$" />
      </compilers>'
   >
 
@@ -146,6 +187,24 @@
         Compiler &apos; Leading_Required_Switches ("Ada") &amp; ("-mrtp");
    end Compiler;
      </config>'
+  >
+
+  <!ENTITY config_no_builtin
+  '
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler &apos; Leading_Required_Switches ("C")
+        &amp; ("-fno-builtin");
+   end Compiler;
+
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler &apos; Leading_Required_Switches ("C++")
+        &amp; ("-fno-builtin");
+   end Compiler;
+     </config>
+  '
   >
 
   <!ENTITY config_e500v2_cflags
@@ -217,7 +276,7 @@
   </configuration>
 
   <configuration>
-    &if_rtp_full;
+    &if_rtp;
     &if_this_target;
     <!-- vx6, vx7 and vx6cert -->
 

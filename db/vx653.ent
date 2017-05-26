@@ -10,12 +10,59 @@
     '<runtimes>full,cert,ravenscar-cert,zfp</runtimes>'
    >
 
+  <!ENTITY config_vx653_cflags
+  '
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler &apos; Leading_Required_Switches ("C")
+        &amp; ("-DVTHREADS",
+               "-I" &amp; Wind_Base &amp; "/target/vThreads/h",
+               "-I" &amp; Wind_Base &amp; "/target/val/h");
+   end Compiler;
+
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler &apos; Leading_Required_Switches ("C++")
+        &amp; ("-DVTHREADS",
+               "-I" &amp; Wind_Base &amp; "/target/vThreads/h",
+               "-I" &amp; Wind_Base &amp; "/target/val/h");
+   end Compiler;
+     </config>
+  '
+  >
   <!ENTITY configurations_vx653
   '
    <configuration>
      &if_this_target;
 
      &config_wind_base;
+   </configuration>
+
+   <configuration>
+     &if_this_target;
+
+     &config_out_suffix;
+   </configuration>
+
+   <configuration>
+     &if_this_target;
+
+     &config_vx653_cflags;
+   </configuration>
+
+   <configuration>
+     &if_zfp;
+     &if_this_target;
+
+     &config_no_builtin;
+   </configuration>
+
+   <configuration>
+     &if_cert_based;
+     &if_this_target;
+
+     &config_no_builtin;
    </configuration>
 
    <configuration>
