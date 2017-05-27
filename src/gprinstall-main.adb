@@ -653,6 +653,10 @@ procedure Gprinstall.Main is
       if Global_Prefix_Dir.V = null then
          --  Set to default for current toolchain
          Global_Prefix_Dir := (new String'(Executable_Prefix_Path), True);
+
+      elsif Global_Prefix_Dir.V.all = "" then
+         Fail_Program
+           (Project_Tree, "--prefix argument cannot be empty");
       end if;
 
       --  Do not require directory to be present in Sources_Only mode
