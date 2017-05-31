@@ -200,6 +200,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_Library_Version;
       procedure Write_Runtime_Library_Dir;
       procedure Write_Auto_Init;
+      procedure Write_Binding_Options;
       procedure Write_Run_Path_Option;
       procedure Write_Leading_Library_Options;
       procedure Write_Library_Options (Success : out Boolean);
@@ -1574,11 +1575,20 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Auto_Init is
       begin
-         if For_Project.Standalone_Library /= No then
-            if For_Project.Lib_Auto_Init then
-               Put_Line (Exchange_File, Library_Label (Auto_Init));
-            end if;
+         if For_Project.Standalone_Library /= No and then
+           For_Project.Lib_Auto_Init
+         then
+            Put_Line (Exchange_File, Library_Label (Auto_Init));
+         end if;
+      end Write_Auto_Init;
 
+      ---------------------------
+      -- Write_Binding_Options --
+      ---------------------------
+
+      procedure Write_Binding_Options is
+      begin
+         if For_Project.Standalone_Library /= No then
             declare
                Binder_Package : constant Package_Id :=
                                   Value_Of
@@ -1618,7 +1628,7 @@ package body Gprbuild.Post_Compile is
                end if;
             end;
          end if;
-      end Write_Auto_Init;
+      end Write_Binding_Options;
 
       ---------------------------
       -- Write_Run_Path_Option --
@@ -3180,6 +3190,8 @@ package body Gprbuild.Post_Compile is
 
             Write_Imported_Libraries;
          end if;
+
+         Write_Binding_Options;
 
          Write_Library_Options (Library_Options_Success);
 

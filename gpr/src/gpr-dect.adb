@@ -222,8 +222,8 @@ package body GPR.Dect is
 
       use GPR.Snames;
    begin
-      --  Packages Naming, Compiler, Binder and Linker are not allowed in
-      --  aggregate projects and aggregate library projects. Package Install
+      --  Packages Naming, Compiler and Linker are not allowed in aggregate
+      --  projects and aggregate library projects. Packages Binder and Install
       --  is not allowed in aggregate projects, but is allowed in aggregate
       --  library projects.
 
@@ -233,10 +233,12 @@ package body GPR.Dect is
            and then
           (Name = Name_Naming or else
            Name = Name_Compiler or else
-           Name = Name_Binder or else
            Name = Name_Linker))
         or else
-         ((Qualif = Aggregate and then Name = Name_Install))
+          (Qualif = Aggregate
+           and then
+           (Name = Name_Install or else
+            Name = Name_Binder))
       then
          Error_Msg_Name_1 := Name;
 
@@ -291,7 +293,9 @@ package body GPR.Dect is
               or else Name = Snames.Name_Externally_Built
               or else Name = Snames.Name_Executable
               or else Name = Snames.Name_Executable_Suffix
-              or else Name = Snames.Name_Default_Switches
+              or else
+                (Qualif = Aggregate and then
+                 Name = Snames.Name_Default_Switches)
             then
                Error_Msg_Name_1 := Name;
                Error_Msg
