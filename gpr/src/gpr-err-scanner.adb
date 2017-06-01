@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---       Copyright (C) 2015-2016, Free Software Foundation, Inc.           --
+--       Copyright (C) 2015-2017, Free Software Foundation, Inc.           --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1645,7 +1645,7 @@ package body Scanner is
               SI  | DLE | DC1 | DC2 | DC3 | DC4 | NAK | SYN | ETB | CAN |
               EM  | FS  | GS  | RS  | US  | DEL
          =>
-            null;
+            Error_Illegal_Character;
 
          --  Invalid graphic characters
 
