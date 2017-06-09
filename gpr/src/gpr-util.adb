@@ -3923,6 +3923,8 @@ package body GPR.Util is
          function Is_Time_Stamp (S : String) return Boolean;
          --  Return True iff S has the format of a Time_Stamp_Type
 
+         OK : Boolean;
+
          -------------------
          -- Is_Time_Stamp --
          -------------------
@@ -4042,14 +4044,27 @@ package body GPR.Util is
                Canonical_Case_File_Name (Name_Buffer (Start .. Last_Obj));
             end if;
 
-            --  First line must start with name of object file, followed by
-            --  colon.
+            --  First line must start with simple name or path name of object
+            --  file, followed by colon.
 
-            if Finish = 0
-              or else
-                (C_Object_Name /= null
-                 and then Name_Buffer (Start .. Last_Obj) /= C_Object_Name.all)
-            then
+            if Finish = 0 then
+               OK := False;
+
+            else
+               OK := C_Object_Name = null or else
+                     Name_Buffer (Start .. Last_Obj) = C_Object_Name.all;
+
+               if not OK then
+                  declare
+                     Path : String := Name_Buffer (Start .. Last_Obj);
+                  begin
+                     Canonical_Case_File_Name (Path);
+                     OK := Path = Object_Path.all;
+                  end;
+               end if;
+            end if;
+
+            if not OK then
                if Opt.Verbosity_Level > Opt.Low then
                   Put  ("      -> dependency file ");
                   Put  (Dep_Name);
