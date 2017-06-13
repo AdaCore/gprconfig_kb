@@ -108,6 +108,9 @@
       for Leading_Required_Switches ("Ada") use
         Compiler'Leading_Required_Switches ("Ada") &amp; ("-gnatceg");
    end Compiler;
+   package Clean is
+      for Object_Artifact_Extensions ("Ada") use (".h");
+   end Clean;
    </config>
   </configuration>
 
