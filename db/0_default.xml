@@ -27,6 +27,7 @@
    end Naming;
 
    for Inherit_Source_Path ("C++") use ("C");
+   for Default_Language use "Ada";
 
    package Clean is
       for Source_Artifact_Extensions ("Ada") use (".dg", ".rep");
