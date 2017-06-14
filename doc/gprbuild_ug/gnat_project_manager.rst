@@ -3179,7 +3179,10 @@ The additional project file reserved words are:
 
   ::
 
-     extends   external   external_as_list   project
+     extends external external_as_list project
+
+Note that ``aggregate`` and ``library`` are qualifiers that may appear before
+the keyword ``project``, but they are not themselves keywords.
 
 To avoid possible compatibility issues in the future, we recommend that
 the reserved words introduced by Ada 2005 and Ada 2012 not be used as
