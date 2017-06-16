@@ -166,6 +166,8 @@ package body GPR.Tempdir is
          return;
       end if;
 
+      Free (Dir);
+
       if Directory_Separator = '\' then
 
          for I in Windows_List'Range loop
