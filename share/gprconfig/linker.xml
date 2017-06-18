@@ -543,6 +543,16 @@
     </config>
   </configuration>
 
+  <!-- Provide a dummy Archive_Builder and no ranlib when generating C -->
+  <configuration>
+    <targets>
+      <target name="c" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("c-gcc");
+    </config>
+  </configuration>
+
   <configuration>
     <targets negate="true">
       <target name="^.*-wrs-vxworks.*$" />
@@ -564,6 +574,7 @@
       <target name="^arm-linux-androideabi$" />
       <target name="^.*-gnueabihf$" />
       <target name="^.*-gnueabi$" />
+      <target name="^c$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
@@ -605,6 +616,7 @@
        <target name="^.*wrs-vxworks.*$" />
        <target name="^avr$" />
        <target name="^.*-pikeos$" />
+       <target name="^c$" />
     </targets>
     <config>
    for Library_Support  use "static_only";
