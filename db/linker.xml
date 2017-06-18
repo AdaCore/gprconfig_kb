@@ -546,7 +546,7 @@
   <!-- Provide a dummy Archive_Builder and no ranlib when generating C -->
   <configuration>
     <targets>
-      <target name="c" />
+      <target name="^c$" />
     </targets>
     <config>
    for Archive_Builder  use ("c-gcc");
