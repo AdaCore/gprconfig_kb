@@ -29,6 +29,10 @@
    for Inherit_Source_Path ("C++") use ("C");
    for Default_Language use "Ada";
 
+   package Compiler is
+      for Language_Kind ("ada") use "unit_based";
+   end Compiler;
+
    package Clean is
       for Source_Artifact_Extensions ("Ada") use (".dg", ".rep");
       for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno", ".su");
