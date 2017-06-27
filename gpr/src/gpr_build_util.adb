@@ -2018,10 +2018,13 @@ package body Gpr_Build_Util is
                   if Is_Allowed_Language (Source.Language.Name)
                     and then Source.Language.Config.Compiler_Driver = No_File
                   then
+                     Error_Msg_Name_1 := Source.Language.Display_Name;
+                     Error_Msg_File_1 := Source.File;
+                     Error_Msg
+                       ("no compiler for language %%, cannot compile {{",
+                        Flag_Location => Source.Location);
                      Fail_Program
-                       (Tree,
-                        "no compiler for source """ &
-                          Get_Name_String (Source.File) & '"');
+                       (Project_Tree, "*** compilation phase failed");
                   end if;
 
                   if Is_Allowed_Language (Source.Language.Name)

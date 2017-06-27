@@ -3092,62 +3092,60 @@ package body GPR.Nmsc is
       Lang_Index := Project.Languages;
       while Lang_Index /= No_Language_Index loop
          if Is_Allowed_Language (Lang_Index.Name) then
-            --  For all languages, Compiler_Driver needs to be specified.
-            --  This is only needed if we do intend to compile (not in GPS
-            --  for instance).
+            --  For all languages, Compiler_Driver should be specified. But
+            --  there is no warning if it is not, as there may not be any
+            --  source of the language. If there is such a source, then an
+            --  error will be reported when trying to compile this source.
 
-            if Data.Flags.Compiler_Driver_Mandatory
-              and then Lang_Index.Config.Compiler_Driver = No_File
-              and then not Project.Externally_Built
-              and then Is_Allowed_Language (Lang_Index.Name)
+            if Lang_Index.Config.Compiler_Driver /= No_File
+              or else Project.Externally_Built
+              or else not Is_Allowed_Language (Lang_Index.Name)
             then
-               Error_Msg_Name_1 := Lang_Index.Display_Name;
-               Error_Msg
-                 (Data.Flags,
-                  "?\no compiler specified for language %%",
-                  No_Location, Project);
+               if Lang_Index.Config.Kind = Unit_Based then
+                  --  For unit based languages, Dot_Replacement, Spec_Suffix
+                  --  and Body_Suffix need to be specified.
 
-            elsif Lang_Index.Config.Kind = Unit_Based then
-               --  For unit based languages, Dot_Replacement, Spec_Suffix and
-               --  Body_Suffix need to be specified.
+                  if Lang_Index.Config.Naming_Data.Dot_Replacement = No_File
+                  then
+                     Error_Msg
+                       (Data.Flags,
+                        "Dot_Replacement not specified for " &
+                          Get_Name_String (Lang_Index.Name),
+                        No_Location, Project);
+                  end if;
 
-               if Lang_Index.Config.Naming_Data.Dot_Replacement = No_File then
-                  Error_Msg
-                    (Data.Flags,
-                     "Dot_Replacement not specified for " &
-                       Get_Name_String (Lang_Index.Name),
-                     No_Location, Project);
-               end if;
+                  if Lang_Index.Config.Naming_Data.Spec_Suffix = No_File then
+                     Error_Msg
+                       (Data.Flags,
+                        "\Spec_Suffix not specified for " &
+                          Get_Name_String (Lang_Index.Name),
+                        No_Location, Project);
+                  end if;
 
-               if Lang_Index.Config.Naming_Data.Spec_Suffix = No_File then
-                  Error_Msg
-                    (Data.Flags,
-                     "\Spec_Suffix not specified for " &
-                       Get_Name_String (Lang_Index.Name),
-                     No_Location, Project);
-               end if;
+                  if Lang_Index.Config.Naming_Data.Body_Suffix = No_File then
+                     Error_Msg
+                       (Data.Flags,
+                        "\Body_Suffix not specified for " &
+                          Get_Name_String (Lang_Index.Name),
+                        No_Location, Project);
+                  end if;
 
-               if Lang_Index.Config.Naming_Data.Body_Suffix = No_File then
-                  Error_Msg
-                    (Data.Flags,
-                     "\Body_Suffix not specified for " &
-                       Get_Name_String (Lang_Index.Name),
-                     No_Location, Project);
-               end if;
+               else
+                  --  For file based languages, either Spec_Suffix or
+                  --  Body_Suffix need to be specified.
 
-            else
-               --  For file based languages, either Spec_Suffix or Body_Suffix
-               --  need to be specified.
-
-               if Data.Flags.Require_Sources_Other_Lang
-                 and then Lang_Index.Config.Naming_Data.Spec_Suffix = No_File
-                 and then Lang_Index.Config.Naming_Data.Body_Suffix = No_File
-               then
-                  Error_Msg_Name_1 := Lang_Index.Display_Name;
-                  Error_Msg
-                    (Data.Flags,
-                     "\no suffixes specified for %%",
-                     No_Location, Project);
+                  if Data.Flags.Require_Sources_Other_Lang
+                    and then
+                      Lang_Index.Config.Naming_Data.Spec_Suffix = No_File
+                    and then
+                      Lang_Index.Config.Naming_Data.Body_Suffix = No_File
+                  then
+                     Error_Msg_Name_1 := Lang_Index.Display_Name;
+                     Error_Msg
+                       (Data.Flags,
+                        "\no suffixes specified for %%",
+                        No_Location, Project);
+                  end if;
                end if;
             end if;
          end if;
