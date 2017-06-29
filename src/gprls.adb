@@ -353,7 +353,7 @@ package body Gprls is
       Checksum : Word;
       Status   : File_Status;
    begin
-      if Sdep_I = No_Sdep_Id then
+      if Sdep_I = No_Sdep_Id or else Source = No_Source then
          return;
       end if;
 
