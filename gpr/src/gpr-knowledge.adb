@@ -98,6 +98,8 @@ package body GPR.Knowledge is
       Equivalent_Keys => "=",
       "="             => External_Value_Lists."=");
 
+   External_Calls_Cache : String_Maps.Map := String_Maps.Empty_Map;
+
    package CDM renames Compiler_Description_Maps;
    package CFL renames Compiler_Filter_Lists;
    use Compiler_Lists, CFL, Compilers_Filter_Lists;
@@ -1840,6 +1842,43 @@ package body GPR.Knowledge is
 
       Visited : String_To_External_Value.Map;
 
+      function Get_Command_Output_Cache
+        (Path       : String;
+         Command    : String) return Unbounded_String;
+      --  Spawns given command and caches results. When the same command
+      --  (same full path and arguments) should be spawned again,
+      --  returns output from cache instead.
+
+      function Get_Command_Output_Cache
+        (Path       : String;
+         Command    : String) return Unbounded_String
+      is
+         Key : constant String             := Path & Command;
+         Cur : constant String_Maps.Cursor := External_Calls_Cache.Find (Key);
+
+         Tmp_Result : Unbounded_String;
+      begin
+         if Cur = String_Maps.No_Element then
+            declare
+               Args   : Argument_List_Access :=
+                 Argument_String_To_List (Command);
+               Output : constant String := Get_Command_Output
+                 (Command    => Args (Args'First).all,
+                  Arguments  => Args (Args'First + 1 .. Args'Last),
+                  Input      => "",
+                  Status     => Status'Unchecked_Access,
+                  Err_To_Out => True);
+            begin
+               GNAT.Strings.Free (Args);
+               Tmp_Result := To_Unbounded_String (Output);
+               External_Calls_Cache.Include (Key, Tmp_Result);
+               return Tmp_Result;
+            end;
+         else
+            return External_Calls_Cache.Element (Key);
+         end if;
+      end Get_Command_Output_Cache;
+
    begin
       Clear (Processed_Value);
 
@@ -1875,29 +1914,19 @@ package body GPR.Knowledge is
                                    (Get_Name_String (Node.Command), Comp);
                   begin
                      Tmp_Result := Null_Unbounded_String;
-                     declare
-                        Args   : Argument_List_Access :=
-                                   Argument_String_To_List (Command);
-                        Output : constant String := Get_Command_Output
-                          (Command    => Args (Args'First).all,
-                           Arguments  => Args (Args'First + 1 .. Args'Last),
-                           Input      => "",
-                           Status     => Status'Unchecked_Access,
-                           Err_To_Out => True);
-                     begin
-                        GNAT.Strings.Free (Args);
-                        Ada.Environment_Variables.Set ("PATH", Saved_Path);
-                        Tmp_Result := To_Unbounded_String (Output);
+                     Tmp_Result := Get_Command_Output_Cache
+                       (Get_Name_String (Comp.Path), Command);
+                     Ada.Environment_Variables.Set ("PATH", Saved_Path);
 
-                        if Current_Verbosity = High then
-                           Put_Verbose (Attribute & ": executing """ & Command
-                                        & """ output=""" & Output & """");
-                        elsif Current_Verbosity = Medium then
-                           Put_Verbose
-                             (Attribute & ": executing """ & Command
-                              & """ output=<use -v -v> no match");
-                        end if;
-                     end;
+                     if Current_Verbosity = High then
+                        Put_Verbose (Attribute & ": executing """ & Command
+                                     & """ output="""
+                                     & To_String (Tmp_Result) & """");
+                     elsif Current_Verbosity = Medium then
+                        Put_Verbose
+                          (Attribute & ": executing """ & Command
+                           & """ output=<use -v -v> no match");
+                     end if;
                   exception
                      when Invalid_Process =>
                         Put_Verbose ("Spawn failed for " & Command);
