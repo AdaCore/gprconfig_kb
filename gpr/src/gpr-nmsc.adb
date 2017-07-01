@@ -6865,16 +6865,6 @@ package body GPR.Nmsc is
    is
       Shared : constant Shared_Project_Tree_Data_Access := Data.Tree.Shared;
 
-      Excluded_Source_List_File : constant Variable_Value :=
-                                    Util.Value_Of
-                                      (Name_Excluded_Source_List_File,
-                                       Project.Project.Decl.Attributes,
-                                       Shared);
-      Excluded_Sources          : Variable_Value := Util.Value_Of
-                                    (Name_Excluded_Source_Files,
-                                     Project.Project.Decl.Attributes,
-                                     Shared);
-
       Current         : String_List_Id;
       Element         : String_Element;
       Location        : Source_Ptr;
@@ -6884,132 +6874,157 @@ package body GPR.Nmsc is
       Last            : Natural;
       Locally_Removed : Boolean := False;
 
+      Proj : Project_Id := Project.Project;
+
    begin
-      --  If Excluded_Source_Files is not declared, check Locally_Removed_Files
+      --  Look for excluded sources in the current project and in all the
+      --  projects that extend it.
 
-      if Excluded_Sources.Default then
-         Locally_Removed := True;
-         Excluded_Sources :=
-           Util.Value_Of
-             (Name_Locally_Removed_Files,
-              Project.Project.Decl.Attributes, Shared);
-      end if;
-
-      --  If there are excluded sources, put them in the table
-
-      if not Excluded_Sources.Default then
-         if not Excluded_Source_List_File.Default then
-            if Locally_Removed then
-               Error_Msg
-                 (Data.Flags,
-                  "?both attributes Locally_Removed_Files and " &
-                  "Excluded_Source_List_File are present",
-                  Excluded_Source_List_File.Location, Project.Project);
-            else
-               Error_Msg
-                 (Data.Flags,
-                  "?both attributes Excluded_Source_Files and " &
-                  "Excluded_Source_List_File are present",
-                  Excluded_Source_List_File.Location, Project.Project);
-            end if;
-         end if;
-
-         Current := Excluded_Sources.Values;
-         while Current /= Nil_String loop
-            Element := Shared.String_Elements.Table (Current);
-            Name := Canonical_Case_File_Name (Element.Value);
-
-            --  If the element has no location, then use the location of
-            --  Excluded_Sources to report possible errors.
-
-            if Element.Location = No_Location then
-               Location := Excluded_Sources.Location;
-            else
-               Location := Element.Location;
-            end if;
-
-            Excluded_Sources_Htable.Set
-              (Project.Excluded, Name,
-               (Name, No_File, 0, False, Location));
-            Current := Element.Next;
-         end loop;
-
-      elsif not Excluded_Source_List_File.Default then
-         Location := Excluded_Source_List_File.Location;
-
+      while Proj /= No_Project loop
          declare
-            Source_File_Name : constant File_Name_Type :=
-                                 File_Name_Type
-                                    (Excluded_Source_List_File.Value);
-            Source_File_Line : Natural := 0;
-
-            Source_File_Path_Name : constant String :=
-                                      Path_Name_Of
-                                        (Source_File_Name,
-                                         Project.Project.Directory.Name);
+            Excluded_Source_List_File : constant Variable_Value :=
+              Util.Value_Of
+                (Name_Excluded_Source_List_File,
+                 Proj.Decl.Attributes,
+                 Shared);
+            Excluded_Sources          : Variable_Value := Util.Value_Of
+              (Name_Excluded_Source_Files,
+               Proj.Decl.Attributes,
+               Shared);
 
          begin
-            if Source_File_Path_Name'Length = 0 then
-               Error_Msg_File_1 :=
-                 File_Name_Type (Excluded_Source_List_File.Value);
-               Error_Msg
-                 (Data.Flags,
-                  "file with excluded sources { does not exist",
-                  Excluded_Source_List_File.Location, Project.Project);
+            --  If Excluded_Source_Files is not declared, check
+            --  Locally_Removed_Files.
 
-            else
-               --  Open the file
+            if Excluded_Sources.Default then
+               Locally_Removed := True;
+               Excluded_Sources :=
+                 Util.Value_Of
+                   (Name_Locally_Removed_Files,
+                    Proj.Decl.Attributes, Shared);
+            end if;
 
-               GPR.Util.Open (File, Source_File_Path_Name);
+            --  If there are excluded sources, put them in the table
 
-               if not GPR.Util.Is_Valid (File) then
-                  Error_Msg
-                    (Data.Flags, "file does not exist",
-                     Location, Project.Project);
-               else
-                  --  Read the lines one by one
+            if not Excluded_Sources.Default then
+               if not Excluded_Source_List_File.Default then
+                  if Locally_Removed then
+                     Error_Msg
+                       (Data.Flags,
+                        "?both attributes Locally_Removed_Files and " &
+                          "Excluded_Source_List_File are present",
+                        Excluded_Source_List_File.Location, Proj);
+                  else
+                     Error_Msg
+                       (Data.Flags,
+                        "?both attributes Excluded_Source_Files and " &
+                          "Excluded_Source_List_File are present",
+                        Excluded_Source_List_File.Location, Proj);
+                  end if;
+               end if;
 
-                  while not GPR.Util.End_Of_File (File) loop
-                     GPR.Util.Get_Line (File, Line, Last);
-                     Source_File_Line := Source_File_Line + 1;
+               Current := Excluded_Sources.Values;
+               while Current /= Nil_String loop
+                  Element := Shared.String_Elements.Table (Current);
+                  Name := Canonical_Case_File_Name (Element.Value);
 
-                     --  Non empty, non comment line should contain a file name
+                  --  If the element has no location, then use the location of
+                  --  Excluded_Sources to report possible errors.
 
-                     if Last /= 0
-                       and then (Last = 1 or else Line (1 .. 2) /= "--")
-                     then
-                        Name_Len := Last;
-                        Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
-                        Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
-                        Name := Name_Find;
+                  if Element.Location = No_Location then
+                     Location := Excluded_Sources.Location;
+                  else
+                     Location := Element.Location;
+                  end if;
 
-                        --  Check that there is no directory information
+                  Excluded_Sources_Htable.Set
+                    (Project.Excluded, Name,
+                     (Name, No_File, 0, False, Location));
+                  Current := Element.Next;
+               end loop;
 
-                        for J in 1 .. Last loop
-                           if Is_Directory_Separator (Line (J)) then
-                              Error_Msg_File_1 := Name;
-                              Error_Msg
-                                (Data.Flags,
-                                 "file name cannot include "
-                                 & "directory information ({)",
-                                 Location, Project.Project);
-                              exit;
+            elsif not Excluded_Source_List_File.Default then
+               Location := Excluded_Source_List_File.Location;
+
+               declare
+                  Source_File_Name : constant File_Name_Type :=
+                    File_Name_Type
+                      (Excluded_Source_List_File.Value);
+                  Source_File_Line : Natural := 0;
+
+                  Source_File_Path_Name : constant String :=
+                    Path_Name_Of
+                      (Source_File_Name,
+                       Proj.Directory.Name);
+
+               begin
+                  if Source_File_Path_Name'Length = 0 then
+                     Error_Msg_File_1 :=
+                       File_Name_Type (Excluded_Source_List_File.Value);
+                     Error_Msg
+                       (Data.Flags,
+                        "file with excluded sources { does not exist",
+                        Excluded_Source_List_File.Location, Proj);
+
+                  else
+                     --  Open the file
+
+                     GPR.Util.Open (File, Source_File_Path_Name);
+
+                     if not GPR.Util.Is_Valid (File) then
+                        Error_Msg
+                          (Data.Flags, "file does not exist",
+                           Location, Proj);
+                     else
+                        --  Read the lines one by one
+
+                        while not GPR.Util.End_Of_File (File) loop
+                           GPR.Util.Get_Line (File, Line, Last);
+                           Source_File_Line := Source_File_Line + 1;
+
+                           --  Non empty, non comment line should contain a
+                           --  file name
+
+                           if Last /= 0
+                             and then (Last = 1 or else Line (1 .. 2) /= "--")
+                           then
+                              Name_Len := Last;
+                              Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
+                              Canonical_Case_File_Name
+                                (Name_Buffer (1 .. Name_Len));
+                              Name := Name_Find;
+
+                              --  Check that there is no directory information
+
+                              for J in 1 .. Last loop
+                                 if Is_Directory_Separator (Line (J)) then
+                                    Error_Msg_File_1 := Name;
+                                    Error_Msg
+                                      (Data.Flags,
+                                       "file name cannot include "
+                                       & "directory information ({)",
+                                       Location, Proj);
+                                    exit;
+                                 end if;
+                              end loop;
+
+                              Excluded_Sources_Htable.Set
+                                (Project.Excluded,
+                                 Name,
+                                 (Name, Source_File_Name, Source_File_Line,
+                                  False, Location));
                            end if;
                         end loop;
 
-                        Excluded_Sources_Htable.Set
-                          (Project.Excluded,
-                           Name,
-                           (Name, Source_File_Name, Source_File_Line,
-                            False, Location));
+                        GPR.Util.Close (File);
                      end if;
-                  end loop;
-
-                  GPR.Util.Close (File);
-               end if;
+                  end if;
+               end;
             end if;
          end;
-      end if;
+
+         Proj := Proj.Extended_By;
+      end loop;
    end Find_Excluded_Sources;
 
    ------------------
@@ -8488,6 +8503,10 @@ package body GPR.Nmsc is
          if Excluded_Sources_Htable.Get_First (Project.Excluded) /=
                                                              No_File_Found
          then
+            --  The excluded files are not only those declared in the current
+            --  project, but also those declared in the projects that extend
+            --  the current project, if there are any.
+
             Proj := Project.Project;
             while Proj /= No_Project loop
                Iter := For_Each_Source (Data.Tree, Proj);
@@ -8541,22 +8560,7 @@ package body GPR.Nmsc is
 
                Error_Msg_File_1 := Excluded.File;
 
-               if Src = No_Source then
-                  if Excluded.Excl_File = No_File then
-                     Error_Msg
-                       (Data.Flags,
-                        "unknown file {", Excluded.Location, Project.Project);
-
-                  else
-                     Error_Msg
-                    (Data.Flags,
-                     "in " &
-                     Get_Name_String (Excluded.Excl_File) & ":" &
-                     No_Space_Img (Excluded.Excl_Line) &
-                     ": unknown file {", Excluded.Location, Project.Project);
-                  end if;
-
-               else
+               if Src /= No_Source then
                   if Excluded.Excl_File = No_File then
                      Error_Msg
                        (Data.Flags,
