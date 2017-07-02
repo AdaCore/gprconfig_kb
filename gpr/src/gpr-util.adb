@@ -2425,11 +2425,14 @@ package body GPR.Util is
 
       function Ensure_Directory (Path : String) return String is
       begin
-         if Path'Length = 0
-           or else Path (Path'Last) = Directory_Separator
+         if Path'Length = 0 then
+            return "./";
+
+         elsif Path (Path'Last) = Directory_Separator
            or else Path (Path'Last) = '/' -- on Windows check also for /
          then
             return Path;
+
          else
             return Path & Directory_Separator;
          end if;
