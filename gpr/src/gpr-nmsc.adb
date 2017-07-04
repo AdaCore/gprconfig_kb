@@ -113,10 +113,11 @@ package body GPR.Nmsc is
       Excl_Line : Natural        := 0;
       Found     : Boolean        := False;
       Location  : Source_Ptr     := No_Location;
+      Project   : Project_Id     := No_Project;
    end record;
 
    No_File_Found : constant File_Found :=
-                     (No_File, No_File, 0, False, No_Location);
+                     (No_File, No_File, 0, False, No_Location, No_Project);
 
    package Excluded_Sources_Htable is new GNAT.Dynamic_HTables.Simple_HTable
      (Header_Num => Header_Num,
@@ -6939,7 +6940,7 @@ package body GPR.Nmsc is
 
                   Excluded_Sources_Htable.Set
                     (Project.Excluded, Name,
-                     (Name, No_File, 0, False, Location));
+                     (Name, No_File, 0, False, Location, Proj));
                   Current := Element.Next;
                end loop;
 
@@ -7012,7 +7013,7 @@ package body GPR.Nmsc is
                                 (Project.Excluded,
                                  Name,
                                  (Name, Source_File_Name, Source_File_Line,
-                                  False, Location));
+                                  False, Location, Proj));
                            end if;
                         end loop;
 
@@ -8560,7 +8561,23 @@ package body GPR.Nmsc is
 
                Error_Msg_File_1 := Excluded.File;
 
-               if Src /= No_Source then
+               if Src = No_Source and then Excluded.Project = Project.Project
+               then
+                  if Excluded.Excl_File = No_File then
+                     Error_Msg
+                       (Data.Flags,
+                        "unknown file {", Excluded.Location, Project.Project);
+
+                  else
+                     Error_Msg
+                    (Data.Flags,
+                     "in " &
+                     Get_Name_String (Excluded.Excl_File) & ":" &
+                     No_Space_Img (Excluded.Excl_Line) &
+                     ": unknown file {", Excluded.Location, Project.Project);
+                  end if;
+
+               elsif Src /= No_Source then
                   if Excluded.Excl_File = No_File then
                      Error_Msg
                        (Data.Flags,

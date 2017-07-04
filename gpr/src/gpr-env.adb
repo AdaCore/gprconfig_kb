@@ -25,6 +25,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.HTable;
 
 with GPR.Opt;
 with GPR.Com;     use GPR.Com;
@@ -756,6 +757,16 @@ package body GPR.Env is
    -- Create_Mapping_File --
    -------------------------
 
+   package Mapping is new GNAT.HTable.Simple_HTable
+     (Header_Num => Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => Path_Name_Type,
+      Hash       => Hash,
+      Equal      => "=");
+   --  A hash table to record path names of sources in a mapping file, to avoid
+   --  declaring a source as excluded once it is in the mapping file.
+
    procedure Create_Mapping_File
      (Project  : Project_Id;
       Language : Name_Id;
@@ -815,6 +826,7 @@ package body GPR.Env is
 
             if Source.Replaced_By = No_Source
               and then Source.Path.Name /= No_Path
+              and then not Mapping.Get (Source.Path.Name)
               and then (Source.Language.Config.Kind = File_Based
                          or else Source.Unit /= No_Unit_Index)
             then
@@ -876,6 +888,11 @@ package body GPR.Env is
                   Name_Buffer (1) := '/';
                else
                   Get_Name_String (Source.Path.Display_Name);
+
+                  --  Record the path name of the source, so that it will not
+                  --  declared as deleted in another project file.
+
+                  Mapping.Set (Source.Path.Name, True);
                end if;
 
                Put_Name_Buffer;
@@ -904,6 +921,8 @@ package body GPR.Env is
       if Current_Verbosity = High then
          Debug_Increase_Indent ("Create mapping file ", Name_Id (Name));
       end if;
+
+      Mapping.Reset;
 
       For_Every_Imported_Project
         (Project, In_Tree, Dummy, Include_Aggregated => False);
