@@ -484,7 +484,7 @@ There can be any number of such main files within a given project, and thus
 several executables can be built from a single project file. Of
 course, a given executable might not (and in general will not) need all the
 source files referenced by the project. As opposed to other build mechanisms
-such as through a *Makefile*, you does not need to specify the list of
+such as through a *Makefile*, you do not need to specify the list of
 dependencies of each executable. The project-aware builder knows enough of the
 semantics of the languages to build and link only the necessary elements.
 
