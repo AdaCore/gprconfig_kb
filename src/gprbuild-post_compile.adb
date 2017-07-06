@@ -155,7 +155,16 @@ package body Gprbuild.Post_Compile is
          Key        => File_Name_Type,
          Hash       => GPR.Hash,
          Equal      => "=");
-      --  The ALI files in the interface sets
+      --  The ALI files in the interface set
+
+      package Complete_Interface_ALIs is new GNAT.HTable.Simple_HTable
+        (Header_Num => GPR.Header_Num,
+         Element    => Boolean,
+         No_Element => False,
+         Key        => File_Name_Type,
+         Hash       => GPR.Hash,
+         Equal      => "=");
+      --  The ALI files in the complete interface set
 
       Expected_File_Name : String_Access;
       --  Expected library file name
@@ -266,6 +275,20 @@ package body Gprbuild.Post_Compile is
          Never : constant Time_Stamp_Type := (others => '9');
          --  A time stamp that is greater than any real one
 
+         procedure Check_Interface
+           (Proj : Project_Id;
+            Tree : Project_Tree_Ref);
+         --  Check if the interface of SAL project Proj is complete
+
+         procedure Find_ALI_Path
+           (The_ALI  : File_Name_Type;
+            ALI_Path : in out Path_Name_Type;
+            Proj     : Project_Id;
+            Tree     : Project_Tree_Ref);
+         --  Find the path of the ALI file The_ALI. It may be in project
+         --  Proj, or if Proj is an aggregate library in one of its aggregated
+         --  projects.
+
          procedure Process
            (Proj : Project_Id;
             Tree : Project_Tree_Ref);
@@ -273,7 +296,8 @@ package body Gprbuild.Post_Compile is
 
          procedure Process_ALI
            (The_ALI : File_Name_Type;
-            Proj    : Project_Id);
+            Proj    : Project_Id;
+            Tree    : Project_Tree_Ref);
          --  Check if the closure of a library unit which is or should be in
          --  the interface set is also in the interface set. Issue a warning
          --  for each missing library unit.
@@ -359,6 +383,48 @@ package body Gprbuild.Post_Compile is
             end loop;
          end Process;
 
+         -------------------
+         -- Find_ALI_Path --
+         -------------------
+
+         procedure Find_ALI_Path
+           (The_ALI  : File_Name_Type;
+            ALI_Path : in out Path_Name_Type;
+            Proj     : Project_Id;
+            Tree     : Project_Tree_Ref) is
+
+            Source : Source_Id;
+            Iter   : Source_Iterator;
+
+            Aggr_Projs : Aggregated_Project_List;
+
+         begin
+            Iter := For_Each_Source (Tree, Proj);
+            loop
+               Source := GPR.Element (Iter);
+               exit when Source = No_Source;
+
+               Initialize_Source_Record (Source);
+
+               if Source.Dep_Name = The_ALI then
+                  ALI_Path := Source.Dep_Path;
+                  return;
+               end if;
+
+               Next (Iter);
+            end loop;
+
+            if Proj.Qualifier = Aggregate_Library then
+               Aggr_Projs := Proj.Aggregated_Projects;
+               while Aggr_Projs /= null loop
+                  Find_ALI_Path
+                    (The_ALI, ALI_Path, Aggr_Projs.Project, Aggr_Projs.Tree);
+                  exit when ALI_Path /= No_Path;
+                  Aggr_Projs := Aggr_Projs.Next;
+               end loop;
+            end if;
+         end Find_ALI_Path;
+
          -----------------
          -- Process_ALI --
          -----------------
@@ -367,15 +433,18 @@ package body Gprbuild.Post_Compile is
 
          procedure Process_ALI
            (The_ALI : File_Name_Type;
-            Proj    : Project_Id)
+            Proj    : Project_Id;
+            Tree    : Project_Tree_Ref)
          is
             use ALI;
-            Text       : Text_Buffer_Ptr;
+            Text       : Text_Buffer_Ptr := null;
             Idread     : ALI_Id;
             First_Unit : Unit_Id;
             Last_Unit  : ALI.Unit_Id;
             Unit_Data  : ALI.Unit_Record;
             Afile      : File_Name_Type;
+
+            ALI_Path   : Path_Name_Type;
 
          begin
             --  Nothing to do if the ALI file has already been processed.
@@ -383,7 +452,13 @@ package body Gprbuild.Post_Compile is
 
             if not Processed_ALIs.Get (The_ALI) then
                Processed_ALIs.Set (The_ALI, True);
-               Text := Read_Library_Info (The_ALI);
+
+               ALI_Path := No_Path;
+               Find_ALI_Path (The_ALI, ALI_Path, Proj, Tree);
+
+               if ALI_Path /= No_Path then
+                  Text := Read_Library_Info (File_Name_Type (ALI_Path));
+               end if;
 
                if Text /= null then
                   Idread :=
@@ -425,10 +500,10 @@ package body Gprbuild.Post_Compile is
                              and then Library_ALIs.Get (Afile)
                              and then not Processed_ALIs.Get (Afile)
                            then
-                              if not Interface_ALIs.Get (Afile) then
+                              if not Complete_Interface_ALIs.Get (Afile) then
                                  if not Interface_Incomplete then
                                     Put
-                                      ("Error: In library project """);
+                                      ("Warning: In library project """);
                                     Get_Name_String (Proj.Name);
                                     To_Mixed (Name_Buffer (1 .. Name_Len));
                                     Put (Name_Buffer (1 .. Name_Len));
@@ -459,11 +534,14 @@ package body Gprbuild.Post_Compile is
                                  To_Mixed (Name_Buffer (1 .. Name_Len - 2));
                                  Put (Name_Buffer (1 .. Name_Len - 2));
                                  Put_Line ("""");
+
+                                 Complete_Interface_ALIs.Set
+                                   (Afile, True);
                               end if;
 
                               --  Now, process this unit
 
-                              Process_ALI (Afile, Proj);
+                              Process_ALI (Afile, Proj, Tree);
                            end if;
                         end loop;
                      end loop;
@@ -480,6 +558,8 @@ package body Gprbuild.Post_Compile is
            (Proj : Project_Id;
             Tree : Project_Tree_Ref)
          is
+            pragma Unreferenced (Tree);
+
             Source : Source_Id;
             Iter   : Source_Iterator;
 
@@ -488,10 +568,7 @@ package body Gprbuild.Post_Compile is
             OK   : Boolean;
 
          begin
-            Processed_ALIs.Reset;
             Library_ALIs.Reset;
-            Interface_ALIs.Reset;
-            Interface_Incomplete := False;
 
             if Proj.Qualifier /= Aggregate_Library
               and then Proj.Extended_By = No_Project
@@ -547,6 +624,7 @@ package body Gprbuild.Post_Compile is
                            OK := True;
                            Library_Sources.Append (Source);
                            Interface_ALIs.Set (Source.Dep_Name, True);
+                           Complete_Interface_ALIs.Set (Source.Dep_Name, True);
                            exit;
                         end if;
 
@@ -574,35 +652,29 @@ package body Gprbuild.Post_Compile is
 
                Next (Iter);
             end loop;
-
-            --  Only check the interface of the aggregate SAL, not those of
-            --  the aggregated projects.
-
-            if Proj = For_Project then
-
-               --  Check if the interface set is complete
-
-               declare
-                  Iface : String_List_Id := Proj.Lib_Interface_ALIs;
-                  ALI   : File_Name_Type;
-
-               begin
-                  while Iface /= Nil_String loop
-                     ALI :=
-                       File_Name_Type
-                         (Tree.Shared.String_Elements.Table (Iface).Value);
-                     Process_ALI (ALI, Proj);
-                     Iface :=
-                       Tree.Shared.String_Elements.Table (Iface).Next;
-                  end loop;
-               end;
-
-               if Interface_Incomplete then
-                  Fail_Program
-                    (Project_Tree, "incomplete Stand-Alone Library interface");
-               end if;
-            end if;
          end Process_Standalone;
+
+         ---------------------
+         -- Check_Interface --
+         ---------------------
+
+         procedure Check_Interface
+           (Proj : Project_Id;
+            Tree : Project_Tree_Ref) is
+
+            Iface : String_List_Id := Proj.Lib_Interface_ALIs;
+            ALI   : File_Name_Type;
+
+         begin
+            while Iface /= Nil_String loop
+               ALI :=
+                 File_Name_Type
+                   (Tree.Shared.String_Elements.Table (Iface).Value);
+               Process_ALI (ALI, Proj, Tree);
+               Iface :=
+                 Tree.Shared.String_Elements.Table (Iface).Next;
+            end loop;
+         end Check_Interface;
 
          -----------------
          -- Get_Closure --
@@ -952,6 +1024,9 @@ package body Gprbuild.Post_Compile is
          Library_Sources.Init;
          Library_Projs.Init;
          Library_SAL_Projs.Init;
+         Processed_ALIs.Reset;
+         Interface_ALIs.Reset;
+         Complete_Interface_ALIs.Reset;
 
          if For_Project.Qualifier = Aggregate_Library then
             if For_Project.Standalone_Library = No then
@@ -975,6 +1050,11 @@ package body Gprbuild.Post_Compile is
          end if;
 
          if For_Project.Standalone_Library /= No then
+            --  Check the interface
+
+            Interface_Incomplete := False;
+            Check_Interface (For_Project, Project_Tree);
+
             --  Create the binder maping file
 
             Tempdir.Create_Temp_File (Mapping_FD, Mapping_Path);
@@ -2319,16 +2399,16 @@ package body Gprbuild.Post_Compile is
       -------------------------------
 
       procedure Write_Interface_Dep_Files is
-         Interface_ALIs : String_List_Id :=
-                            For_Project.Lib_Interface_ALIs;
-         Element        : String_Element;
+         Interface_ALI : File_Name_Type := No_File;
+         In_Interface  : Boolean := False;
+
       begin
          Put_Line (Exchange_File, Library_Label (Interface_Dep_Files));
 
-         while Interface_ALIs /= Nil_String loop
-            Element :=
-              Project_Tree.Shared.String_Elements.Table (Interface_ALIs);
+         Complete_Interface_ALIs.Get_First
+           (Interface_ALI, In_Interface);
 
+         while In_Interface loop
             --  Find the source to get the absolute path of the ALI file
 
             declare
@@ -2347,8 +2427,7 @@ package body Gprbuild.Post_Compile is
                   while GPR.Element (Iter) /= No_Source
                     and then
                     (GPR.Element (Iter).Unit = null
-                     or else GPR.Element (Iter).Dep_Name /=
-                       File_Name_Type (Element.Value))
+                     or else GPR.Element (Iter).Dep_Name /= Interface_ALI)
                   loop
                      Next (Iter);
                   end loop;
@@ -2386,7 +2465,8 @@ package body Gprbuild.Post_Compile is
                end if;
             end;
 
-            Interface_ALIs := Element.Next;
+            Complete_Interface_ALIs.Get_Next
+              (Interface_ALI, In_Interface);
          end loop;
       end Write_Interface_Dep_Files;
 
@@ -2414,13 +2494,19 @@ package body Gprbuild.Post_Compile is
       -------------------------------
 
       procedure Write_Interface_Obj_Files is
-         List      : String_List_Id :=
-                       For_Project.Lib_Interface_ALIs;
+         List      : String_List_Id := For_Project.Other_Interfaces;
          Element   : String_Element;
          Other_Int : Boolean := False;
 
+         Interface_Dep : File_Name_Type := No_File;
+         In_Interface  : Boolean;
+
          function Base_Name (Name : Name_Id) return String;
          --  File name without path nor extension
+
+         procedure Find_Source;
+         --  Find the source corresponding to Interface_Dep (when Other_Int is
+         --  False) or Element.Value (when Other_Int is True).
 
          ---------------
          -- Base_Name --
@@ -2432,90 +2518,100 @@ package body Gprbuild.Post_Compile is
             return Base_Name (N, File_Extension (N));
          end Base_Name;
 
+         -----------------
+         -- Find_Source --
+         -----------------
+
+         procedure Find_Source is
+            Next_Proj : Project_Id;
+            Iter      : Source_Iterator;
+         begin
+            Next_Proj := For_Project.Extends;
+
+            if For_Project.Qualifier = Aggregate_Library then
+               Iter := For_Each_Source (Project_Tree);
+            else
+               Iter := For_Each_Source (Project_Tree, For_Project);
+            end if;
+
+            loop
+               --  Look for the Source_Id corresponding to this unit
+
+               while GPR.Element (Iter) /= No_Source
+                 and then
+               --  Either an foreign language, we need the
+               --  implementation of this unit.
+                 ((Other_Int
+                   and then
+                     (Base_Name (Name_Id (GPR.Element (Iter).Object)) /=
+                          Base_Name (Element.Value)
+                      or else GPR.Element (Iter).Kind = Spec))
+               --  Or and Ada unit, we need the dependency file
+                  or else
+                    (not Other_Int and then
+                         (GPR.Element (Iter).Unit = null
+                          or else GPR.Element (Iter).Dep_Name /=
+                                Interface_Dep)))
+               loop
+                  Next (Iter);
+               end loop;
+
+               Source := GPR.Element (Iter);
+
+               exit when Source /= No_Source
+                 or else Next_Proj = No_Project;
+
+               Iter := For_Each_Source (Project_Tree, Next_Proj);
+               Next_Proj := Next_Proj.Extends;
+            end loop;
+
+            if Source /= No_Source then
+               if Source.Kind = Sep then
+                  Source := No_Source;
+
+               elsif Source.Kind = Spec
+                 and then Other_Part (Source) /= No_Source
+               then
+                  Source := Other_Part (Source);
+               end if;
+            end if;
+
+            if Source /= No_Source then
+               if Source.Project /= Project
+                 and then not Is_Extending (For_Project, Source.Project)
+                 and then not (For_Project.Qualifier = Aggregate_Library)
+               then
+                  Source := No_Source;
+               end if;
+            end if;
+
+            if Source /= No_Source then
+               Put_Line
+                 (Exchange_File, Get_Name_String (Source.Object_Path));
+            end if;
+         end Find_Source;
+
       begin
          Put_Line (Exchange_File, Library_Label (Interface_Obj_Files));
 
+         --  First the Ada sources
+
+         Other_Int := False;
+         Complete_Interface_ALIs.Get_First (Interface_Dep, In_Interface);
+
+         while In_Interface loop
+            Find_Source;
+            Complete_Interface_ALIs.Get_Next (Interface_Dep, In_Interface);
+         end loop;
+
+         --  Then the foreign language objects
+
+         Other_Int := True;
+
          while List /= Nil_String loop
-            Element :=
-              Project_Tree.Shared.String_Elements.Table (List);
-
-            --  Find the source to get the absolute path of the ALI file
-
-            declare
-               Next_Proj : Project_Id;
-               Iter      : Source_Iterator;
-            begin
-               Next_Proj := For_Project.Extends;
-
-               if For_Project.Qualifier = Aggregate_Library then
-                  Iter := For_Each_Source (Project_Tree);
-               else
-                  Iter := For_Each_Source (Project_Tree, For_Project);
-               end if;
-
-               loop
-                  --  Look for the Source_Id corresponding to this unit
-
-                  while GPR.Element (Iter) /= No_Source
-                    and then
-                       --  Either an foreign language, we need the
-                       --  implementation of this unit.
-                      ((Other_Int
-                        and then
-                        (Base_Name (Name_Id (GPR.Element (Iter).Object)) /=
-                             Base_Name (Element.Value)
-                         or else GPR.Element (Iter).Kind = Spec))
-                       --  Or and Ada unit, when need the dependency file
-                       or else
-                         (not Other_Int and then
-                            (GPR.Element (Iter).Unit = null
-                             or else GPR.Element (Iter).Dep_Name /=
-                                 File_Name_Type (Element.Value))))
-                  loop
-                     Next (Iter);
-                  end loop;
-
-                  Source := GPR.Element (Iter);
-
-                  exit when Source /= No_Source
-                    or else Next_Proj = No_Project;
-
-                  Iter := For_Each_Source (Project_Tree, Next_Proj);
-                  Next_Proj := Next_Proj.Extends;
-               end loop;
-
-               if Source /= No_Source then
-                  if Source.Kind = Sep then
-                     Source := No_Source;
-
-                  elsif Source.Kind = Spec
-                    and then Other_Part (Source) /= No_Source
-                  then
-                     Source := Other_Part (Source);
-                  end if;
-               end if;
-
-               if Source /= No_Source then
-                  if Source.Project /= Project
-                    and then not Is_Extending (For_Project, Source.Project)
-                    and then not (For_Project.Qualifier = Aggregate_Library)
-                  then
-                     Source := No_Source;
-                  end if;
-               end if;
-
-               if Source /= No_Source then
-                  Put_Line
-                    (Exchange_File, Get_Name_String (Source.Object_Path));
-               end if;
-            end;
-
+            Element := Project_Tree.Shared.String_Elements.Table (List);
+            Find_Source;
             List := Element.Next;
-
-            if List = Nil_String and then not Other_Int then
-               List := For_Project.Other_Interfaces;
-               Other_Int := True;
-            end if;
          end loop;
       end Write_Interface_Obj_Files;
 
