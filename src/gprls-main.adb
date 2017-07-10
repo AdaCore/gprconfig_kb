@@ -1127,10 +1127,12 @@ begin
 
       for J in 1 .. Number_File_Names loop
          declare
-            File_Name : constant String := File_Names (J).File_Name.all;
+            File_Name : String := File_Names (J).File_Name.all;
             Unit      : GPR.Unit_Index;
             Subunit   : Boolean := False;
          begin
+            Canonical_Case_File_Name (File_Name);
+
             Unit := Units_Htable.Get_First (Project_Tree.Units_HT);
 
             Unit_Loop :
@@ -1161,25 +1163,31 @@ begin
                         Subunit := Is_Subunit (Unit.File_Names (Impl));
                      end if;
 
-                     if not Subunit and then
-                       (Get_Name_String (Unit.File_Names (Impl).Object) =
-                          File_Name
-                       or else
-                         Get_Name_String (Unit.File_Names (Impl).Dep_Name) =
-                            File_Name
-                       or else
-                         Get_Name_String (Unit.File_Names (Impl).Dep_Name) =
-                          File_Name & ".ali"
-                       or else
-                         Get_Name_String (Unit.File_Names (Impl).File) =
-                            File_Name
-                       or else
-                         Get_Name_String
-                            (Unit.File_Names (Impl).Display_File) =
-                            File_Name)
-                     then
-                        File_Names (J).Source := Unit.File_Names (Impl);
-                        exit Unit_Loop;
+                     if not Subunit then
+                        declare
+                           Object_Name : String :=
+                             Get_Name_String (Unit.File_Names (Impl).Object);
+                           Dep_Name : String :=
+                             Get_Name_String (Unit.File_Names (Impl).Dep_Name);
+                        begin
+                           Canonical_Case_File_Name (Object_Name);
+                           Canonical_Case_File_Name (Dep_Name);
+
+                           if Object_Name = File_Name
+                             or else Dep_Name = File_Name
+                             or else Dep_Name = File_Name & ".ali"
+                             or else
+                               Get_Name_String (Unit.File_Names (Impl).File) =
+                                 File_Name
+                             or else
+                               Get_Name_String
+                                 (Unit.File_Names (Impl).Display_File) =
+                                 File_Name
+                           then
+                              File_Names (J).Source := Unit.File_Names (Impl);
+                              exit Unit_Loop;
+                           end if;
+                        end;
                      end if;
                   end if;
 
@@ -1189,26 +1197,32 @@ begin
                   --  We have a spec with no body. Check if it is for this
                   --  project.
 
-                  if (All_Projects
-                      or else Unit.File_Names (Spec).Project = Main_Project)
-                    and then
-                      (Get_Name_String (Unit.File_Names (Spec).Object) =
-                         File_Name
-                       or else
-                       Get_Name_String (Unit.File_Names (Spec).Dep_Name) =
-                         File_Name
-                       or else
-                       Get_Name_String (Unit.File_Names (Spec).Dep_Name) =
-                         File_Name & ".ali"
-                       or else
-                       Get_Name_String (Unit.File_Names (Spec).File) =
-                         File_Name
-                       or else
-                       Get_Name_String
-                          (Unit.File_Names (Spec).Display_File) =
-                         File_Name)
+                  if All_Projects
+                      or else Unit.File_Names (Spec).Project = Main_Project
                   then
-                     File_Names (J).Source := Unit.File_Names (Spec);
+                     declare
+                        Object_Name : String :=
+                          Get_Name_String (Unit.File_Names (Spec).Object);
+                        Dep_Name : String :=
+                          Get_Name_String (Unit.File_Names (Spec).Dep_Name);
+                     begin
+                        Canonical_Case_File_Name (Object_Name);
+                        Canonical_Case_File_Name (Dep_Name);
+
+                        if Object_Name = File_Name
+                          or else Dep_Name = File_Name
+                          or else Dep_Name = File_Name & ".ali"
+                          or else
+                            Get_Name_String (Unit.File_Names (Spec).File) =
+                              File_Name
+                          or else
+                            Get_Name_String
+                              (Unit.File_Names (Spec).Display_File) =
+                              File_Name
+                        then
+                           File_Names (J).Source := Unit.File_Names (Spec);
+                        end if;
+                     end;
                   end if;
                end if;
 
