@@ -4439,26 +4439,59 @@ package body GPR.Util is
                   if Dep_Src = No_Source and then
                     ALI.Sdep.Table (D).Checksum = 0
                   then
-                     --  Probably preprocessing dependencies. Look for the
-                     --  file in the object directory.
+                     --  Probably preprocessing dependencies. Look for the file
+                     --  in the directory of the source, then the other source
+                     --  directories of the project.
 
                      declare
-                        Path : Path_Name_Type;
-                        File : constant String := Get_Name_String (Sfile);
-                        Stamp : Time_Stamp_Type;
+                        Path  : Path_Name_Type  := No_Path;
+                        File  : constant String := Get_Name_String (Sfile);
+                        Stamp : Time_Stamp_Type := Empty_Time_Stamp;
+                        List  : String_List_Id  := In_Project.Source_Dirs;
+                        Elem  : String_Element;
 
-                     begin
-                        if Is_Absolute_Path (File) then
-                           Path := Path_Name_Type (Sfile);
-                        else
+                        procedure Get_Path (Dir : String);
+                        --  If File is in the absolute directory Dir then
+                        --  set Path to the absolute path of the file and
+                        --  Stamp to its timestamp. Otherwise Path is No_Path.
+
+                        --------------
+                        -- Get_Path --
+                        --------------
+
+                        procedure Get_Path (Dir : String) is
+                        begin
                            Name_Len := 0;
-                           Add_Str_To_Name_Buffer (Source_Dir_Of (Source));
+                           Add_Str_To_Name_Buffer (Dir);
                            Add_Char_To_Name_Buffer (Directory_Separator);
                            Add_Str_To_Name_Buffer (File);
                            Path := Name_Find;
+
+                           Stamp := File_Stamp (Path);
+
+                           if Stamp = Empty_Time_Stamp then
+                              Path := No_Path;
+                           end if;
+                        end Get_Path;
+
+                     begin
+                        --  No need to search if we have an absolute path
+                        if Is_Absolute_Path (File) then
+                           Path := Path_Name_Type (Sfile);
+                           Stamp := File_Stamp (Path);
                         end if;
 
-                        Stamp := File_Stamp (Path);
+                        --  Look in the directory of the source
+
+                        if Path = No_Path then
+                           Get_Path (Source_Dir_Of (Source));
+                        end if;
+
+                        while Path = No_Path and then List /= Nil_String loop
+                           Elem := Tree.Shared.String_Elements.Table (List);
+                           Get_Path (Get_Name_String (Elem.Display_Value));
+                           List := Elem.Next;
+                        end loop;
 
                         if Stamp /= ALI.Sdep.Table (D).Stamp then
                            if Opt.Verbosity_Level > Opt.Low then
