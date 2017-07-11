@@ -8903,7 +8903,20 @@ package body GPR.Nmsc is
       Location     : Source_Ptr;
       Continuation : Boolean := False)
    is
+      Language_Name : String (1 .. Lang_Name'Length * 2);
+      Language_Last : Natural := 0;
    begin
+      --  Make sure that the language name will be displayed as is in the
+      --  error message and not modified, for example if it is in capital
+      --  letters.
+
+      for J in Lang_Name'Range loop
+         Language_Last := Language_Last + 1;
+         Language_Name (Language_Last) := '\';
+         Language_Last := Language_Last + 1;
+         Language_Name (Language_Last) := Lang_Name (J);
+      end loop;
+
       case Data.Flags.When_No_Sources is
          when Silent =>
             null;
@@ -8911,8 +8924,8 @@ package body GPR.Nmsc is
          when Warning | Error =>
             declare
                Msg : constant String :=
-                      "<there are no "
-                      & Lang_Name & " sources in this project";
+                      "<there are no source of language """
+                      & Language_Name & """ in this project";
 
             begin
                Error_Msg_Warn := Data.Flags.When_No_Sources = Warning;
