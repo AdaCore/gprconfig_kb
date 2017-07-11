@@ -8924,7 +8924,7 @@ package body GPR.Nmsc is
          when Warning | Error =>
             declare
                Msg : constant String :=
-                      "<there are no source of language """
+                      "<there are no sources of language """
                       & Language_Name & """ in this project";
 
             begin
