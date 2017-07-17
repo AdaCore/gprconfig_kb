@@ -32,7 +32,7 @@ BUILD         = production
 PROCESSORS    = 0
 BUILD_DIR     =
 SOURCE_DIR    := $(shell dirname "$(MAKEFILE_LIST)")
-LIB_DIR       = ${prefix}/lib
+LIB_DIR       = lib/
 
 # Load current setup if any
 -include makefile.setup
