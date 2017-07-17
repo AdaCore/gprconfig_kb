@@ -32,6 +32,7 @@ BUILD         = production
 PROCESSORS    = 0
 BUILD_DIR     =
 SOURCE_DIR    := $(shell dirname "$(MAKEFILE_LIST)")
+LIB_DIR       = ${prefix}/lib
 
 # Load current setup if any
 -include makefile.setup
@@ -152,21 +153,21 @@ libgpr.install.static:
 	$(LIBGPR_INSTALLER) \
 	   -XLIBRARY_TYPE=static \
 	   -XXMLADA_BUILD=static \
-	   --lib-subdir=lib/gpr/static \
+	   --lib-subdir=${LIB_DIR}/gpr/static \
 	   --build-name=static
 
 libgpr.install.static-pic:
 	$(LIBGPR_INSTALLER) \
 	   -XLIBRARY_TYPE=static-pic \
 	   -XXMLADA_BUILD=static-pic \
-	   --lib-subdir=lib/gpr/static-pic \
+	   --lib-subdir=${LIB_DIR}/gpr/static-pic \
 	   --build-name=static-pic
 
 libgpr.install.shared:
 	$(LIBGPR_INSTALLER) \
 	   -XLIBRARY_TYPE=relocatable \
 	   -XXMLADA_BUILD=relocatable \
-	   --lib-subdir=lib/gpr/relocatable \
+	   --lib-subdir=${LIB_DIR}/gpr/relocatable \
 	   --build-name=relocatable
 
 libgpr.uninstall:
