@@ -1596,6 +1596,21 @@ package GPR is
    Unknown_Pkg     : constant Pkg_Node_Id     := Package_Node_High_Bound;
    Unknown_Package : constant Package_Node_Id := (Value => Unknown_Pkg);
 
+   -------------------
+   -- Miscellaneous --
+   -------------------
+
+   procedure Add_To_Path
+     (Directory : String;
+      Append    : Boolean := False;
+      Variable  : String := "PATH");
+   --  Add a directory to the path environment variable (by default "PATH").
+   --  If the variable is not defined or if its value is the empty string, set
+   --  the value of the variable to Directory;
+   --  Otherwise update the variable with Directory either in the front or in
+   --  the back, depending on the value of parameter Append, using a
+   --  Path_Separator after or before Directory.
+
    -------------------------------
    -- Restricted Access Section --
    -------------------------------

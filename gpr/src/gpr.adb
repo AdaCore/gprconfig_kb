@@ -23,7 +23,10 @@
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Handling;     use Ada.Characters.Handling;
+with Ada.Command_Line;
+with Ada.Directories;
 with Ada.Containers.Ordered_Sets;
+with Ada.Environment_Variables;   use Ada.Environment_Variables;
 with Ada.Text_IO;                 use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 
@@ -122,6 +125,47 @@ package body GPR is
       Restricted_Languages :=
         new Restricted_Lang'(Name => Name_Find, Next => Restricted_Languages);
    end Add_Restricted_Language;
+
+   -----------------
+   -- Add_To_Path --
+   -----------------
+
+   procedure Add_To_Path
+     (Directory : String;
+      Append    : Boolean := False;
+      Variable  : String := "PATH")
+   is
+
+      procedure Update (Path : String);
+      --  Update value of Variable. Path is its current value;
+
+      ------------
+      -- Update --
+      ------------
+
+      procedure Update (Path : String) is
+      begin
+         if Path'Length = 0 then
+            Set (Variable, Directory);
+
+         elsif Append then
+            Set (Variable, Path & Path_Separator & Directory);
+
+         else
+            Set (Variable, Directory & Path_Separator & Path);
+         end if;
+      end Update;
+
+   begin
+      if Directory'Length /= 0 then
+         if not Exists (Variable) then
+            Update ("");
+
+         else
+            Update (Value (Variable));
+         end if;
+      end if;
+   end Add_To_Path;
 
    -------------------------------------
    -- Remove_All_Restricted_Languages --
@@ -1174,6 +1218,30 @@ package body GPR is
          The_Dot_String := Name_Find;
 
          GPR.Attr.Initialize;
+
+         --  Add the directory of the GPR tool at the end of the PATH, so that
+         --  other GPR tools, such as gprconfig, may be found.
+
+         declare
+            Program_Name : constant String := Ada.Command_Line.Command_Name;
+            use Ada.Directories;
+
+         begin
+            if Program_Name'Length > 0 then
+               if Is_Absolute_Path (Program_Name) then
+                  Add_To_Path
+                    (Containing_Directory (Program_Name),
+                     Append => True);
+
+               else
+                  Add_To_Path
+                    (Current_Directory &
+                     Directory_Separator &
+                     Containing_Directory (Program_Name),
+                    Append => True);
+               end if;
+            end if;
+         end;
       end if;
 
       if Tree /= No_Project_Tree then
