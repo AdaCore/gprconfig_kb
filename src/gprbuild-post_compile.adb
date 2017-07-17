@@ -67,6 +67,11 @@ package body Gprbuild.Post_Compile is
       Known : Boolean;
    end record;
 
+   function "<" (Left, Right : Library_Object) return Boolean;
+   --  Operator uses for the ordered set Library_Objs in procedure
+   --  Build_Library. Left < Right if Left path as a string is before
+   --  Right path in alphabetical order.
+
    --  Dependency Files
 
    type Dep_Name;
@@ -82,6 +87,17 @@ package body Gprbuild.Post_Compile is
    procedure Add_Dep (Name : String);
    --  Insert a dependency file path name in the list starting at First_Dep,
    --  at the right place so that the list is sorted.
+
+   ---------
+   -- "<" --
+   ---------
+
+   function "<" (Left, Right : Library_Object) return Boolean is
+      Left_Path  : constant String := Get_Name_String (Left.Path);
+      Right_Path : constant String := Get_Name_String (Right.Path);
+   begin
+      return Left_Path < Right_Path;
+   end "<";
 
    ----------------
    -- Add_Dep --
@@ -113,13 +129,11 @@ package body Gprbuild.Post_Compile is
       Project_Tree : Project_Tree_Ref;
       No_Create    : Boolean)
    is
-      package Library_Objs is new GNAT.Table
-        (Table_Component_Type => Library_Object,
-         Table_Index_Type     => Integer,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 10,
-         Table_Increment      => 100);
-      --  Objects that are in the library file with their time stamps
+      package Objects is new Containers.Ordered_Sets (Library_Object);
+
+      Library_Objs : Objects.Set;
+      --  Objects that are in the library file with their time stamps, ordered
+      --  by increasing path names.
 
       package Library_SAL_Projs is new GNAT.Table
         (Table_Component_Type => Project_Id,
@@ -180,7 +194,7 @@ package body Gprbuild.Post_Compile is
       package Lang_Set is new Containers.Ordered_Sets (Name_Id);
 
       procedure Get_Objects;
-      --  Get the paths of the object files of the library in table
+      --  Get the paths of the object files of the library in ordered set
       --  Library_Objs.
 
       procedure Write_List
@@ -356,7 +370,7 @@ package body Gprbuild.Post_Compile is
                     or else not For_Project.Externally_Built
                     or else Source.Project.Extended_By /= No_Project)
                then
-                  Library_Objs.Append
+                  Library_Objs.Insert
                     ((Path  => Source.Object_Path,
                       TS    => Source.Object_TS,
                       Known => False));
@@ -603,7 +617,7 @@ package body Gprbuild.Post_Compile is
                then
                   if Source.Unit = No_Unit_Index then
                      OK := True;
-                     Library_Objs.Append
+                     Library_Objs.Insert
                        ((Path  => Source.Object_Path,
                          TS    => Source.Object_TS,
                          Known => False));
@@ -1020,7 +1034,7 @@ package body Gprbuild.Post_Compile is
       --  Start of processing of Get_Objects
 
       begin
-         Library_Objs.Init;
+         Library_Objs.Clear;
          Library_Sources.Init;
          Library_Projs.Init;
          Library_SAL_Projs.Init;
@@ -1068,7 +1082,7 @@ package body Gprbuild.Post_Compile is
 
             for J in 1 .. Library_Sources.Last loop
                Source := Library_Sources.Table (J);
-               Library_Objs.Append
+               Library_Objs.Insert
                  ((Path  => Source.Object_Path,
                    TS    => Source.Object_TS,
                    Known => False));
@@ -1082,14 +1096,20 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Object_Files is
       begin
-         if Library_Objs.Last > 0 then
+         if not Library_Objs.Is_Empty then
             Put_Line (Exchange_File, Library_Label (Object_Files));
 
-            for J in 1 .. Library_Objs.Last loop
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (Library_Objs.Table (J).Path));
-            end loop;
+            declare
+               Cursor : Objects.Cursor := Objects.First (Library_Objs);
+               use Objects;
+            begin
+               while Cursor /= No_Element loop
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (Element (Cursor).Path));
+                  Next (Cursor);
+               end loop;
+            end;
          end if;
       end Write_Object_Files;
 
@@ -2950,15 +2970,33 @@ package body Gprbuild.Post_Compile is
                     Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
 
                   Path_Found := False;
-                  for Index in 1 .. Library_Objs.Last loop
-                     if Object_Path = Library_Objs.Table (Index).Path then
-                        Path_Found := True;
-                        Library_Needs_To_Be_Built :=
-                          Object_TS /= Library_Objs.Table (Index).TS;
-                        Library_Objs.Table (Index).Known := True;
-                        exit;
-                     end if;
-                  end loop;
+
+                  declare
+                     Elem : Library_Object;
+                     Cursor : Objects.Cursor := Library_Objs.First;
+                     use Objects;
+                  begin
+                     --  Look in the Library_Objs set. If the path name is in
+                     --  the set, indicate that it has been found.
+                     --  The library need to be re-build if the time stamp is
+                     --  different in the set.
+
+                     while Cursor /= No_Element loop
+                        Elem := Element (Cursor);
+
+                        if Object_Path = Elem.Path then
+                           Path_Found := True;
+                           Library_Needs_To_Be_Built :=
+                             Object_TS /= Elem.TS;
+                           Elem.Known := True;
+                           Library_Objs.Delete (Cursor);
+                           Library_Objs.Insert (Elem);
+                           exit;
+                        end if;
+
+                        Next (Cursor);
+                     end loop;
+                  end;
 
                   --  If the object file is not found, it may be that the path
                   --  in the library is the same as the path of the object
@@ -2971,20 +3009,27 @@ package body Gprbuild.Post_Compile is
                           Normalize_Pathname
                             (Get_Name_String (Object_Path),
                              Resolve_Links => Opt.Follow_Links_For_Dirs);
+                        Elem : Library_Object;
+                        Cursor : Objects.Cursor := Library_Objs.First;
+                        use Objects;
 
                      begin
-                        for Index in 1 .. Library_Objs.Last loop
+                        while Cursor /= No_Element loop
+                           Elem := Element (Cursor);
                            if Norm_Path =
                              Normalize_Pathname
-                               (Get_Name_String
-                                  (Library_Objs.Table (Index).Path),
+                               (Get_Name_String (Elem.Path),
                                 Resolve_Links => Opt.Follow_Links_For_Dirs)
                            then
                               Library_Needs_To_Be_Built :=
-                                Object_TS /= Library_Objs.Table (Index).TS;
-                              Library_Objs.Table (Index).Known := True;
+                                Object_TS /= Elem.TS;
+                              Elem.Known := True;
+                              Library_Objs.Delete (Cursor);
+                              Library_Objs.Insert (Elem);
                               exit;
                            end if;
+
+                           Next (Cursor);
                         end loop;
                      end;
                   end if;
@@ -3012,20 +3057,28 @@ package body Gprbuild.Post_Compile is
          Close (Exchange_File);
 
          if not Library_Needs_To_Be_Built then
-            for Index in 1 .. Library_Objs.Last loop
-               if not Library_Objs.Table (Index).Known then
-                  Library_Needs_To_Be_Built := True;
+            declare
+               Cursor : Objects.Cursor := Library_Objs.First;
+               Elem : Library_Object;
+               use Objects;
+            begin
+               while Cursor /= No_Element loop
+                  Elem := Element (Cursor);
+                  if not Elem.Known then
+                     Library_Needs_To_Be_Built := True;
 
-                  if Opt.Verbosity_Level > Opt.Low then
-                     Put
-                       ("      -> library was built without object file ");
-                     Put_Line
-                       (Get_Name_String (Library_Objs.Table (Index).Path));
+                     if Opt.Verbosity_Level > Opt.Low then
+                        Put
+                          ("      -> library was built without object file ");
+                        Put_Line (Get_Name_String (Elem.Path));
+                     end if;
+
+                     exit;
                   end if;
 
-                  exit;
-               end if;
-            end loop;
+                  Next (Cursor);
+               end loop;
+            end;
          end if;
       end if;
 
