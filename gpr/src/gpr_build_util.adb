@@ -1998,6 +1998,8 @@ package body Gpr_Build_Util is
 
             Proj : Project_Id;
 
+            Location : Source_Ptr;
+
          begin
             --  Nothing to do when "-u" was specified and some files were
             --  specified on the command line
@@ -2018,11 +2020,19 @@ package body Gpr_Build_Util is
                   if Is_Allowed_Language (Source.Language.Name)
                     and then Source.Language.Config.Compiler_Driver = No_File
                   then
+                     --  Always provide a non null location
+
+                     if Source.Location = No_Location then
+                        Location := Source.Project.Location;
+                     else
+                        Location := Source.Location;
+                     end if;
+
                      Error_Msg_Name_1 := Source.Language.Display_Name;
                      Error_Msg_File_1 := Source.File;
                      Error_Msg
                        ("no compiler for language %%, cannot compile {{",
-                        Flag_Location => Source.Location);
+                        Flag_Location => Location);
                      Fail_Program
                        (Project_Tree, "*** compilation phase failed");
                   end if;
