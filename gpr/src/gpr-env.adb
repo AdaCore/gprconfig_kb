@@ -759,13 +759,11 @@ package body GPR.Env is
 
    package Mapping is new GNAT.HTable.Simple_HTable
      (Header_Num => Header_Num,
-      Element    => Boolean,
-      No_Element => False,
-      Key        => Path_Name_Type,
-      Hash       => Hash,
-      Equal      => "=");
-   --  A hash table to record path names of sources in a mapping file, to avoid
-   --  declaring a source as excluded once it is in the mapping file.
+      Element     => Source_Id,
+      No_Element  => No_Source,
+      Key         => Name_Id,
+      Hash        => Hash,
+      Equal       => "=");
 
    procedure Create_Mapping_File
      (Project  : Project_Id;
@@ -813,8 +811,9 @@ package body GPR.Env is
          pragma Unreferenced (State);
 
          Source : Source_Id;
-         Suffix : File_Name_Type;
          Iter   : Source_Iterator;
+
+         Unit : Name_Id;
 
       begin
          Debug_Output ("Add mapping for project", Project.Name);
@@ -826,76 +825,45 @@ package body GPR.Env is
 
             if Source.Replaced_By = No_Source
               and then Source.Path.Name /= No_Path
-              and then not Mapping.Get (Source.Path.Name)
-              and then (Source.Language.Config.Kind = File_Based
-                         or else Source.Unit /= No_Unit_Index)
+              and then Source.Unit /= No_Unit_Index
             then
-               if Source.Unit /= No_Unit_Index then
 
-                  --  Put the encoded unit name in the name buffer
+               --  Get the encoded unit name in the name buffer
 
-                  declare
-                     Uname : constant String :=
-                               Get_Name_String (Source.Unit.Name);
+               declare
+                  Uname : constant String :=
+                    Get_Name_String (Source.Unit.Name);
 
-                  begin
-                     Name_Len := 0;
-                     for J in Uname'Range loop
-                        if Uname (J) in Upper_Half_Character then
-                           Store_Encoded_Character (Get_Char_Code (Uname (J)));
-                        else
-                           Add_Char_To_Name_Buffer (Uname (J));
-                        end if;
-                     end loop;
-                  end;
-
-                  if Source.Language.Config.Kind = Unit_Based then
-
-                     --  ??? Mapping_Spec_Suffix could be set in the case of
-                     --  gnatmake as well
-
-                     Add_Char_To_Name_Buffer ('%');
-
-                     if Source.Kind = Spec then
-                        Add_Char_To_Name_Buffer ('s');
+               begin
+                  Name_Len := 0;
+                  for J in Uname'Range loop
+                     if Uname (J) in Upper_Half_Character then
+                        Store_Encoded_Character (Get_Char_Code (Uname (J)));
                      else
-                        Add_Char_To_Name_Buffer ('b');
+                        Add_Char_To_Name_Buffer (Uname (J));
                      end if;
+                  end loop;
+               end;
 
-                  else
-                     case Source.Kind is
-                        when Spec =>
-                           Suffix :=
-                             Source.Language.Config.Mapping_Spec_Suffix;
-                        when Impl | Sep =>
-                           Suffix :=
-                             Source.Language.Config.Mapping_Body_Suffix;
-                     end case;
+               Add_Char_To_Name_Buffer ('%');
 
-                     if Suffix /= No_File then
-                        Add_Str_To_Name_Buffer (Get_Name_String (Suffix));
-                     end if;
-                  end if;
-
-                  Put_Name_Buffer;
-               end if;
-
-               Get_Name_String (Source.Display_File);
-               Put_Name_Buffer;
-
-               if Source.Locally_Removed or else Source.Suppressed then
-                  Name_Len := 1;
-                  Name_Buffer (1) := '/';
+               if Source.Kind = Spec then
+                  Add_Char_To_Name_Buffer ('s');
                else
-                  Get_Name_String (Source.Path.Display_Name);
-
-                  --  Record the path name of the source, so that it will not
-                  --  declared as deleted in another project file.
-
-                  Mapping.Set (Source.Path.Name, True);
+                  Add_Char_To_Name_Buffer ('b');
                end if;
 
-               Put_Name_Buffer;
+               Unit := Name_Find;
+
+               declare
+                  Src : constant Source_Id := Mapping.Get (Unit);
+               begin
+                  if Src = No_Source or else
+                    not (Source.Locally_Removed or else Source.Suppressed)
+                  then
+                     Mapping.Set (Unit, Source);
+                  end if;
+               end;
             end if;
 
             Next (Iter);
@@ -930,9 +898,30 @@ package body GPR.Env is
       declare
          Last   : Natural;
          Status : Boolean := False;
-
+         Unit   : Name_Id := No_Name;
+         Source : Source_Id;
       begin
          if File /= Invalid_FD then
+            Mapping.Get_First (Unit, Source);
+            while Source /= No_Source loop
+               Get_Name_String (Unit);
+               Put_Name_Buffer;
+
+               Get_Name_String (Source.Display_File);
+               Put_Name_Buffer;
+
+               if Source.Locally_Removed or else Source.Suppressed then
+                  Name_Len := 1;
+                  Name_Buffer (1) := '/';
+               else
+                  Get_Name_String (Source.Path.Display_Name);
+               end if;
+
+               Put_Name_Buffer;
+
+               Mapping.Get_Next (Unit, Source);
+            end loop;
+
             Last := Write (File, Buffer (1)'Address, Buffer_Last);
 
             if Last = Buffer_Last then
