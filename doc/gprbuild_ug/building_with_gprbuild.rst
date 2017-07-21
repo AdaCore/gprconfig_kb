@@ -603,6 +603,11 @@ package Builder of the main project (attribute Switches):
 
   Do not generate any warnings while processing the project files.
 
+* :samp:`-x` (Create include path file)
+
+  Create the include path file for the Ada compiler.
+  This switch is often necessary when Ada sources are compiled with switch
+  -gnatep=.
 
 Switches that are accepted for compatibility with gnatmake, either on the
 command line or in the Builder Ada switches in the main project file:
