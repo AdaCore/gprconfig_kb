@@ -8912,7 +8912,7 @@ package body GPR.Nmsc is
 
       for J in Lang_Name'Range loop
          Language_Last := Language_Last + 1;
-         Language_Name (Language_Last) := '\';
+         Language_Name (Language_Last) := ''';
          Language_Last := Language_Last + 1;
          Language_Name (Language_Last) := Lang_Name (J);
       end loop;
