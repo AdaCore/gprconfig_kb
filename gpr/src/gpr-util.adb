@@ -2095,9 +2095,12 @@ package body GPR.Util is
    -- Object_Project --
    --------------------
 
-   function Object_Project (Project : Project_Id) return Project_Id is
+   function Object_Project
+     (Project          : Project_Id;
+      Must_Be_Writable : Boolean := False)
+      return Project_Id
+   is
       Result     : Project_Id := No_Project;
-      Aggregated : Boolean := False;
 
       procedure Check_Project (P : Project_Id);
       --  Find a project with an object dir
@@ -2116,8 +2119,6 @@ package body GPR.Util is
                List : Aggregated_Project_List := P.Aggregated_Projects;
 
             begin
-               Aggregated := True;
-
                --  Look for a non aggregate project until one is found
 
                while Result = No_Project and then List /= null loop
@@ -2127,9 +2128,9 @@ package body GPR.Util is
             end;
 
          elsif P.Object_Directory.Name /= No_Path then
-            if not Aggregated or else
+            if (not Must_Be_Writable) or else
               Is_Writable_File
-                (Get_Name_String (P.Object_Directory.Name))
+                (Get_Name_String (P.Object_Directory.Display_Name))
             then
                Result := P;
             end if;

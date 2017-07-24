@@ -3137,6 +3137,14 @@ package body Gprbuild.Post_Compile is
          end if;
 
       else
+         --  The current directory is already the correct object directory.
+         --  However, we call again Change_To_Object_Directory with
+         --  Must_Be_Writable set to True, to check if the object directory
+         --  is writable and to fail graciously if it not.
+
+         Change_To_Object_Directory
+           (For_Project, Must_Be_Writable => True);
+
          --  Create the library exchange file
 
          begin

@@ -413,9 +413,12 @@ private
    --  Return the archive suffix for the project, if defined, otherwise
    --  return ".a".
 
-   procedure Change_To_Object_Directory (Project : Project_Id);
+   procedure Change_To_Object_Directory
+     (Project          : Project_Id;
+      Must_Be_Writable : Boolean := False);
    --  Change to the object directory of project Project, if this is not
-   --  already the current working directory.
+   --  already the current working directory. If Must_Be_Writable is True and
+   --  the object directory is not writable, fail with an error message.
 
    use Gpr_Build_Util;
 

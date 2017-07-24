@@ -218,13 +218,28 @@ package body Gprbuild is
    -- Change_To_Object_Directory --
    --------------------------------
 
-   procedure Change_To_Object_Directory (Project : Project_Id) is
-      Proj : constant Project_Id := Object_Project (Project);
-
+   procedure Change_To_Object_Directory
+     (Project          : Project_Id;
+      Must_Be_Writable : Boolean := False)
+   is
+      Proj : constant Project_Id := Object_Project (Project, Must_Be_Writable);
    begin
       if Proj = No_Project then
-         Fail_Program
-           (Project_Tree, "no project with writeable object directory");
+         if Project.Qualifier = Aggregate
+           or else Project.Qualifier = Aggregate_Library
+         then
+            Fail_Program
+              (Project_Tree, "no project with writable object directory");
+
+         else
+            Fail_Program
+              (Project_Tree,
+               "object directory """ &
+                 Get_Name_String (Project.Object_Directory.Display_Name) &
+                 """ for project """ &
+                 Get_Name_String (Project.Name) &
+                 """ is not writable");
+         end if;
       end if;
 
       --  Nothing to do if the current working directory is already the correct

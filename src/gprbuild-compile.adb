@@ -3288,7 +3288,8 @@ package body Gprbuild.Compile is
                end if;
 
                Update_Object_Path (Source.Id, Source_Project);
-               Change_To_Object_Directory (Source_Project);
+               Change_To_Object_Directory
+                 (Source_Project, Must_Be_Writable => True);
 
                --  Record the last recorded option index, to be able to
                --  write the switches file later.
