@@ -2432,8 +2432,7 @@ procedure Gprslave is
       --  section has the builder is not yet known in the system. At this point
       --  no compilation can be received for this slave anyway.
 
-      Set_Rewrite_WD
-        (Builder.Channel, Path => Work_Directory (Builder));
+      Set_Rewrite_WD (Builder.Channel, Path => Work_Directory (Builder));
 
       --  For Ada compilers, rewrite the root directory
 

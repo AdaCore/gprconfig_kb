@@ -2603,7 +2603,6 @@ package body Gprbuild.Compile is
          Mapping_File_Path : Path_Name_Type;
       begin
          if List /= No_Name_List then
-
             --  Check if there is a temporary mapping file we can use
 
             Mapping_File_Path := Mapping_Files_Htable.Get_First

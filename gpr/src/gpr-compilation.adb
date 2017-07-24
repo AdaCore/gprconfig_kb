@@ -22,9 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO;
 with Ada.Environment_Variables; use Ada;
 with Ada.Strings.Fixed;
+with Ada.Text_IO;
 
 with GNAT.MD5;          use GNAT;
 with GNAT.String_Split; use GNAT.String_Split;

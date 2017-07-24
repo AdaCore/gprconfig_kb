@@ -1220,6 +1220,7 @@ package body GPR.Compilation.Protocol is
    begin
       if P = 0 then
          return Str;
+
       else
          return To_String (Channel.WD_From)
            & Str (P + Length (Channel.WD_To) .. Str'Last);
