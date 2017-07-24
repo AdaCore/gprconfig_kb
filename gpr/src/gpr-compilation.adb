@@ -24,6 +24,7 @@
 
 with Ada.Environment_Variables; use Ada;
 with Ada.Strings.Fixed;
+with Ada.Strings.Maps;
 with Ada.Text_IO;
 
 with GNAT.MD5;          use GNAT;
@@ -143,5 +144,19 @@ package body GPR.Compilation is
       end Wait_Non_Zero;
 
    end Shared_Counter;
+
+   -----------------------------------
+   -- To_Native_Directory_Separator --
+   -----------------------------------
+
+   function To_Native_Directory_Separator (Pathname : String) return String is
+      DS : Character renames Directory_Separator;
+   begin
+      return Strings.Fixed.Translate
+        (Pathname,
+         Strings.Maps.To_Mapping
+           (String'(1 => (if DS = '/' then '\' else '/')),
+            String'(1 => DS)));
+   end To_Native_Directory_Separator;
 
 end GPR.Compilation;

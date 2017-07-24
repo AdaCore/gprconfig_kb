@@ -114,4 +114,10 @@ package GPR.Compilation is
    function Image (Pid : Remote_Id) return String;
    --  Returns the string representation of Pid
 
+private
+
+   function To_Native_Directory_Separator
+     (Pathname : String) return String with Inline;
+   --  Returns Pathname with native directory separator
+
 end GPR.Compilation;
