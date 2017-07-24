@@ -79,8 +79,6 @@ procedure Gprslave is
 
    type Shared_Status is access Status;
 
-   package String_Set is new Containers.Indefinite_Vectors (Positive, String);
-
    --  Data for a build master
 
    type Build_Master is new Finalization.Controlled with record
@@ -1058,23 +1056,23 @@ procedure Gprslave is
 
                   declare
                      Cmd : constant Command := Get_Command (Builder.Channel);
-                     V   : Unbounded_String;
                   begin
                      if Debug then
-                        V := To_Unbounded_String
-                          ("command: " & Command_Kind'Image (Kind (Cmd)));
-
                         declare
                            List : constant Argument_List_Access := Args (Cmd);
+                           V    : Unbounded_String;
                         begin
+                           V := To_Unbounded_String
+                             ("command: " & Command_Kind'Image (Kind (Cmd)));
+
                            if List /= null then
                               for K in List'Range loop
                                  Append (V, ", " & List (K).all);
                               end loop;
                            end if;
-                        end;
 
-                        Display (Builder, To_String (V), Is_Debug => True);
+                           Display (Builder, To_String (V), Is_Debug => True);
+                        end;
                      end if;
 
                      if Kind (Cmd) = EX then
@@ -1946,6 +1944,9 @@ procedure Gprslave is
       Job     : Job_Data;
       Builder : Build_Master;
 
+      package String_Set is
+        new Containers.Indefinite_Vectors (Positive, String);
+
       function Expand_Artifacts
         (Root      : String;
          Base_Name : String;
@@ -2439,18 +2440,18 @@ procedure Gprslave is
       if Compiler_Path = null then
          Display (Builder, "compiler path is null.", Is_Debug => True);
       else
-         Display
-           (Builder,
-            "compiler path is : "
-            & Containing_Directory (Containing_Directory (Compiler_Path.all)),
-            Is_Debug => True);
-      end if;
+         declare
+            C_Path : constant String :=
+                       Containing_Directory
+                         (Containing_Directory (Compiler_Path.all));
+         begin
+            Display
+              (Builder,
+               "compiler path is : " & C_Path,
+               Is_Debug => True);
 
-      if Compiler_Path /= null then
-         Set_Rewrite_CD
-           (Builder.Channel,
-            Path => Containing_Directory
-              (Containing_Directory (Compiler_Path.all)));
+            Set_Rewrite_CD (Builder.Channel, Path => C_Path);
+         end;
       end if;
 
       --  It is safe to write to this builder outside of a lock here as this
