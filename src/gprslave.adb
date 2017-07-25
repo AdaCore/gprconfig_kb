@@ -71,25 +71,25 @@ procedure Gprslave is
    --  a boolean used a a mutex to lock/unlock the object to allow proper
    --  concurrent access.
 
-   type Status is record
-      Id     : UID;
-      Locked : Boolean := False;
-      Count  : Natural := 0;
-   end record;
-
-   type Shared_Status is access Status;
-
-   --  Data for a build master
-
-   type Build_Master is new Finalization.Controlled with record
+   type Data is record
       Channel                    : Communication_Channel;
       --  Communication with build master
       Project_Name               : Unbounded_String;
       Target                     : Unbounded_String;
       Build_Env                  : Unbounded_String;
       Included_Artifact_Patterns : String_Split.Slice_Set;
-      Sync                       : Boolean;
-      Status                     : Shared_Status;
+      Id                         : UID;
+      Locked                     : Boolean := False;
+      Count                      : Natural := 0;
+   end record;
+
+   type Shared_Data is access Data;
+
+   --  Data for a build master
+
+   type Build_Master is new Finalization.Controlled with record
+      Sync : Boolean;
+      D    : Shared_Data;
    end record;
 
    overriding procedure Initialize (Builder : in out Build_Master);
@@ -106,7 +106,7 @@ procedure Gprslave is
    end Controlled_Build_Master;
 
    function Sock (Builder : Build_Master'Class) return Socket_Type is
-     (Protocol.Sock (Builder.Channel));
+     (Protocol.Sock (Builder.D.Channel));
 
    package Builder is
 
@@ -189,8 +189,8 @@ procedure Gprslave is
    function Get_Slave_Id return Remote_Id;
 
    function Is_Active_Build_Master (Builder : Build_Master) return Boolean is
-     (Builder.Project_Name /= Null_Unbounded_String
-      and then Builder.Status /= null);
+     (Builder.D /= null
+      and then Builder.D.Project_Name /= Null_Unbounded_String);
 
    procedure Close_Builder (Builder : in out Build_Master; Ack : Boolean);
    --  Close the channel and socket and remove the builder from the slave. This
@@ -467,7 +467,7 @@ procedure Gprslave is
       function Exists (Socket : Socket_Type) return Boolean is
          Builder : Build_Master;
       begin
-         Builder.Channel := Protocol.Create (Socket, Virtual => True);
+         Builder.D.Channel := Protocol.Create (Socket, Virtual => True);
          return Builder_Set.Has_Element (Builders.Find (Builder));
       end Exists;
 
@@ -479,7 +479,7 @@ procedure Gprslave is
          Builder : Build_Master;
          Pos     : Builder_Set.Cursor;
       begin
-         Builder.Channel := Protocol.Create (Socket, Virtual => True);
+         Builder.D.Channel := Protocol.Create (Socket, Virtual => True);
 
          Pos := Builders.Find (Builder);
 
@@ -510,7 +510,7 @@ procedure Gprslave is
 
       procedure Initialize (Builder : in out Build_Master) is
       begin
-         Builder.Status.Id := Current_Id;
+         Builder.D.Id := Current_Id;
          Current_Id := Current_Id + 1;
       end Initialize;
 
@@ -529,10 +529,10 @@ procedure Gprslave is
 
       entry Lock (Builder : in out Build_Master) when True is
       begin
-         if Builder.Status.Locked then
+         if Builder.D.Locked then
             requeue Try_Lock;
          else
-            Builder.Status.Locked := True;
+            Builder.D.Locked := True;
          end if;
       end Lock;
 
@@ -542,7 +542,7 @@ procedure Gprslave is
 
       procedure Release (Builder : in out Build_Master) is
       begin
-         Builder.Status.Locked := False;
+         Builder.D.Locked := False;
          if Try_Lock'Count > 0 then
             To_Check := To_Check + Try_Lock'Count;
          end if;
@@ -566,10 +566,10 @@ procedure Gprslave is
       begin
          To_Check := To_Check - 1;
 
-         if Builder.Status.Locked then
+         if Builder.D.Locked then
             requeue Try_Lock;
          else
-            Builder.Status.Locked := True;
+            Builder.D.Locked := True;
          end if;
       end Try_Lock;
 
@@ -604,7 +604,7 @@ procedure Gprslave is
 
       if Ack then
          begin
-            Send_Ok (Builder.Channel);
+            Send_Ok (Builder.D.Channel);
          exception
             when others =>
                null;
@@ -615,7 +615,7 @@ procedure Gprslave is
       --  has encountered an error, so the associated socket may be in a bad
       --  state. Make sure we do not fail here.
 
-      Close (Builder.Channel);
+      Close (Builder.D.Channel);
    end Close_Builder;
 
    -----------------------------
@@ -630,7 +630,7 @@ procedure Gprslave is
 
       procedure Adjust (Builder : in out Build_Master) is
       begin
-         Builder.Status.Count := Builder.Status.Count + 1;
+         Builder.D.Count := Builder.D.Count + 1;
       end Adjust;
 
       --------------
@@ -639,10 +639,10 @@ procedure Gprslave is
 
       procedure Finalize (Builder : in out Build_Master) is
          procedure Unchecked_Free is
-           new Unchecked_Deallocation (Status, Shared_Status);
-         S : Shared_Status := Builder.Status;
+           new Unchecked_Deallocation (Data, Shared_Data);
+         S : Shared_Data := Builder.D;
       begin
-         Builder.Status := null;
+         Builder.D := null;
 
          S.Count := S.Count - 1;
 
@@ -657,7 +657,15 @@ procedure Gprslave is
 
       procedure Initialize (Builder : in out Build_Master) is
       begin
-         Builder.Status := new Status'(0, False, 1);
+         Builder.D := new Data'
+           (Channel                    => No_Channel,
+            Project_Name               => Null_Unbounded_String,
+            Target                     => Null_Unbounded_String,
+            Build_Env                  => Null_Unbounded_String,
+            Included_Artifact_Patterns => <>,
+            Id                         => 0,
+            Locked                     => False,
+            Count                      => 1);
       end Initialize;
 
    end Controlled_Build_Master;
@@ -801,7 +809,7 @@ procedure Gprslave is
       is
          package UID_IO is new Text_IO.Modular_IO (UID);
       begin
-         UID_IO.Put (Builder.Status.Id, Width => 4);
+         UID_IO.Put (Builder.D.Id, Width => 4);
          Put (' ');
          Message (Str, Is_Debug);
       end Message;
@@ -1058,7 +1066,7 @@ procedure Gprslave is
                   Builders.Lock (Builder);
 
                   declare
-                     Cmd : constant Command := Get_Command (Builder.Channel);
+                     Cmd : constant Command := Get_Command (Builder.D.Channel);
                   begin
                      if Debug then
                         declare
@@ -1092,7 +1100,7 @@ procedure Gprslave is
                              (Builder,
                               "register compilation " & Image (Id), True);
 
-                           Send_Ack (Builder.Channel, Id);
+                           Send_Ack (Builder.D.Channel, Id);
 
                            To_Run.Push
                              (Job_Data'(Cmd,
@@ -1131,7 +1139,7 @@ procedure Gprslave is
                         Display
                           (Builder,
                            "End project : "
-                           & To_String (Builder.Project_Name));
+                           & To_String (Builder.D.Project_Name));
 
                      elsif Kind (Cmd) = SY then
                         --  Synchronization requested
@@ -1139,7 +1147,7 @@ procedure Gprslave is
                            Empty : Sync.Str_Vect.Vector;
                         begin
                            Compilation.Sync.Send_Files
-                             (Builder.Channel,
+                             (Builder.D.Channel,
                               Work_Directory (Builder),
                               Empty, Empty,
                               Mode => Sync.To_Master);
@@ -1149,7 +1157,7 @@ procedure Gprslave is
                         --  Information requested
 
                         Send_Info_Response
-                          (Builder.Channel,
+                          (Builder.D.Channel,
                            GPR.Version.Gpr_Version_String,
                            UTC_Time,
                            "toto"); -- Gprslave.Hash.all);
@@ -1169,7 +1177,7 @@ procedure Gprslave is
                         Display
                           (Builder,
                            "Interrupted project : "
-                           & To_String (Builder.Project_Name));
+                           & To_String (Builder.D.Project_Name));
 
                      when E : others =>
                         --  In case of an exception, communication endded
@@ -1248,7 +1256,7 @@ procedure Gprslave is
          --  Set Driver with the found driver for the Language
 
          Key                : constant String :=
-                                To_String (Builder.Target) & '+' & Language;
+                                To_String (Builder.D.Target) & '+' & Language;
          Position           : constant Drivers_Cache.Cursor :=
                                 Cache.Find (Key);
          Compilers, Filters : Compiler_Lists.List;
@@ -1277,7 +1285,7 @@ procedure Gprslave is
                Errout_Handling   => GPR.Part.Finalize_If_Error,
                Packages_To_Check => null,
                Is_Config_File    => Is_Config,
-               Target_Name       => To_String (Builder.Target),
+               Target_Name       => To_String (Builder.D.Target),
                Env               => Env);
 
             Project_Tree := new Project_Tree_Data;
@@ -1385,13 +1393,14 @@ procedure Gprslave is
             --  Generate configuration project file
 
             Generate_Configuration
-              (Base, Compilers, "slave_tmp.cgpr", To_String (Builder.Target));
+              (Base, Compilers, "slave_tmp.cgpr",
+               To_String (Builder.D.Target));
 
             GPR.Tree.Initialize (Env, GPR.Gprbuild_Flags);
             GPR.Initialize (GPR.No_Project_Tree);
 
             GPR.Env.Initialize_Default_Project_Path
-              (Env.Project_Path, Target_Name => To_String (Builder.Target));
+              (Env.Project_Path, Target_Name => To_String (Builder.D.Target));
 
             --  Parse it to find the driver for this language
 
@@ -1635,9 +1644,9 @@ procedure Gprslave is
       --------------
 
       procedure Do_Clean (Job : Job_Data) is
-         Builder : Build_Master := Builders.Get (Job.Build_Sock);
+         Builder : constant Build_Master := Builders.Get (Job.Build_Sock);
       begin
-         Builder.Project_Name :=
+         Builder.D.Project_Name :=
            To_Unbounded_String (Args (Job.Cmd)(1).all);
 
          declare
@@ -1656,14 +1665,14 @@ procedure Gprslave is
             end if;
          end;
 
-         Send_Ok (Builder.Channel);
+         Send_Ok (Builder.D.Channel);
       exception
          when E : others =>
             Display
               (Builder,
                "clean-up error " & Symbolic_Traceback (E),
                True);
-            Send_Ko (Builder.Channel);
+            Send_Ko (Builder.D.Channel);
       end Do_Clean;
 
       Job : Job_Data;
@@ -2043,7 +2052,7 @@ procedure Gprslave is
                      S        : Boolean;
                   begin
                      if Exists (Out_File) then
-                        Send_Output (Builder.Channel, Out_File);
+                        Send_Output (Builder.D.Channel, Out_File);
                      end if;
 
                      OS_Lib.Delete_File (Out_File, S);
@@ -2066,13 +2075,14 @@ procedure Gprslave is
                              and then Kind (D_File) = Ordinary_File
                            then
                               Send_File
-                                (Builder.Channel, D_File, Rewrite => True);
+                                (Builder.D.Channel, D_File, Rewrite => True);
                            end if;
 
                            if Obj_File /= "" then
                               if Exists (O_File) then
                                  Send_File
-                                   (Builder.Channel, O_File, Rewrite => False);
+                                   (Builder.D.Channel,
+                                    O_File, Rewrite => False);
                               end if;
 
                               --  We also check for any artifacts based on the
@@ -2083,10 +2093,10 @@ procedure Gprslave is
                                   (Root      => R_Dir,
                                    Base_Name => Base_Name (Obj_File),
                                    Patterns  =>
-                                     Builder.Included_Artifact_Patterns)
+                                     Builder.D.Included_Artifact_Patterns)
                               loop
                                  Send_File
-                                   (Builder.Channel, Artifact,
+                                   (Builder.D.Channel, Artifact,
                                     Rewrite => False);
                               end loop;
                            end if;
@@ -2100,9 +2110,9 @@ procedure Gprslave is
                      Is_Debug => True);
 
                   if Success then
-                     Send_Ok (Builder.Channel, Job.Id);
+                     Send_Ok (Builder.D.Channel, Job.Id);
                   else
-                     Send_Ko (Builder.Channel, Job.Id);
+                     Send_Ko (Builder.D.Channel, Job.Id);
                   end if;
 
                   Builders.Release (Builder);
@@ -2247,7 +2257,7 @@ procedure Gprslave is
          In_Master         : Sync.Files.Set;
 
          Result            : constant Protocol.Command_Kind :=
-                               Sync.Receive_Files (Builder.Channel,
+                               Sync.Receive_Files (Builder.D.Channel,
                                                    WD,
                                                    Total_File,
                                                    Total_Transferred,
@@ -2304,7 +2314,7 @@ procedure Gprslave is
          end;
       end loop Wait_Incoming_Master;
 
-      Builder.Channel := Create (Socket);
+      Builder.D.Channel := Create (Socket);
 
       --  Then initialize the new builder Id
 
@@ -2322,8 +2332,8 @@ procedure Gprslave is
          Is_Ping          : Boolean;
       begin
          Get_Context
-           (Builder.Channel, Builder.Target,
-            Builder.Project_Name, Builder.Build_Env, Builder.Sync,
+           (Builder.D.Channel, Builder.D.Target,
+            Builder.D.Project_Name, Builder.D.Build_Env, Builder.Sync,
             Master_Timestamp, Version, Hash, Patterns, Is_Ping);
 
          --  Set included artifact patterns
@@ -2334,12 +2344,12 @@ procedure Gprslave is
             Is_Debug => True);
 
          String_Split.Create
-           (Builder.Included_Artifact_Patterns,
+           (Builder.D.Included_Artifact_Patterns,
             To_String (Patterns), Separators => ";");
 
          if Is_Ping then
             Send_Ping_Response
-              (Builder.Channel,
+              (Builder.D.Channel,
                GPR.Version.Gpr_Version_String,
                UTC_Time,
                Gprslave.Hash.all);
@@ -2354,8 +2364,7 @@ procedure Gprslave is
          if To_String (Version) /= GPR.Version.Gpr_Version_String (False) then
             Display
               (Builder, "Reject non compatible build for "
-               & To_String (Builder.Project_Name));
-            Send_Ko (Builder.Channel);
+               & To_String (Builder.D.Project_Name));
 
             Display
               (Builder, "builder version " & To_String (Version),
@@ -2364,17 +2373,19 @@ procedure Gprslave is
               (Builder,
                "slave version   " & GPR.Version.Gpr_Version_String (False),
                Is_Debug =>  True);
+
+            Send_Ko (Builder.D.Channel);
             return;
          end if;
 
          if Builders.Working_Dir_Exists (Work_Directory (Builder)) then
             Display
               (Builder, "Cannot use the same build environment for "
-               & To_String (Builder.Project_Name));
+               & To_String (Builder.D.Project_Name));
             Send_Ko
-              (Builder.Channel,
+              (Builder.D.Channel,
                "build environment "
-               & To_String (Builder.Build_Env) & " already in use");
+               & To_String (Builder.D.Build_Env) & " already in use");
             return;
          end if;
 
@@ -2386,9 +2397,9 @@ procedure Gprslave is
          then
             Display
               (Builder, "hash does not match "
-               & To_String (Builder.Project_Name));
+               & To_String (Builder.D.Project_Name));
             Send_Ko
-              (Builder.Channel,
+              (Builder.D.Channel,
                "hash does not match, slave is " & Gprslave.Hash.all);
             return;
          end if;
@@ -2402,11 +2413,11 @@ procedure Gprslave is
       end;
 
       Get_Targets_Set
-        (Base, To_String (Builder.Target), Selected_Targets_Set);
+        (Base, To_String (Builder.D.Target), Selected_Targets_Set);
 
       Display
-        (Builder, "Handling project : " & To_String (Builder.Project_Name));
-      Display (Builder, "Compiling for    : " & To_String (Builder.Target));
+        (Builder, "Handling project : " & To_String (Builder.D.Project_Name));
+      Display (Builder, "Compiling for    : " & To_String (Builder.D.Target));
 
       if Builder.Sync then
          Display (Builder, "Synchronization from master enabled");
@@ -2422,7 +2433,7 @@ procedure Gprslave is
          exception
             when others =>
                Send_Ko
-                 (Builder.Channel,
+                 (Builder.D.Channel,
                   "fail to create build environment directory: "
                   & Work_Directory (Builder));
                Close_Builder (Builder, Ack => False);
@@ -2443,7 +2454,7 @@ procedure Gprslave is
       --  section has the builder is not yet known in the system. At this point
       --  no compilation can be received for this slave anyway.
 
-      Set_Rewrite_WD (Builder.Channel, Path => Work_Directory (Builder));
+      Set_Rewrite_WD (Builder.D.Channel, Path => Work_Directory (Builder));
 
       --  For Ada compilers, rewrite the root directory
 
@@ -2460,7 +2471,7 @@ procedure Gprslave is
                "compiler path is : " & C_Path,
                Is_Debug => True);
 
-            Set_Rewrite_CD (Builder.Channel, Path => C_Path);
+            Set_Rewrite_CD (Builder.D.Channel, Path => C_Path);
          end;
       end if;
 
@@ -2469,8 +2480,8 @@ procedure Gprslave is
 
       begin
          Send_Slave_Config
-           (Builder.Channel, Max_Processes,
-            Compose (Root_Directory.all, To_String (Builder.Build_Env)),
+           (Builder.D.Channel, Max_Processes,
+            Compose (Root_Directory.all, To_String (Builder.D.Build_Env)),
             Clock_Status);
       exception
          when others =>
@@ -2508,8 +2519,8 @@ procedure Gprslave is
    function Work_Directory (Builder : Build_Master) return String is
    begin
       return Compose
-        (Compose (Root_Directory.all, To_String (Builder.Build_Env)),
-         To_String (Builder.Project_Name));
+        (Compose (Root_Directory.all, To_String (Builder.D.Build_Env)),
+         To_String (Builder.D.Project_Name));
    end Work_Directory;
 
 begin
