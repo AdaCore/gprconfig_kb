@@ -151,17 +151,17 @@ procedure Gprslave is
            and then Kind (Job_Data.Cmd) in EX | CU
            and then Job_Data.Build_Sock /= No_Socket);
 
-   No_Job : constant Job_Data :=
-              (Id     => -1,
-               Pid    => OS_Lib.Invalid_Pid,
-               Stage  => J_None,
-               others => <>);
-
    function "<" (J1, J2 : Job_Data) return Boolean is
      (Pid_To_Integer (J1.Pid) < Pid_To_Integer (J2.Pid));
 
    function "=" (J1, J2 : Job_Data) return Boolean is
      (Pid_To_Integer (J1.Pid) = Pid_To_Integer (J2.Pid));
+
+   No_Job : constant Job_Data :=
+              (Id     => -1,
+               Pid    => OS_Lib.Invalid_Pid,
+               Stage  => J_None,
+               others => <>);
 
    package Job_Data_Set is new Containers.Ordered_Sets (Job_Data);
 
