@@ -411,7 +411,7 @@ package body GPR.Compilation.Slave is
    begin
       for P of Included_Artifact_Patterns loop
          if IAP /= Null_Unbounded_String then
-            Append (IAP, "|");
+            Append (IAP, ";");
          end if;
          Append (IAP, P);
       end loop;

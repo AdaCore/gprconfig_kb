@@ -2333,7 +2333,7 @@ procedure Gprslave is
 
          String_Split.Create
            (Builder.Included_Artifact_Patterns,
-            To_String (Patterns), Separators => "|");
+            To_String (Patterns), Separators => ";");
 
          if Is_Ping then
             Send_Ping_Response
