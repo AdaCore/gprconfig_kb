@@ -237,7 +237,8 @@ GPRconfig supports the following command line switches:
 :samp:`--db {directory}`, :samp:`--db-`
   Indicates another directory that should be parsed for GPRconfig's knowledge
   base. Most of the time this is only useful if you are creating your own
-  XML description files locally. The second version of the switch prevents
+  XML description files locally. Additional directories are always processed
+  after the default knowledge base. The second version of the switch prevents
   GPRconfig from reading its default knowledge base.
 
 .. index:: -h (gprconfig)
