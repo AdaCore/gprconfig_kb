@@ -96,6 +96,9 @@ procedure Gprslave is
    overriding procedure Adjust     (Builder : in out Build_Master);
    overriding procedure Finalize   (Builder : in out Build_Master);
 
+   --  Controlled_Build_Master is to ensure that the Build_Master controlled
+   --  object can be used concurrently.
+
    protected Controlled_Build_Master is
       procedure Initialize (Builder : in out Build_Master);
       procedure Adjust     (Builder : in out Build_Master);
@@ -2303,12 +2306,6 @@ procedure Gprslave is
 
       Builder.Channel := Create (Socket);
 
-      --  We must call explicitely Finalize/Initialize here to ensure that the
-      --  Builder object Status access will be changed for this new builder.
-
-      Controlled_Build_Master.Finalize (Builder);
-      Controlled_Build_Master.Initialize (Builder);
-
       --  Then initialize the new builder Id
 
       Builders.Initialize (Builder);
@@ -2330,6 +2327,11 @@ procedure Gprslave is
             Master_Timestamp, Version, Hash, Patterns, Is_Ping);
 
          --  Set included artifact patterns
+
+         Display
+           (Builder,
+            "artifact patterns:  " & To_String (Patterns),
+            Is_Debug => True);
 
          String_Split.Create
            (Builder.Included_Artifact_Patterns,
