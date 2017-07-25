@@ -60,7 +60,7 @@ package GPR.Version is
    --       gives appropriate bug submission instructions that do not reference
    --       customer number etc.
 
-   function Gpr_Version_String return String;
+   function Gpr_Version_String (Host : Boolean := True) return String;
    --  Version output when GPRBUILD or its related tools, including
    --  GPRCLEAN, are run (with appropriate verbose option switch set).
 

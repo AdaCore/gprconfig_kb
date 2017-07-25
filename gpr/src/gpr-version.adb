@@ -64,10 +64,11 @@ package body GPR.Version is
    -- Gpr_Version_String --
    ------------------------
 
-   function Gpr_Version_String return String is
-      Host : constant String := " (" & GPR.Sdefault.Hostname & ')';
+   function Gpr_Version_String (Host : Boolean := True) return String is
+      Hostname       : constant String := " (" & GPR.Sdefault.Hostname & ')';
       Version_String : constant String :=
-                                  Gpr_Version & " (" & Date & ")" & Host;
+                         Gpr_Version & " (" & Date & ")"
+                         & (if Host then Hostname else "");
 
    begin
       case Build_Type is

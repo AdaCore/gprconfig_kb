@@ -668,7 +668,7 @@ package body GPR.Compilation.Protocol is
          & Args_Sep & Build_Env
          & Args_Sep & Boolean'Image (Sync)
          & Args_Sep & String (GPR.Util.UTC_Time)
-         & Args_Sep & Gpr_Version_String
+         & Args_Sep & Gpr_Version_String (Host => False)
          & Args_Sep & Hash
          & Args_Sep & Included_Artifact_Patterns);
    end Send_Context;

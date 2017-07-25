@@ -2349,11 +2349,19 @@ procedure Gprslave is
 
          Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
 
-         if To_String (Version) /= GPR.Version.Gpr_Version_String then
+         if To_String (Version) /= GPR.Version.Gpr_Version_String (False) then
             Display
               (Builder, "Reject non compatible build for "
                & To_String (Builder.Project_Name));
             Send_Ko (Builder.Channel);
+
+            Display
+              (Builder, "builder version " & To_String (Version),
+               Is_Debug =>  True);
+            Display
+              (Builder,
+               "slave version   " & GPR.Version.Gpr_Version_String (False),
+               Is_Debug =>  True);
             return;
          end if;
 
