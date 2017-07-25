@@ -607,7 +607,7 @@ package Builder of the main project (attribute Switches):
 
   Create the include path file for the Ada compiler.
   This switch is often necessary when Ada sources are compiled with switch
-  -gnatep=.
+  :samp:`-gnatep=`.
 
 Switches that are accepted for compatibility with gnatmake, either on the
 command line or in the Builder Ada switches in the main project file:
