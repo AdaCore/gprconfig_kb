@@ -698,8 +698,7 @@ package body GPR.Compilation.Slave is
       Pid : Remote_Id;
 
    begin
-      --  Record the rewrite information for this channel only if we are not
-      --  using a shared directory.
+      --  Record the rewrite information for this channel
 
       Slaves.Set_Rewrite_WD (S, Path => RD);
 
