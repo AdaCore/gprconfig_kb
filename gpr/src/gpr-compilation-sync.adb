@@ -397,7 +397,9 @@ package body GPR.Compilation.Sync is
                   Total_File := Total_File + 1;
 
                   declare
-                     Path_Name     : constant String := Args (Cmd) (K).all;
+                     Path_Name     : constant String :=
+                                       To_Native_Directory_Separator
+                                         (Args (Cmd) (K).all);
                      Full_Path     : constant String :=
                                        Root_Dir & Directory_Separator
                                        & Path_Name;

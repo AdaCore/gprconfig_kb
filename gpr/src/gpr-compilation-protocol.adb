@@ -24,6 +24,7 @@
 
 with Ada.Calendar.Formatting;    use Ada.Calendar.Formatting;
 with Ada.Calendar.Time_Zones;    use Ada.Calendar;
+with Ada.Characters.Handling;
 with Ada.Directories;            use Ada.Directories;
 with Ada.Streams.Stream_IO;      use Ada.Streams;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
@@ -35,6 +36,7 @@ with GNAT.String_Split; use GNAT.String_Split;
 
 with GPR.Util;
 with GPR.Version;       use GPR.Version;
+with Gpr_Build_Util;
 
 package body GPR.Compilation.Protocol is
 
@@ -392,6 +394,22 @@ package body GPR.Compilation.Protocol is
             elsif Result.Cmd = DP then
                --  We got an output to display
                Handle_Output (Result);
+
+            elsif Result.Cmd = EX then
+               --  Last - 1 parameter is the compiler options, ensure that we
+               --  are using native directory separator. This is a requirement
+               --  to have a cross compilation from a Windows builder to a
+               --  Linux slave.
+               declare
+                  F_Idx    : constant Positive :=
+                               Result.Args'Last - 1;
+                  Filename : constant String :=
+                               To_Native_Directory_Separator
+                                 (Result.Args (F_Idx).all);
+               begin
+                  Free (Result.Args (F_Idx));
+                  Result.Args (F_Idx) := new String'(Filename);
+               end;
             end if;
 
          else
@@ -1186,9 +1204,23 @@ package body GPR.Compilation.Protocol is
    --------------------
 
    procedure Set_Rewrite_CD
-     (Channel : in out Communication_Channel; Path : String) is
+     (Channel : in out Communication_Channel; Path : String)
+   is
+      P : String := Normalize_Pathname
+                      (Path, Case_Sensitive => not Gpr_Build_Util.On_Windows);
    begin
-      Channel.CD_From := To_Unbounded_String (Normalize_Pathname (Path));
+      if Gpr_Build_Util.On_Windows then
+         --  On Windows the mapping file contains non normalized pathname. The
+         --  format is an upper-case driver letter, all the remaining of the
+         --  path is lower-case and the directory separator is a slash. We
+         --  ensure that the compiler path registered follows this format
+         --  to properly rewrite the runtime path in the mapping file.
+
+         P (P'First) := Characters.Handling.To_Upper (P (P'First));
+         P := Strings.Fixed.Translate (P, Strings.Maps.To_Mapping ("\", "/"));
+      end if;
+
+      Channel.CD_From := To_Unbounded_String (P);
       Channel.CD_To := To_Unbounded_String (CD_Path_Tag);
    end Set_Rewrite_CD;
 
@@ -1225,8 +1257,10 @@ package body GPR.Compilation.Protocol is
          return Str;
 
       else
-         return To_String (Channel.WD_From)
-           & Str (P + Length (Channel.WD_To) .. Str'Last);
+         --  Make sure we translate the filename to native directory seprator
+         return To_Native_Directory_Separator
+           (To_String (Channel.WD_From)
+            & Str (P + Length (Channel.WD_To) .. Str'Last));
       end if;
    end Translate_Receive;
 
