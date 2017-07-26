@@ -677,6 +677,7 @@ package body GPR.Compilation.Slave is
                        (S.Channel, File_Name,
                         Rewrite         => True,
                         Keep_Time_Stamp => True);
+
                   else
                      Put_Line
                        ("File not found " & File_Name);

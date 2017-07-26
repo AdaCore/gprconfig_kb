@@ -206,9 +206,6 @@ package body GPR.Compilation.Protocol is
       -----------------
 
       function Handle_File (Cmd : Command) return Command is
-         File_Name : constant String :=
-                       Translate_Receive (Channel, Cmd.Args (2).all);
-         Dir       : constant String := Containing_Directory (File_Name);
 
          procedure Input
            (Item : out Stream_Element_Array;
@@ -218,7 +215,11 @@ package body GPR.Compilation.Protocol is
          procedure Output (Item : Stream_Element_Array);
          --  Write data to file
 
-         Size     : Stream_Element_Count :=
+         File_Name : constant String :=
+                       Translate_Receive (Channel, Cmd.Args (2).all);
+         Dir       : constant String := Containing_Directory (File_Name);
+
+         Size      : Stream_Element_Count :=
                        Stream_Element_Count'Value (Cmd.Args (1).all);
          --  Number of bytes remaining to be read from channel
 
@@ -226,6 +227,7 @@ package body GPR.Compilation.Protocol is
                          Rewrite_Data.Create
                            (To_String (Channel.WD_To),
                             To_String (Channel.WD_From));
+
          Rewriter_CD : aliased Rewrite_Data.Buffer :=
                          Rewrite_Data.Create
                            (To_String (Channel.CD_To),
@@ -845,6 +847,7 @@ package body GPR.Compilation.Protocol is
                       Rewrite_Data.Create
                         (To_String (Channel.WD_From),
                          To_String (Channel.WD_To));
+
       Rewriter_CD : aliased Rewrite_Data.Buffer :=
                       Rewrite_Data.Create
                         (To_String (Channel.CD_From),
