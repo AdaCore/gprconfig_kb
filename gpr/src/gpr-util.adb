@@ -5501,10 +5501,29 @@ package body GPR.Util is
       return abs (T1 - T2) <= Max_Drift;
    end Check_Diff;
 
+   -----------------------------
+   -- Check_Maximum_Processes --
+   -----------------------------
+
+   procedure Check_Maximum_Processes is
+   begin
+      if On_Windows and then Opt.Maximum_Processes > 63 then
+         Put_Line
+           ("On Windows the maximum number of simultaneous processes is 63");
+         Opt.Maximum_Processes := 63;
+      end if;
+   end Check_Maximum_Processes;
+
+   --------------------
+   -- Project_Output --
+   --------------------
+
    package body Project_Output is
+
       ----------------
       -- Write_Char --
       ----------------
+
       procedure Write_A_Char (C : Character) is
       begin
          Write_A_String ((1 => C));

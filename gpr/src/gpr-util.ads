@@ -52,6 +52,10 @@ package GPR.Util is
    procedure Set_Gprls_Mode;
    --  Set Gprls_Mode to True
 
+   procedure Check_Maximum_Processes;
+   --  Check that the maximum number of simultaneous processes is not too large
+   --  for the platform.
+
    --------------
    -- Closures --
    --------------
