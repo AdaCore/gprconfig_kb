@@ -2509,14 +2509,23 @@ begin
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
    if Main_Project.Qualifier = Aggregate_Library then
-      if Main_On_Command_Line
-         and then (not Opt.Compile_Only or else Opt.Bind_Only)
-         and then not Unique_Compile
-      then
-         Fail_Program
-           (Project_Tree,
-            "cannot specify a main program " &
-            "on the command line for a library project file");
+      if Main_On_Command_Line then
+
+         if (not Opt.Compile_Only or else Opt.Bind_Only)
+            and then not Unique_Compile
+         then
+            Fail_Program
+              (Project_Tree,
+               "cannot specify a main program " &
+               "on the command line for a library project file");
+
+         else
+            Mains.Complete_Mains
+              (Root_Environment.Flags,
+               Main_Project,
+               Project_Tree,
+               Unique_Compile);
+         end if;
       end if;
 
    else

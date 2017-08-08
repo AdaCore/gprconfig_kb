@@ -3568,7 +3568,10 @@ package body Gprbuild.Post_Compile is
          --  For an aggregate library we do not want to build separate
          --  libraries if any, this means that at this point we want to
          --  handle only the main aggregate library project.
-         Post_Compilation_Phase (Main_Project, Project_Tree);
+
+         if Builder_Data (Project_Tree).Need_Binding then
+            Post_Compilation_Phase (Main_Project, Project_Tree);
+         end if;
 
       else
          Post_Compile_All (Main_Project, Project_Tree);
