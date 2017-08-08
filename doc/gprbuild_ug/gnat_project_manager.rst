@@ -272,12 +272,16 @@ subtrees rooted at some subdirectories. An example is the subdirectories
 created by a Version Control System such as Subversion that creates directory
 subtrees rooted at a subdirectory named :file:`.svn`. To do that, attribute
 **Ignore_Source_Sub_Dirs** can be used. It specifies the list of simple
-file names for the roots of these undesirable directory subtrees.
+file names or patterns for the roots of these undesirable directory subtrees.
 
   .. code-block:: gpr
 
       for Source_Dirs use ("./**");
-      for Ignore_Source_Sub_Dirs use (".svn");
+      for Ignore_Source_Sub_Dirs use (".svn", "@*");
+
+With the declaration of attribute Ignore_Source_Sub_Dirs above, .svn subtrees
+as weel as subtrees rooted at subdirectories with a name starting with '@'
+are not part of the source directories of the project.
 
 When applied to the simple example, and because we generally prefer to have
 the project file at the top-level directory rather than mixed with the sources,
@@ -4218,8 +4222,8 @@ Project Level Attributes
 
   * **Ignore_Source_Sub_Dirs**: list
 
-    Value is a list of simple names for subdirectories that are removed from the
-    list of source directories, including their subdirectories.
+    Value is a list of simple names or patterns for subdirectories that are
+    removed from the list of source directories, including their subdirectories.
 
 * **Source Files**
 

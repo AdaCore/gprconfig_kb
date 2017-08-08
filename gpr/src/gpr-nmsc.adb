@@ -7936,7 +7936,13 @@ package body GPR.Nmsc is
                                 (Shared.String_Elements.Table (List).Value);
                               Canonical_Case_File_Name
                                 (Name_Buffer (1 .. Name_Len));
-                              OK := Name_Buffer (1 .. Name_Len) /= Dir_Name;
+
+                              File_Pattern := Compile
+                                (Name_Buffer (1 .. Name_Len),
+                                 Glob           => True,
+                                 Case_Sensitive => File_Names_Case_Sensitive);
+
+                              OK := not Match (Dir_Name, File_Pattern);
                               exit when not OK;
                               List := Shared.String_Elements.Table (List).Next;
                            end loop;
