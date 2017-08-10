@@ -673,6 +673,8 @@
 
    for Shared_Library_Suffix use ".dylib";
    for Library_Auto_Init_Supported use "true";
+   for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc",
+                                   "-nostdlib", "-Wl,-r", "-o");
    for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
    for Shared_Library_Minimum_Switches use
          ("-dynamiclib", "-shared-libgcc");
