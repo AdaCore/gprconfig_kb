@@ -1600,6 +1600,9 @@
        <compiler language="Ada" runtime="ios-simulator" />
      </compilers>
      <config>
+   for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc",
+                                   "-mios-version-min=8.0",
+                                   "-nostdlib", "-Wl,-r", "-o");
    package Linker is
       for Required_Switches use Linker'Required_Switches
         &amp; ("-mios-version-min=8.0",
