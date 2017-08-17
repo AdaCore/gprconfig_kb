@@ -53,6 +53,8 @@ procedure Build_Shared_Lib is
    procedure Build (Output_File : String) is
       Success  : Boolean;
 
+      Windows_Target : constant Boolean := Shared_Lib_Suffix.all = ".dll";
+
       Out_Opt : constant String_Access := new String'("-o");
       Out_V   : constant String_Access := new String'(Output_File);
 
@@ -411,6 +413,20 @@ procedure Build_Shared_Lib is
               (new String'(Export_File_Switch.all
                & Get_Name_String (Export_File)));
          end if;
+      end if;
+
+      --  On Windows, if we are building a standard library or a library with
+      --  unrestricted symbol-policy make sure all symbols are exported.
+
+      if Windows_Target
+        and then (Standalone = No or else Export_File_Switch = null)
+      then
+         --  This is needed if an object contains a declspec(dllexport) as in
+         --  this case only the specified symbols will be exported. That is the
+         --  linker change from export-all to export only the symbols specified
+         --  as dllexport.
+
+         Add_Arg (new String'("-Wl,--export-all-symbols"));
       end if;
 
       Display_Linking_Command;
