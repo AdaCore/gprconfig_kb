@@ -1748,10 +1748,10 @@ procedure Gprbuild.Main is
                    Arg (1 .. Compiler_Subst_Option'Length) =
                      Compiler_Subst_Option)
                  or else
-                 (Arg'Length >= Compiler_Pkg_Subst_Option'Length
+                   (Arg'Length >= Compiler_Pkg_Subst_Option'Length
                     and then
-                  Arg (1 .. Compiler_Pkg_Subst_Option'Length) =
-                    Compiler_Pkg_Subst_Option)
+                    Arg (1 .. Compiler_Pkg_Subst_Option'Length) =
+                      Compiler_Pkg_Subst_Option)
                then
                   Subst_Switch_Present := True;
                end if;
@@ -2453,11 +2453,11 @@ begin
 
    declare
       Options_Instance : constant Bind_Option_Table_Ref :=
-        Binder_Options_HTable.Get (Name_Ada);
+                           Binder_Options_HTable.Get (Name_Ada);
    begin
-      if All_Language_Binder_Options.Last > 0 or else
-        (Options_Instance /= No_Bind_Option_Table and then
-         Binder_Options.Last (Options_Instance.all) > 0)
+      if All_Language_Binder_Options.Last > 0
+        or else (Options_Instance /= No_Bind_Option_Table
+                 and then Binder_Options.Last (Options_Instance.all) > 0)
       then
          if Main_Project.Standalone_Library /= No then
             GPR.Err.Error_Msg
@@ -2485,6 +2485,7 @@ begin
    begin
       if Target_Name.all = "c" then
          C_Target := True;
+
       else
          Variable := GPR.Util.Value_Of
            (Name_Target, Main_Project.Decl.Attributes, Project_Tree.Shared);
@@ -2510,7 +2511,6 @@ begin
 
    if Main_Project.Qualifier = Aggregate_Library then
       if Main_On_Command_Line then
-
          if (not Opt.Compile_Only or else Opt.Bind_Only)
             and then not Unique_Compile
          then
@@ -2621,8 +2621,9 @@ begin
    end if;
 
    if Debug.Debug_Flag_M then
-      Put_Line ("Maximum number of simultaneous compilations =" &
-                    Opt.Maximum_Processes'Img);
+      Put_Line
+        ("Maximum number of simultaneous compilations ="
+         & Opt.Maximum_Processes'Img);
    end if;
 
    --  Warn if --create-map-file is not supported
