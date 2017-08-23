@@ -1807,7 +1807,7 @@ package body GPR.Conf is
                     new String'(Get_Name_String (Variable.Value));
                   Target_Try_Again := False;
 
-                  --  Target explicitely spexified in the project file,
+                  --  Target explicitly specified in the project file,
                   --  undo fallback preparations.
                   Fallback_Try_Again := False;
                   Env.Flags := Store_Flags;
