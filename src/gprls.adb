@@ -352,6 +352,9 @@ package body Gprls is
       Stamp    : GPR.Stamps.Time_Stamp_Type;
       Checksum : Word;
       Status   : File_Status;
+      Sfile    : File_Name_Type;
+      Src      : GPR.Source_Id;
+
    begin
       if Sdep_I = No_Sdep_Id or else Source = No_Source then
          return;
@@ -359,13 +362,33 @@ package body Gprls is
 
       Stamp    := Sdep.Table (Sdep_I).Stamp;
       Checksum := Sdep.Table (Sdep_I).Checksum;
+      Sfile    := Sdep.Table (Sdep_I).Sfile;
+
+      --  Find the real source
+
+      if Sfile = Source.File then
+         Src := Source;
+
+      else
+         --  Check if it may be a spec
+
+         Src := ALI_Names.Get ((Sfile, True));
+
+         if Src = No_Source then
+            Src := ALI_Names.Get ((Sfile, False));
+
+            if Src = No_Source then
+               Src := Source;
+            end if;
+         end if;
+      end if;
 
       if Print_Source then
-         Find_Status (Source, Stamp, Checksum, Status);
+         Find_Status (Src, Stamp, Checksum, Status);
 
          if Verbose_Mode then
             Put ("     Source => ");
-            Put (Get_Name_String (Source.Path.Display_Name));
+            Put (Get_Name_String (Src.Path.Display_Name));
             Output_Status (Status, True);
             New_Line;
 
