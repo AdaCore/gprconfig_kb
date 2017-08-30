@@ -475,6 +475,9 @@ package GPR.Util is
    No_Complete_Output : Boolean := False;
    --  Set to True with switch -n or No_Complete_Output_Option
 
+   No_Project_File : Boolean := False;
+   --  Set to True in gprbuild and gprclean when switch --no-project is used
+
    --  Config project
 
    Config_Project_Option : constant String := "--config=";
@@ -489,6 +492,8 @@ package GPR.Util is
 
    Restricted_To_Languages_Option : constant String :=
                                                "--restricted-to-languages=";
+
+   No_Project_Option : constant String := "--no-project";
 
    Distributed_Option : constant String := "--distributed";
    Hash_Option        : constant String := "--hash";

@@ -201,6 +201,17 @@ package Builder of the main project:
   running this script should perform the same build as the invocation of
   gprbuild, with the same sources.
 
+* :samp:`--no-project`
+
+  This switch cannot be used if a project file is specified on the command
+  line.
+
+  When this switch is specified, it indicates to gprbuild that the project
+  files in the current directory should not be considered and that the default
+  project file in <prefix>/share/gpr is to be used.
+
+  It is usually used with one or several mains specified on the command line.
+
 * :samp:`--complete-output`
 
   This switch is not compatible with :samp:`--distributed=`.

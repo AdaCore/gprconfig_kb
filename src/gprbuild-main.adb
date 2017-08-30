@@ -732,6 +732,16 @@ procedure Gprbuild.Main is
             No_Complete_Output := True;
             Complete_Output := False;
 
+         elsif Arg = No_Project_Option then
+            Forbidden_In_Package_Builder;
+            No_Project_File := True;
+
+            if Project_File_Name /= null then
+               Fail_Program
+                 (Project_Tree,
+                  "cannot specified --no-project with a project file");
+            end if;
+
          elsif Arg'Length >= Distributed_Option'Length
             and then
             Arg (1 .. Distributed_Option'Length) = Distributed_Option
@@ -1361,7 +1371,12 @@ procedure Gprbuild.Main is
          elsif Arg'Length >= 2 and then Arg (2) = 'P' then
             Forbidden_In_Package_Builder;
 
-            if Project_File_Name /= null then
+            if No_Project_File then
+               Fail_Program
+                 (Project_Tree,
+                  "cannot specify --no-project with a project file");
+
+            elsif Project_File_Name /= null then
                Fail_Program
                  (Project_Tree,
                   "cannot have several project files specified");
@@ -1592,7 +1607,12 @@ procedure Gprbuild.Main is
                 (File_Name'Last - Project_File_Extension'Length + 1
                  .. File_Name'Last) = Project_File_Extension
             then
-               if Project_File_Name /= null then
+               if No_Project_File then
+                  Fail_Program
+                    (Project_Tree,
+                     "cannot specify --no-project with a project file");
+
+               elsif Project_File_Name /= null then
                   Fail_Program
                     (Project_Tree,
                      "cannot have several project files specified");

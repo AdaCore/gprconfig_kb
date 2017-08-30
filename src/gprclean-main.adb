@@ -215,7 +215,13 @@ procedure Gprclean.Main is
                           (File_Name'Last - Project_File_Extension'Length + 1
                            .. File_Name'Last) = Project_File_Extension
                      then
-                        if Project_File_Name /= null then
+                        if No_Project_File then
+                           Fail_Program
+                             (Project_Tree,
+                              "cannot specify --no-project" &
+                              " with a project file");
+
+                        elsif Project_File_Name /= null then
                            Fail_Program
                              (Project_Tree,
                               "cannot have several project files specified");
@@ -279,6 +285,15 @@ procedure Gprclean.Main is
 
             elsif Switch = "--db" then
                Db_Directory_Expected := True;
+
+            elsif Switch = No_Project_Option then
+               No_Project_File := True;
+
+               if Project_File_Name /= null then
+                  Fail_Program
+                    (Project_Tree,
+                     "cannot specify --no-project with a project file");
+               end if;
 
             elsif Switch'Length > Config_Project_Option'Length
               and then Switch (1 .. Config_Project_Option'Length) =
@@ -591,7 +606,12 @@ procedure Gprclean.Main is
                Bad_Switch;
             end if;
 
-            if Project_File_Name /= null then
+            if No_Project_File then
+                  Fail_Program
+                    (Project_Tree,
+                     "cannot specify --no-project with a project file");
+
+            elsif Project_File_Name /= null then
                Fail_Program (Project_Tree, "multiple -P switches");
             end if;
 

@@ -3573,68 +3573,73 @@ package body GPR.Util is
 
    procedure Look_For_Default_Project (Never_Fail : Boolean := False) is
    begin
-      No_Project_File_Found := False;
-
-      if Is_Regular_File (Default_Project_File_Name) then
-         Project_File_Name := new String'(Default_Project_File_Name);
+      if No_Project_File then
+         No_Project_File_Found := True;
 
       else
-         --  Check if there is a single project file in the current
-         --  directory. If there is one and only one, use it.
+         No_Project_File_Found := False;
 
-         declare
-            Dir : Dir_Type;
-            Str : String (1 .. 255);
-            Last : Natural;
-            Single : String_Access := null;
+         if Is_Regular_File (Default_Project_File_Name) then
+            Project_File_Name := new String'(Default_Project_File_Name);
 
-         begin
-            No_Project_File_Found := True;
+         else
+            --  Check if there is a single project file in the current
+            --  directory. If there is one and only one, use it.
 
-            Open (Dir, ".");
+            declare
+               Dir : Dir_Type;
+               Str : String (1 .. 255);
+               Last : Natural;
+               Single : String_Access := null;
 
-            loop
-               Read (Dir, Str, Last);
-               exit when Last = 0;
+            begin
+               No_Project_File_Found := True;
 
-               if Last > Project_File_Extension'Length
-                 and then Is_Regular_File (Str (1 .. Last))
-               then
-                  Canonical_Case_File_Name (Str (1 .. Last));
+               Open (Dir, ".");
 
-                  if Str (Last - Project_File_Extension'Length + 1 .. Last)
-                    = Project_File_Extension
+               loop
+                  Read (Dir, Str, Last);
+                  exit when Last = 0;
+
+                  if Last > Project_File_Extension'Length
+                    and then Is_Regular_File (Str (1 .. Last))
                   then
-                     No_Project_File_Found := False;
+                     Canonical_Case_File_Name (Str (1 .. Last));
 
-                     if Single = null then
-                        Single := new String'(Str (1 .. Last));
+                     if Str (Last - Project_File_Extension'Length + 1 .. Last)
+                       = Project_File_Extension
+                     then
+                        No_Project_File_Found := False;
 
-                     else
-                        --  There are several project files in the current
-                        --  directory. Reset Single to null and exit.
+                        if Single = null then
+                           Single := new String'(Str (1 .. Last));
 
-                        Single := null;
-                        exit;
+                        else
+                           --  There are several project files in the current
+                           --  directory. Reset Single to null and exit.
+
+                           Single := null;
+                           exit;
+                        end if;
                      end if;
                   end if;
-               end if;
-            end loop;
+               end loop;
 
-            Close (Dir);
+               Close (Dir);
 
-            Project_File_Name := Single;
-         end;
+               Project_File_Name := Single;
+            end;
+         end if;
+      end if;
 
-         if No_Project_File_Found or else
-            (Never_Fail and then Project_File_Name = null)
-         then
-            Project_File_Name :=
-              new String'(Executable_Prefix_Path & Implicit_Project_File_Path);
+      if No_Project_File_Found or else
+        (Never_Fail and then Project_File_Name = null)
+      then
+         Project_File_Name :=
+           new String'(Executable_Prefix_Path & Implicit_Project_File_Path);
 
-            if not Is_Regular_File (Project_File_Name.all) then
-               Project_File_Name := null;
-            end if;
+         if not Is_Regular_File (Project_File_Name.all) then
+            Project_File_Name := null;
          end if;
       end if;
 

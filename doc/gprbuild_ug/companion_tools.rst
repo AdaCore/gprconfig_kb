@@ -1788,6 +1788,17 @@ Switches for GPRclean
 
 The switches for GPRclean are:
 
+* :samp:`--no-project`
+
+  This switch cannot be used if a project file is specified on the command
+  line.
+
+  When this switch is specified, it indicates to gprclean that the project
+  files in the current directory should not be considered and that the default
+  project file in <prefix>/share/gpr is to be used.
+
+  It is usually used with one or several mains specified on the command line.
+
 * :samp:`--distributed`
 
   Also clean-up the sources on build slaves,
