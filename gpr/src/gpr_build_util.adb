@@ -38,8 +38,6 @@ with GPR.Util;    use GPR.Util;
 
 package body Gpr_Build_Util is
 
-   use Stamps;
-
    use ALI;
 
    function File_Not_A_Source_Of

@@ -691,8 +691,6 @@ package body GPR is
       Include_Aggregated : Boolean := True;
       Imported_First     : Boolean := False)
    is
-      use Project_Boolean_Htable;
-
       procedure Recursive_Check_Context
         (Project               : Project_Id;
          Tree                  : Project_Tree_Ref;

@@ -40,8 +40,6 @@ package body Gprls is
    --  the expected Stamp and checksum given as argument. FS will be updated
    --  to the full file name if available.
 
-   use Rident;
-
    ---------
    -- Add --
    ---------

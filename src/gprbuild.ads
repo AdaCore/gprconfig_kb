@@ -35,7 +35,9 @@ private with GPR.Opt;
 
 package Gprbuild is
 
+   pragma Warnings (Off); -- Used by children
    use Stamps;
+   pragma Warnings (On);
 
    --  Everyting private so only accessible to child packages
 
@@ -43,7 +45,9 @@ private
 
    use GNAT.OS_Lib;
 
+   pragma Warnings (Off); -- Used by children
    use type ALI.ALI_Id, Opt.Verbosity_Level_Type, Opt.Warning_Mode_Type;
+   pragma Warnings (On);
 
    Exit_Code : Osint.Exit_Code_Type := Osint.E_Success;
    --  Exit code for gprbuild

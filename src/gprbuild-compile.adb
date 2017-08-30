@@ -1157,7 +1157,6 @@ package body Gprbuild.Compile is
       ----------------
 
       procedure Do_Compile (Project : Project_Id; Tree : Project_Tree_Ref) is
-         use type Containers.Count_Type;
       begin
          if Builder_Data (Tree).Need_Compilation then
             Compilation_Phase (Project, Tree);
@@ -3341,8 +3340,6 @@ package body Gprbuild.Compile is
       --------------------------------
 
       function Must_Exit_Because_Of_Error return Boolean is
-         use type Containers.Count_Type;
-
          Source_Identity : Queue.Source_Info;
          Compilation_OK  : Boolean;
          Slave           : Unbounded_String;

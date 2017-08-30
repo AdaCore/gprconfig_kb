@@ -821,7 +821,6 @@ package body GPR.Compilation.Protocol is
       end Create_Args;
 
       declare
-         use Protocol;
          Cmd : constant Command := Get_Command (Channel);
       begin
          if Kind (Cmd) = KO then

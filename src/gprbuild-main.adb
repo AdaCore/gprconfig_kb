@@ -56,8 +56,6 @@ with GPR.Version;                use GPR.Version;
 
 procedure Gprbuild.Main is
 
-   use Stamps;
-
    CodePeer_String : constant String := "codepeer";
    --  Used in CopePeer mode for the target and the subdirs
 

@@ -26,7 +26,7 @@ with GPR.ALI; use GPR.ALI;
 with GPR.Env;
 with GPR.Opt;   use GPR.Opt;
 with GPR.Osint; use GPR.Osint;
-with GPR.Tree;  use GPR.Tree;
+with GPR.Tree;
 
 package Gprls is
 

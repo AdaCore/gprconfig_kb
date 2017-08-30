@@ -31,7 +31,6 @@ with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;                 use Ada.Strings.Unbounded;
 with Ada.Text_IO;                           use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
-with Interfaces;
 with System.Multiprocessors;                use System;
 
 with GNAT.Command_Line;       use GNAT;
@@ -53,10 +52,10 @@ with GPR.Version;
 with GPR;                           use GPR;
 with GPR.Opt;                       use GPR.Opt;
 with GPR.Knowledge;                 use GPR.Knowledge;
-with GPR.Env;                       use GPR.Env;
+with GPR.Env;
 with GPR.Names;                     use GPR.Names;
 with GPR.Part;                      use GPR.Part;
-with GPR.Proc;                      use GPR.Proc;
+with GPR.Proc;
 with GPR.Tree;                      use GPR.Tree;
 with GPR.Snames;                    use GPR.Snames;
 
@@ -744,7 +743,6 @@ procedure Gprslave is
 
    function Get_Slave_Id return Remote_Id is
       use GNAT.CRC32;
-      use type Interfaces.Unsigned_32;
       CRC : GNAT.CRC32.CRC32;
    begin
       Initialize (CRC);
@@ -2173,8 +2171,6 @@ procedure Gprslave is
       --------------
 
       procedure Sync_Gpr (Builder : in out Build_Master) is
-
-         use type Containers.Count_Type;
 
          procedure Delete_Files (Except : Sync.Files.Set);
          --  Delete all files in the current working tree except those in

@@ -43,7 +43,6 @@ with GPR.Sdefault;
 with System.Case_Util; use System.Case_Util;
 with System.CRTL;
 with System.HTable;
-with System.Regexp;    use System.Regexp;
 
 package body GPRName is
 

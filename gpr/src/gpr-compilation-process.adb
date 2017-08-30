@@ -150,8 +150,6 @@ package body GPR.Compilation.Process is
    -------------------
 
    function Get_Slave_For (Pid : Id) return String is
-      use type Failures_Slave_Set.Cursor;
-
    begin
       if Pid.Kind = Local then
          return "";

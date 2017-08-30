@@ -998,8 +998,6 @@ package body GPR.Compilation.Slave is
    -----------------
 
    task body Wait_Remote is
-      use type Slave_S.Cursor;
-
       Proc         : Id;
       Pid          : Remote_Id;
       Selector     : Selector_Type;
