@@ -1882,10 +1882,25 @@ package body GPR.Conf is
 
             goto Parse_Again;
          end if;
+      end if;
 
-         --  Add the default directories corresponding to the compilers. This
-         --  is done every time, mostly for the benefit of gprls, so that the
-         --  project path is updated and is correctly displayed by gprls -v.
+      --  Exit if there was an error. Otherwise, if Config_Try_Again is True,
+      --  update the project path and try again.
+
+      if Main_Project /= No_Project and then Config_Try_Again then
+         Set_Ignore_Missing_With (Env.Flags, False);
+
+         if Config_File_Path /= null then
+            Conf_File_Name := new String'(Config_File_Path.all);
+         end if;
+
+         --  For the second time the project files are parsed, the warning for
+         --  --RTS= being only taken into account in auto-configuration are
+         --  suppressed, as we are no longer in auto-configuration.
+
+         Warn_For_RTS := False;
+
+         --  Add the default directories corresponding to the compilers
 
          Update_Project_Path
            (By                 => Main_Project,
@@ -2050,27 +2065,11 @@ package body GPR.Conf is
             end loop;
          end;
 
-         --  If Config_Try_Again is True, try again
+         --  And parse again the project files. There will be no missing
+         --  withed projects, as Ignore_Missing_With is set to False in
+         --  the environment flags, so there is no risk of endless loop here.
 
-         if Config_Try_Again then
-            Set_Ignore_Missing_With (Env.Flags, False);
-
-            if Config_File_Path /= null then
-               Conf_File_Name := new String'(Config_File_Path.all);
-            end if;
-
-            --  For the next time the project files are parsed, the warning for
-            --  --RTS= being only taken into account in auto-configuration are
-            --  suppressed, as we are no longer in auto-configuration.
-
-            Warn_For_RTS := False;
-
-            --  Parse again the project files. There will be no missing
-            --  withed projects, as Ignore_Missing_With is set to False in the
-            --  environment flags, so there is no risk of endless loop here.
-
-            goto Parse_Again;
-         end if;
+         goto Parse_Again;
       end if;
    end Parse_Project_And_Apply_Config;
 

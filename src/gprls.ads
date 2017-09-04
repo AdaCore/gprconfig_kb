@@ -26,6 +26,7 @@ with GPR.ALI; use GPR.ALI;
 with GPR.Env;
 with GPR.Opt;   use GPR.Opt;
 with GPR.Osint; use GPR.Osint;
+with GPR.Tree;
 
 package Gprls is
 
@@ -137,6 +138,8 @@ private
 
    Tree : constant GPR.Project_Node_Tree_Ref := new Project_Node_Tree_Data;
    --  The project tree where the project file is parsed
+
+   Root_Environment : GPR.Tree.Environment;
 
    --  Packages of project files where unknown attributes are errors
 
