@@ -5133,8 +5133,6 @@ package body GPR.Nmsc is
         GPR.Util.Value_Of
           (Name_Default_Language, Project.Decl.Attributes, Shared);
 
-      if Project.Source_Dirs /= Nil_String then
-
          --  Check if languages are specified in this project
 
          if Languages.Default then
@@ -5198,7 +5196,6 @@ package body GPR.Nmsc is
                end if;
             end;
          end if;
-      end if;
    end Check_Programming_Languages;
 
    -------------------------------
@@ -7082,8 +7079,6 @@ package body GPR.Nmsc is
 
          begin
             if Current = Nil_String then
-               Project.Project.Languages := No_Language_Index;
-
                --  This project contains no source. For projects that don't
                --  extend other projects, this also means that there is no
                --  need for an object directory, if not specified.

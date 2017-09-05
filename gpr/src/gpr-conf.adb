@@ -583,11 +583,6 @@ package body GPR.Conf is
       function Is_Base_Name (Path : String) return Boolean;
       --  Returns True if Path has no directory separator
 
-      function Might_Have_Sources (Project : Project_Id) return Boolean;
-      --  True if the specified project might have sources (ie the user has not
-      --  explicitly specified it. We haven't checked the file system, nor do
-      --  we need to at this stage.
-
       ----------------------------
       -- Check_Builder_Switches --
       ----------------------------
@@ -1132,68 +1127,66 @@ package body GPR.Conf is
             Elem          : String_Element;
 
          begin
-            if Might_Have_Sources (Project) then
-               Variable :=
-                 Value_Of (Name_Languages, Project.Decl.Attributes, Shared);
+            Variable :=
+              Value_Of (Name_Languages, Project.Decl.Attributes, Shared);
 
-               if Variable = Nil_Variable_Value or else Variable.Default then
+            if Variable = Nil_Variable_Value or else Variable.Default then
 
-                  --  Languages is not declared. If it is not an extending
-                  --  project, or if it extends a project with no Languages,
-                  --  check for Default_Language.
+               --  Languages is not declared. If it is not an extending
+               --  project, or if it extends a project with no Languages,
+               --  check for Default_Language.
 
-                  Check_Default := Project.Extends = No_Project;
+               Check_Default := Project.Extends = No_Project;
 
-                  if not Check_Default then
-                     Variable :=
-                       Value_Of
-                         (Name_Languages,
-                          Project.Extends.Decl.Attributes,
-                          Shared);
-                     Check_Default :=
-                       Variable /= Nil_Variable_Value
-                         and then Variable.Values = Nil_String;
-                  end if;
+               if not Check_Default then
+                  Variable :=
+                    Value_Of
+                      (Name_Languages,
+                       Project.Extends.Decl.Attributes,
+                       Shared);
+                  Check_Default :=
+                    Variable /= Nil_Variable_Value
+                    and then Variable.Values = Nil_String;
+               end if;
 
-                  if Check_Default then
-                     Variable :=
-                       Value_Of
-                         (Name_Default_Language,
-                          Project.Decl.Attributes,
-                          Shared);
+               if Check_Default then
+                  Variable :=
+                    Value_Of
+                      (Name_Default_Language,
+                       Project.Decl.Attributes,
+                       Shared);
 
-                     if Variable /= Nil_Variable_Value
-                       and then not Variable.Default
-                     then
-                        Get_Name_String (Variable.Value);
-                        To_Lower (Name_Buffer (1 .. Name_Len));
-                        Lang := Name_Find;
-                        Language_Htable.Set (Lang, Lang);
-
-                     --  If no default language is declared, default to Ada
-
-                     else
-                        Language_Htable.Set (Name_Ada, Name_Ada);
-                     end if;
-                  end if;
-
-               elsif Variable.Values /= Nil_String then
-
-                  --  Attribute Languages is declared with a non empty list:
-                  --  put all the languages in Language_HTable.
-
-                  List := Variable.Values;
-                  while List /= Nil_String loop
-                     Elem := Shared.String_Elements.Table (List);
-
-                     Get_Name_String (Elem.Value);
+                  if Variable /= Nil_Variable_Value
+                    and then not Variable.Default
+                  then
+                     Get_Name_String (Variable.Value);
                      To_Lower (Name_Buffer (1 .. Name_Len));
                      Lang := Name_Find;
                      Language_Htable.Set (Lang, Lang);
 
-                     List := Elem.Next;
-                  end loop;
+                     --  If no default language is declared, default to Ada
+
+                  else
+                     Language_Htable.Set (Name_Ada, Name_Ada);
+                  end if;
                end if;
+
+            elsif Variable.Values /= Nil_String then
+
+               --  Attribute Languages is declared with a non empty list:
+               --  put all the languages in Language_HTable.
+
+               List := Variable.Values;
+               while List /= Nil_String loop
+                  Elem := Shared.String_Elements.Table (List);
+
+                  Get_Name_String (Elem.Value);
+                  To_Lower (Name_Buffer (1 .. Name_Len));
+                  Lang := Name_Find;
+                  Language_Htable.Set (Lang, Lang);
+
+                  List := Elem.Next;
+               end loop;
             end if;
          end Add_Config_Switches_For_Project;
 
@@ -1309,32 +1302,6 @@ package body GPR.Conf is
          end loop;
          return True;
       end Is_Base_Name;
-
-      ------------------------
-      -- Might_Have_Sources --
-      ------------------------
-
-      function Might_Have_Sources (Project : Project_Id) return Boolean is
-         Variable : Variable_Value;
-
-      begin
-         Variable :=
-           Value_Of (Name_Source_Dirs, Project.Decl.Attributes, Shared);
-
-         if Variable = Nil_Variable_Value
-           or else Variable.Default
-           or else Variable.Values /= Nil_String
-         then
-            Variable :=
-              Value_Of (Name_Source_Files, Project.Decl.Attributes, Shared);
-            return Variable = Nil_Variable_Value
-              or else Variable.Default
-              or else Variable.Values /= Nil_String;
-
-         else
-            return False;
-         end if;
-      end Might_Have_Sources;
 
       --  Local Variables
 
