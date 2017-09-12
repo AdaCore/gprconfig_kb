@@ -13,7 +13,9 @@
       for Leading_Required_Switches ("Asm_Cpp") use
          Compiler'Leading_Required_Switches ("Asm_Cpp") &amp;
          ("-c", "-x", "assembler-with-cpp");
-      for Include_Path      ("Asm_Cpp") use "CPATH";
+      for Include_Switches        ("Asm_Cpp") use ("-I");
+      for Max_Command_Line_Length use "8192";
+      for Response_File_Format    ("Asm_Cpp") use "GCC_GNU";
       for Dependency_Switches ("Asm_Cpp") use ("-MMD", "-MF", "");
    end Compiler;
      </config>
@@ -29,7 +31,9 @@
       for Leading_Required_Switches ("Asm") use
         Compiler'Leading_Required_Switches ("Asm") &amp;
         ("-c", "-x", "assembler");
-      for Include_Path      ("Asm") use "CPATH";
+      for Include_Switches        ("Asm") use ("-I");
+      for Max_Command_Line_Length use "8192";
+      for Response_File_Format    ("Asm") use "GCC_GNU";
       for Dependency_Switches ("Asm") use ("-MMD", "-MF", "");
    end Compiler;
      </config>
@@ -45,7 +49,9 @@
       for Leading_Required_Switches ("Asm2") use
         Compiler'Leading_Required_Switches ("Asm2") &amp;
         ("-c", "-x", "assembler");
-      for Include_Path      ("Asm2") use "CPATH";
+      for Include_Switches        ("Asm2") use ("-I");
+      for Max_Command_Line_Length use "8192";
+      for Response_File_Format    ("Asm2") use "GCC_GNU";
       for Dependency_Switches ("Asm2") use ("-MMD", "-MF", "");
    end Compiler;
      </config>
