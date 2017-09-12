@@ -1984,10 +1984,9 @@ Projects that won't be installed are:
   A project with the Active attribute set to False in the project's
   Install package.
 
-* Abstract project
+* Projects with no sources
 
-  A project explicitly set with the abstract discriminant or a standard project
-  without any sources.
+  Both abstract projects and standard projects without any sources
 
 At a minimum, to invoke GPRinstall you must specify a main project file
 in a command such as `gprinstall proj.gpr` or
