@@ -30,6 +30,31 @@ package body GPR.ALI is
    use ASCII;
    --  Make control characters visible
 
+   --  The following array records which characters currently are used as line
+   --  type markers in the ALI file. This is used in Scan_ALI to detect (or
+   --  skip) invalid lines.
+
+   Known_ALI_Lines : constant array (Character range 'A' .. 'Z') of Boolean :=
+     ('V'    => True,   -- version
+      'M'    => True,   -- main program
+      'A'    => True,   -- argument
+      'P'    => True,   -- program
+      'R'    => True,   -- restriction
+      'I'    => True,   -- interrupt
+      'U'    => True,   -- unit
+      'W'    => True,   -- with
+      'L'    => True,   -- linker option
+      'N'    => True,   -- notes
+      'E'    => True,   -- external
+      'D'    => True,   -- dependency
+      'X'    => True,   -- xref
+      'S'    => True,   -- specific dispatching
+      'Y'    => True,   -- limited_with
+      'Z'    => True,   -- implicit with from instantiation
+      'C'    => True,   -- SCO information
+      'F'    => True,   -- SPARK cross-reference information
+      others => False);
+
    --------------------
    -- Initialize_ALI --
    --------------------
@@ -242,7 +267,9 @@ package body GPR.ALI is
 
       procedure Check_Unknown_Line is
       begin
-         while C not in 'A' .. 'Z' loop
+         while C not in 'A' .. 'Z'
+           or else not Known_ALI_Lines (C)
+         loop
             if C = CR or else C = LF then
                Skip_Next_Line;
                C := Nextc;
