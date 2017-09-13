@@ -5050,8 +5050,8 @@ Package Install Attributes
 
 * **Artifacts**: list, indexed
 
-  An array attribute to declare a set of files not part of the sources
-  to be installed. The array discriminant is the directory where the
+  An indexed attribute to declare a set of files not part of the sources
+  to be installed. The array index is the directory where the
   file is to be installed. If a relative directory then Prefix (see
   below) is prepended. Note also that if the same file name occurs
   multiple time in the attribute list, the last one will be the one
