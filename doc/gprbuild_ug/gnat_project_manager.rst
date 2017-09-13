@@ -1375,7 +1375,7 @@ option for one of the tools involved in the build process. Most of those
 attributes are project specific. That is to say, they only affect the invocation
 of tools on the sources of the project where they are defined.
 
-.. index:; Main project
+.. index:: Main project
 
 There are a few additional attributes that, when defined for a "main" project
 `proj`, also apply to all other projects in the project import closure of `proj`.
@@ -3319,7 +3319,7 @@ qualifiers are allowed:
   A library project must define both of the attributes
   `Library_Name` and `Library_Dir`.
 
-.. index:; Configuration project
+.. index:: Configuration project
 
 .. _Configuration_Project:
 
