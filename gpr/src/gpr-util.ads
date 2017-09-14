@@ -837,6 +837,15 @@ package GPR.Util is
    --  Return command line argument of rank Rank. If Rank is greater than
    --  Last_Command_Line_Argument, return the empty string.
 
+   ----------------------
+   -- Time Stamp Cache --
+   ----------------------
+
+   --  There is a hash table to cache the time stamps of files.
+   --  This table needs to be cleared sometimes.
+
+   procedure Clear_Time_Stamp_Cache;
+
 private
    type Text_File_Data is record
       FD                  : File_Descriptor := Invalid_FD;

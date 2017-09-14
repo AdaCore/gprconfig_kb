@@ -72,6 +72,21 @@ package body GPR.Util is
 
    Program_Name : String_Access := null;
 
+   type File_Stamp_Record is record
+      Known : Boolean         := False;
+      TS    : Time_Stamp_Type := Empty_Time_Stamp;
+   end record;
+   Unknow_File_Stamp : constant File_Stamp_Record := (False, Empty_Time_Stamp);
+
+   package File_Stamp_HTable is new GNAT.HTable.Simple_HTable
+     (Header_Num => GPR.Header_Num,
+      Element    => File_Stamp_Record,
+      No_Element => Unknow_File_Stamp,
+      Key        => Path_Name_Type,
+      Hash       => GPR.Hash,
+      Equal      => "=");
+   --  A hash table to cache time stamps of files
+
    package Source_Info_Table is new GNAT.Table
      (Table_Component_Type => Source_Info_Iterator,
       Table_Index_Type     => Natural,
@@ -111,6 +126,10 @@ package body GPR.Util is
    --  Returns the length of C (null-terminated) string at S, or 0 for
    --  Null_Address.
 
+   function File_Stamp (Path : Path_Name_Type) return Time_Stamp_Type;
+   --  Get the tme stamp of Path. Take it from File_Stamp_HTable if it is
+   --  already there, otherwise get is and put it in File_Stamp_HTable.
+
    ------------------------------
    -- Locate_Directory support --
    ------------------------------
@@ -129,6 +148,43 @@ package body GPR.Util is
          return Integer (strlen (S));
       end if;
    end C_String_Length;
+
+   ----------------------------
+   -- Clear_Time_Stamp_Cache --
+   ----------------------------
+
+   procedure Clear_Time_Stamp_Cache is
+   begin
+      File_Stamp_HTable.Reset;
+   end Clear_Time_Stamp_Cache;
+
+   ----------------
+   -- File_Stamp --
+   ----------------
+
+   function File_Stamp (Path : Path_Name_Type) return Time_Stamp_Type is
+   begin
+      if Path = No_Path then
+         return Empty_Time_Stamp;
+
+      else
+         declare
+            FSR : File_Stamp_Record := File_Stamp_HTable.Get (Path);
+         begin
+            if FSR.Known then
+               return FSR.TS;
+            else
+               declare
+                  Result : constant Time_Stamp_Type := Osint.File_Stamp (Path);
+               begin
+                  FSR := (True, Result);
+                  File_Stamp_HTable.Set (Path, FSR);
+                  return Result;
+               end;
+            end if;
+         end;
+      end if;
+   end File_Stamp;
 
    ----------------------
    -- Locate_Directory --

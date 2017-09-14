@@ -2744,6 +2744,7 @@ package body GPR.Nmsc is
                         Elem    : String_Element;
                      begin
                         Lang_Index.Config.Runtime_Library_Dirs := No_Name_List;
+                        Shared.Ada_Runtime_Dir := No_Name;
 
                         while Dirs /= Nil_String loop
                            Elem := Shared.String_Elements.Table (Dirs);
@@ -2965,6 +2966,7 @@ package body GPR.Nmsc is
                                       Lang_Index.Config.Toolchain_Version;
                                  end if;
 
+                                 Shared.Ada_Runtime_Dir := Element.Value.Value;
                                  Shared.Ada_Runtime_Library_Dirs :=
                                    Lang_Index.Config.Runtime_Library_Dirs;
                                  Shared.Ada_Runtime_Source_Dirs :=

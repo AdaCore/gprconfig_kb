@@ -3561,6 +3561,7 @@ package body Gprbuild.Post_Compile is
       procedure Post_Compile_All is new For_Project_And_Aggregated (Do_Post);
 
    begin
+      Clear_Time_Stamp_Cache;
       Outstanding_Processes := 0;
       Stop_Spawning := False;
 

@@ -1638,13 +1638,17 @@ package body GPR is
          --  the same lifetime and will always exist concurrently.
 
          Tree.Shared := Tree.Shared_Data'Unrestricted_Access;
-         Name_List_Table.Init        (Tree.Shared.Name_Lists);
          Number_List_Table.Init      (Tree.Shared.Number_Lists);
          String_Element_Table.Init   (Tree.Shared.String_Elements);
          Variable_Element_Table.Init (Tree.Shared.Variable_Elements);
          Array_Element_Table.Init    (Tree.Shared.Array_Elements);
          Array_Table.Init            (Tree.Shared.Arrays);
          Package_Table.Init          (Tree.Shared.Packages);
+
+         --  As Ada_Runtime_Dir is the key for caching various Ada language
+         --  data, reset it so that the cached values are no longer used.
+
+         --  Tree.Shared.Ada_Runtime_Dir := No_Name;
 
          --  Create Dot_String_List
 
