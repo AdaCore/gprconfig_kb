@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1055,6 +1055,24 @@ package body GPR.Tree is
       Project_Node_Table.Init (Tree.Project_Nodes);
       Projects_Htable.Reset (Tree.Projects_HT);
    end Initialize;
+
+   ----------------------------
+   -- Is_Config_Concatenable --
+   ----------------------------
+
+   function Is_Config_Concatenable
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref) return Boolean
+   is
+   begin
+      pragma Assert
+        (Present (Node)
+         and then
+           (In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Declaration
+            or else
+            In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Reference));
+      return In_Tree.Project_Nodes.Table (Node).Flag2;
+   end Is_Config_Concatenable;
 
    --------------------
    -- Override_Flags --
@@ -2550,6 +2568,25 @@ package body GPR.Tree is
           and then In_Tree.Project_Nodes.Table (Node).Kind = N_Project);
       In_Tree.Project_Nodes.Table (Node).Display_Name := To;
    end Set_Display_Name_Of;
+
+   --------------------------------
+   -- Set_Is_Config_Concatenable --
+   --------------------------------
+
+   procedure Set_Is_Config_Concatenable
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref;
+      To      : Boolean)
+   is
+   begin
+      pragma Assert
+        (Present (Node)
+         and then
+           (In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Declaration
+            or else
+            In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Reference));
+      In_Tree.Project_Nodes.Table (Node).Flag2 := To;
+   end Set_Is_Config_Concatenable;
 
    -------------------------------
    -- Set_Next_Declarative_Item --

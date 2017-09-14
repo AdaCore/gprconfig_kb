@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2005-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2005-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -23,13 +23,13 @@
 ------------------------------------------------------------------------------
 
 --  This package contains insecure procedures that are intended to be used
---  only inside the Prj and MLib hierarchies. It should not be imported by
---  other tools, such as GPS.
+--  only inside the GPR hierarcy. It should not be imported by other tools,
+--  such as GPS.
 
 package GPR.Attr.PM is
 
    --  The following procedures should only be used by the Project Manager, as
-   --  duplicate nanes are not checked.
+   --  duplicate names are not checked.
 
    procedure Add_Unknown_Package (Name : Name_Id; Id : out Package_Node_Id);
    --  Add a new unknown package. The Name cannot be the name of a predefined

@@ -284,7 +284,8 @@ package body GPR.Proc is
                         Location    => No_Location,
                         Default     => True,
                         String_Type => Empty_Project_Node,
-                        Values      => Nil_String);
+                        Values      => Nil_String,
+                        Concat      => Is_Config_Concatenable (The_Attribute));
 
                end case;
 
@@ -1016,7 +1017,11 @@ package body GPR.Proc is
                                  Location    => No_Location,
                                  Default     => True,
                                  String_Type => Empty_Project_Node,
-                                 Values      => Nil_String);
+                                 Values      => Nil_String,
+                                 Concat      =>
+                                   Is_Config_Concatenable
+                                     (The_Current_Term,
+                                      From_Project_Node_Tree));
                            else
                               The_Variable :=
                                 (Project     => Project,

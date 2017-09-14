@@ -477,6 +477,7 @@ package GPR is
             null;
          when List =>
             Values : String_List_Id := Nil_String;
+            Concat : Boolean := False;
          when Single =>
             Value : Name_Id := No_Name;
             Index : Int     := 0;
@@ -1705,6 +1706,10 @@ package GPR is
 
          Flag2 : Boolean := False;
          --  This flag is significant only for:
+         --
+         --    N_Attribute_Declaration and N_Attribute_Reference
+         --      Indicates if attribute values are concatenated with the value
+         --      in the configuration project for the same attribute.
          --
          --    N_Project
          --      Indicates that the project "extends all" another project.

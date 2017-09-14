@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -109,6 +109,8 @@ package GPR.Attr is
       --  The value of the attribute when referenced if the attribute has not
       --  yet been declared.
 
+      Config_Concatenable : Boolean := False;
+
    end record;
    --  Name and characteristics of an attribute in a package registered
    --  explicitly with Register_New_Package (see below).
@@ -213,6 +215,11 @@ package GPR.Attr is
    function Others_Allowed_For (Attribute : Attribute_Node_Id) return Boolean;
    --  True iff the index for an associative array attributes may be others
 
+   function Is_Config_Concatenable (Attribute : Attribute_Node_Id)
+                                    return Boolean;
+   --  True iff the values in configuration project and user project are
+   --  concatenated when both are not empty.
+
    --------------
    -- Packages --
    --------------
@@ -225,18 +232,19 @@ package GPR.Attr is
    --  below.
 
    procedure Register_New_Attribute
-     (Name               : String;
-      In_Package         : Package_Node_Id;
-      Attr_Kind          : Defined_Attribute_Kind;
-      Var_Kind           : Defined_Variable_Kind;
-      Index_Is_File_Name : Boolean                 := False;
-      Opt_Index          : Boolean                 := False;
-      Default            : Attribute_Default_Value := Empty_Value);
+     (Name                : String;
+      In_Package          : Package_Node_Id;
+      Attr_Kind           : Defined_Attribute_Kind;
+      Var_Kind            : Defined_Variable_Kind;
+      Index_Is_File_Name  : Boolean                 := False;
+      Opt_Index           : Boolean                 := False;
+      Default             : Attribute_Default_Value := Empty_Value;
+      Config_Concatenable : Boolean                 := False);
    --  Add a new attribute to registered package In_Package. Fails if Name
    --  (the attribute name) is empty, if In_Package is Empty_Package or if
    --  the attribute name has a duplicate name. See definition of type
    --  Attribute_Data above for the meaning of parameters Attr_Kind, Var_Kind,
-   --  Index_Is_File_Name, Opt_Index, and Default.
+   --  Index_Is_File_Name, Opt_Index, Default and Config_Concatenable.
 
    function Attribute_Registered
      (Name               : String;
@@ -309,6 +317,7 @@ private
       Read_Only      : Boolean;
       Others_Allowed : Boolean;
       Default        : Attribute_Default_Value;
+      Config_Concat  : Boolean;
       Next           : Attr_Node_Id;
    end record;
    --  Data for an attribute

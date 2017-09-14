@@ -218,6 +218,7 @@ package body GPR.Conf is
 
                elsif User_Attr.Value.Kind = List
                  and then Conf_Attr.Value.Values /= Nil_String
+                 and then Conf_Attr.Value.Concat
                then
                   --  List attribute declared in both the user project and the
                   --  configuration project: prepend the user list with the

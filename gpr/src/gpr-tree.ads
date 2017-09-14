@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -589,6 +589,12 @@ package GPR.Tree is
    --  Only valid for N_Case_Item nodes. Return the first choice in a
    --  N_Case_Item, or Empty_Node if this is when others.
 
+   function Is_Config_Concatenable
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref) return Boolean;
+   pragma Inline (Is_Config_Concatenable);
+   --  Only valid for N_Attribute_Declaration and N_Attribute_Reference
+
    function Next_Case_Item
      (Node    : Project_Node_Id;
       In_Tree : Project_Node_Tree_Ref) return Project_Node_Id;
@@ -1096,6 +1102,13 @@ package GPR.Tree is
       To      : Project_Node_Id);
    pragma Inline (Set_First_Case_Item_Of);
    --  Only valid for N_Case_Construction nodes
+
+   procedure Set_Is_Config_Concatenable
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref;
+      To      : Boolean);
+   pragma Inline (Set_Is_Config_Concatenable);
+   --  Only valid for N_Attribute_Declaration and N_Attribute_Reference
 
    procedure Set_First_Choice_Of
      (Node    : Project_Node_Id;

@@ -56,6 +56,10 @@ package body GPR.Attr is
    --  The third optional letter is
    --     'R' the attribute is read-only
    --     'O' others is allowed as an index for an associative array
+   --     'C' if values of the list attribute are not empty in both the user
+   --         project and the configuration project, the final value is
+   --         the concatenation of the configuration project value with
+   --         the user project value.
 
    --  If the character after the name in lower case letter is a 'D' (for
    --  default), then 'D' must be followed by an enumeration value of type
@@ -113,12 +117,12 @@ package body GPR.Attr is
    "SVlibrary_version#" &
    "LVlibrary_interface#" &
    "SVlibrary_standalone#" &
-   "LVlibrary_encapsulated_options#" &
+   "LVClibrary_encapsulated_options#" &
    "SVlibrary_encapsulated_supported#" &
    "SVlibrary_auto_init#" &
-   "LVleading_library_options#" &
-   "LVlibrary_options#" &
-   "Lalibrary_rpath_options#" &
+   "LVCleading_library_options#" &
+   "LVClibrary_options#" &
+   "LaClibrary_rpath_options#" &
    "SVlibrary_src_dir#" &
    "SVlibrary_ali_dir#" &
    "SVlibrary_gcc#" &
@@ -170,8 +174,8 @@ package body GPR.Attr is
    "SVsymbolic_link_supported#" &
    "SVlibrary_major_minor_id_supported#" &
    "SVlibrary_auto_init_supported#" &
-   "LVshared_library_minimum_switches#" &
-   "LVlibrary_version_switches#" &
+   "LVCshared_library_minimum_switches#" &
+   "LVClibrary_version_switches#" &
    "SVlibrary_install_name_option#" &
 
    --  package Naming
@@ -196,8 +200,8 @@ package body GPR.Attr is
    --  package Compiler
 
    "Pcompiler#" &
-   "Ladefault_switches#" &
-   "LcOswitches#" &
+   "LaCdefault_switches#" &
+   "LcOCswitches#" &
    "SVlocal_configuration_pragmas#" &
    "Salocal_config_file#" &
 
@@ -206,26 +210,26 @@ package body GPR.Attr is
    "Sadriver#" &
    "Salanguage_kind#" &
    "Sadependency_kind#" &
-   "Larequired_switches#" &
-   "Laleading_required_switches#" &
-   "Latrailing_required_switches#" &
+   "LaCrequired_switches#" &
+   "LaCleading_required_switches#" &
+   "LaCtrailing_required_switches#" &
    "Lapic_option#" &
    "Sapath_syntax#" &
-   "Lasource_file_switches#" &
+   "LaCsource_file_switches#" &
    "Saobject_file_suffix#" &
-   "Laobject_file_switches#" &
-   "Lamulti_unit_switches#" &
+   "LaCobject_file_switches#" &
+   "LaCmulti_unit_switches#" &
    "Samulti_unit_object_separator#" &
 
    --  Configuration - Mapping files
 
-   "Lamapping_file_switches#" &
+   "LaCmapping_file_switches#" &
    "Samapping_spec_suffix#" &
    "Samapping_body_suffix#" &
 
    --  Configuration - Config files
 
-   "Laconfig_file_switches#" &
+   "LaCconfig_file_switches#" &
    "Saconfig_body_file_name#" &
    "Saconfig_body_file_name_index#" &
    "Saconfig_body_file_name_pattern#" &
@@ -236,27 +240,27 @@ package body GPR.Attr is
 
    --  Configuration - Dependencies
 
-   "Ladependency_switches#" &
+   "LaCdependency_switches#" &
    "Ladependency_driver#" &
 
    --  Configuration - Search paths
 
-   "Lainclude_switches#" &
+   "LaCinclude_switches#" &
    "Sainclude_path#" &
    "Sainclude_path_file#" &
-   "Laobject_path_switches#" &
+   "LaCobject_path_switches#" &
 
    --  Configuraation - Response Files
    "SVmax_command_line_length#" &
    "Saresponse_file_format#" &
-   "Laresponse_file_switches#" &
+   "LaCresponse_file_switches#" &
 
    --  package Builder
 
    "Pbuilder#" &
-   "Ladefault_switches#" &
-   "LcOswitches#" &
-   "Laglobal_compilation_switches#" &
+   "LaCdefault_switches#" &
+   "LcOCswitches#" &
+   "LaCglobal_compilation_switches#" &
    "Scexecutable#" &
    "SVexecutable_suffix#" &
    "SVglobal_configuration_pragmas#" &
@@ -270,13 +274,13 @@ package body GPR.Attr is
    --  package Binder
 
    "Pbinder#" &
-   "Ladefault_switches#" &
-   "LcOswitches#" &
+   "LaCdefault_switches#" &
+   "LcOCswitches#" &
 
    --  Configuration - Binding
 
    "Sadriver#" &
-   "Larequired_switches#" &
+   "LaCrequired_switches#" &
    "Saprefix#" &
    "Saobjects_path#" &
    "Saobjects_path_file#" &
@@ -284,12 +288,12 @@ package body GPR.Attr is
    --  package Linker
 
    "Plinker#" &
-   "LVrequired_switches#" &
-   "Ladefault_switches#" &
-   "LcOleading_switches#" &
-   "LcOswitches#" &
-   "LcOtrailing_switches#" &
-   "LVlinker_options#" &
+   "LVCrequired_switches#" &
+   "LaCdefault_switches#" &
+   "LcOCleading_switches#" &
+   "LcOCswitches#" &
+   "LcOCtrailing_switches#" &
+   "LVClinker_options#" &
    "SVmap_file_option#" &
 
    --  Configuration - Linking
@@ -300,7 +304,7 @@ package body GPR.Attr is
 
    "SVmax_command_line_length#" &
    "SVresponse_file_format#" &
-   "LVresponse_file_switches#" &
+   "LVCresponse_file_switches#" &
 
    --  Configuration - Export file
 
@@ -310,7 +314,7 @@ package body GPR.Attr is
    --  package Clean
 
    "Pclean#" &
-   "LVswitches#" &
+   "LVCswitches#" &
    "Lasource_artifact_extensions#" &
    "Laobject_artifact_extensions#" &
    "LVartifacts_in_exec_dir#" &
@@ -319,49 +323,49 @@ package body GPR.Attr is
    --  package Cross_Reference
 
    "Pcross_reference#" &
-   "Ladefault_switches#" &
-   "LbOswitches#" &
+   "LaCdefault_switches#" &
+   "LbOCswitches#" &
 
    --  package Finder
 
    "Pfinder#" &
-   "Ladefault_switches#" &
-   "LbOswitches#" &
+   "LaCdefault_switches#" &
+   "LbOCswitches#" &
 
    --  package Pretty_Printer
 
    "Ppretty_printer#" &
-   "Ladefault_switches#" &
-   "LbOswitches#" &
+   "LaCdefault_switches#" &
+   "LbOCswitches#" &
 
    --  package gnatstub
 
    "Pgnatstub#" &
-   "Ladefault_switches#" &
-   "LbOswitches#" &
+   "LaCdefault_switches#" &
+   "LbOCswitches#" &
 
    --  package Check
 
    "Pcheck#" &
-   "Ladefault_switches#" &
-   "LbOswitches#" &
+   "LaCdefault_switches#" &
+   "LbOCswitches#" &
 
    --  package Eliminate
 
    "Peliminate#" &
-   "Ladefault_switches#" &
-   "LbOswitches#" &
+   "LaCdefault_switches#" &
+   "LbOCswitches#" &
 
    --  package Metrics
 
    "Pmetrics#" &
-   "Ladefault_switches#" &
-   "LbOswitches#" &
+   "LaCdefault_switches#" &
+   "LbOCswitches#" &
 
    --  package Ide
 
    "Pide#" &
-   "Ladefault_switches#" &
+   "LaCdefault_switches#" &
    "SVremote_host#" &
    "SVprogram_host#" &
    "SVcommunication_protocol#" &
@@ -401,7 +405,7 @@ package body GPR.Attr is
    --  package Stack
 
    "Pstack#" &
-   "LVswitches#" &
+   "LVCswitches#" &
 
    --  package Codepeer
 
@@ -410,7 +414,7 @@ package body GPR.Attr is
    "SVdatabase_directory#" &
    "SVmessage_patterns#" &
    "SVadditional_patterns#" &
-   "LVswitches#" &
+   "LVCswitches#" &
    "LVexcluded_source_files#" &
 
    --  package Prove
@@ -539,6 +543,7 @@ package body GPR.Attr is
       First_Attribute   : Attr_Node_Id      := Attr.First_Attribute;
       Read_Only         : Boolean;
       Others_Allowed    : Boolean;
+      Config_Concat     : Boolean;
       Default           : Attribute_Default_Value;
 
       function Attribute_Location return String;
@@ -670,6 +675,7 @@ package body GPR.Attr is
             Read_Only := False;
             Others_Allowed := False;
             Default := Empty_Value;
+            Config_Concat := False;
 
             if Initialization_Data (Start) = 'R' then
                Read_Only := True;
@@ -678,6 +684,11 @@ package body GPR.Attr is
 
             elsif Initialization_Data (Start) = 'O' then
                Others_Allowed := True;
+               Start := Start + 1;
+            end if;
+
+            if Initialization_Data (Start) = 'C' then
+               Config_Concat := True;
                Start := Start + 1;
             end if;
 
@@ -751,6 +762,7 @@ package body GPR.Attr is
                Read_Only      => Read_Only,
                Others_Allowed => Others_Allowed,
                Default        => Default,
+               Config_Concat  => Config_Concat,
                Next           => Empty_Attr);
             Start := Finish + 1;
          end if;
@@ -758,6 +770,22 @@ package body GPR.Attr is
 
       Initialized := True;
    end Initialize;
+
+   ----------------------------
+   -- Is_Config_Concatenable --
+   ----------------------------
+
+   function Is_Config_Concatenable
+     (Attribute : Attribute_Node_Id)
+      return Boolean
+   is
+   begin
+      if Attribute = Empty_Attribute then
+         return False;
+      else
+         return Attrs.Table (Attribute.Value).Config_Concat;
+      end if;
+   end Is_Config_Concatenable;
 
    ------------------
    -- Is_Read_Only --
@@ -898,13 +926,14 @@ package body GPR.Attr is
    ----------------------------
 
    procedure Register_New_Attribute
-     (Name               : String;
-      In_Package         : Package_Node_Id;
-      Attr_Kind          : Defined_Attribute_Kind;
-      Var_Kind           : Defined_Variable_Kind;
-      Index_Is_File_Name : Boolean                 := False;
-      Opt_Index          : Boolean                 := False;
-      Default            : Attribute_Default_Value := Empty_Value)
+     (Name                : String;
+      In_Package          : Package_Node_Id;
+      Attr_Kind           : Defined_Attribute_Kind;
+      Var_Kind            : Defined_Variable_Kind;
+      Index_Is_File_Name  : Boolean                 := False;
+      Opt_Index           : Boolean                 := False;
+      Default             : Attribute_Default_Value := Empty_Value;
+      Config_Concatenable : Boolean                 := False)
    is
       Attr_Name       : Name_Id;
       First_Attr      : Attr_Node_Id := Empty_Attr;
@@ -977,6 +1006,7 @@ package body GPR.Attr is
          Read_Only      => False,
          Others_Allowed => False,
          Default        => Default,
+         Config_Concat  => Config_Concatenable,
          Next           => First_Attr);
 
       Package_Attributes.Table (In_Package.Value).First_Attribute :=
@@ -1104,6 +1134,7 @@ package body GPR.Attr is
             Read_Only      => False,
             Others_Allowed => False,
             Default        => Attributes (Index).Default,
+            Config_Concat  => Attributes (Index).Config_Concatenable,
             Next           => First_Attr);
          First_Attr := Attrs.Last;
       end loop;

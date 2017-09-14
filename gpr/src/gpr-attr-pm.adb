@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2004-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -49,6 +49,7 @@ package body GPR.Attr.PM is
             Read_Only      => False,
             Others_Allowed => False,
             Default        => Empty_Value,
+            Config_Concat  => False,
             Next           =>
               Package_Attributes.Table (To_Package.Value).First_Attribute));
 

@@ -442,6 +442,10 @@ package body GPR.Dect is
          if Current_Attribute /= Empty_Attribute then
             Set_Expression_Kind_Of
               (Attribute, In_Tree, To => Variable_Kind_Of (Current_Attribute));
+            Set_Is_Config_Concatenable
+              (Attribute,
+               In_Tree,
+               To => Is_Config_Concatenable (Current_Attribute));
             Optional_Index := Optional_Index_Of (Current_Attribute);
          end if;
       end Process_Attribute_Name;
