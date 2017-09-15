@@ -127,6 +127,21 @@ package body GPR.Part is
       Hash       => GPR.Hash,
       Equal      => "=");
 
+   type Name_And_Path is record
+      Name : Name_Id := No_Name;
+      Path : Path_Name_Type := No_Path;
+   end record;
+
+   package Extended_Projects is new GNAT.Table
+     (Table_Component_Type => Name_And_Path,
+      Table_Index_Type     => Nat,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100);
+   --  A table to record projects with their path in a chain of extending
+   --  projects to detect two different projects with the same names in the
+   --  chain, as this is a error.
+
    function Has_Circular_Dependencies
      (Flags               : Processing_Flags;
       Normed_Path_Name    : Path_Name_Type;
@@ -1354,6 +1369,27 @@ package body GPR.Part is
          return;
       end if;
 
+      --  Check if a different project with the same name is already in the
+      --  chain of extending projects. Report an error if such a project is
+      --  found.
+
+      for J in 1 .. Extended_Projects.Last loop
+         declare
+            NP : constant Name_And_Path := Extended_Projects.Table (J);
+         begin
+            if NP.Name = Name_From_Path and then
+              NP.Path /= Resolved_Path_Name
+            then
+               Error_Msg
+                 (Env.Flags,
+                  "cannot extend a project with the same name",
+                  Token_Ptr);
+               Project := Empty_Project_Node;
+               return;
+            end if;
+         end;
+      end loop;
+
       --  Put the new path name on the stack
 
       Project_Stack.Append
@@ -1780,6 +1816,10 @@ package body GPR.Part is
                         From_Ext := Extending_All;
                      end if;
 
+                     Extended_Projects.Append
+                       ((Name => Name_From_Path,
+                         Path => Resolved_Path_Name));
+
                      Parse_Single_Project
                        (In_Tree           => In_Tree,
                         Project           => Extended_Project,
@@ -1793,6 +1833,11 @@ package body GPR.Part is
                         Current_Dir       => Current_Dir,
                         Is_Config_File    => Is_Config_File,
                         Env               => Env);
+
+                     --  The chain of extending projects has ended, empty the
+                     --  table.
+
+                     Extended_Projects.Set_Last (0);
                   end;
 
                   if Present (Extended_Project) then
