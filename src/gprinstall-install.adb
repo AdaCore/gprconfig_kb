@@ -1511,15 +1511,18 @@ package body Gprinstall.Install is
 
             if not Is_Static (Project) and then Add_Lib_Link then
                if Windows_Target then
-                  Copy_File
-                    (From          => Lib_Dir
-                     & Get_Name_String (Get_Library_Filename),
-                     To            => Exec_Dir,
-                     File          => Get_Name_String (Get_Library_Filename),
-                     Executable    => True,
-                     Extract_Debug => False);
+                  if Lib_Dir /= Exec_Dir then
+                     Copy_File
+                       (From          => Lib_Dir
+                        & Get_Name_String (Get_Library_Filename),
+                        To            => Exec_Dir,
+                        File          =>
+                          Get_Name_String (Get_Library_Filename),
+                        Executable    => True,
+                        Extract_Debug => False);
+                  end if;
 
-               else
+               elsif Link_Lib_Dir /= Lib_Dir then
                   Copy_File
                     (From       => Link_Lib_Dir
                                      & Get_Name_String (Get_Library_Filename),
