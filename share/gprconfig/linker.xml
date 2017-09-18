@@ -32,7 +32,7 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("i686-pc-mingw32-nm", "-g", "--no-demangle");
+   for Object_Lister use ("${PATH(ada)}i686-pc-mingw32-nm", "-g", "--no-demangle");
    for Object_Lister_Matcher use " [TDRB] _(.*)";
 
    package Linker is
@@ -51,7 +51,7 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("x86_64-pc-mingw32-nm", "-g", "--no-demangle");
+   for Object_Lister use ("${PATH(ada)}x86_64-pc-mingw32-nm", "-g", "--no-demangle");
    for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
@@ -70,7 +70,7 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("nm", "-g", "--no-demangle");
+   for Object_Lister use ("${PATH(ada)}nm", "-g", "--no-demangle");
    for Object_Lister_Matcher use " [TDRB] _(.*)";
 
    package Linker is
@@ -89,7 +89,7 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("nm", "-g", "--no-demangle");
+   for Object_Lister use ("${PATH(ada)}nm", "-g", "--no-demangle");
    for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
@@ -107,7 +107,7 @@
       <host name="^x86_64.*-linux.*" />
     </hosts>
     <config>
-   for Object_Lister use ("nm", "-g");
+   for Object_Lister use ("${PATH(ada)}nm", "-g");
    for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
@@ -125,7 +125,7 @@
       <host name="^i686.*-linux.*$" />
     </hosts>
     <config>
-   for Object_Lister use ("nm", "-g");
+   for Object_Lister use ("${PATH(ada)}nm", "-g");
    for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
@@ -141,7 +141,7 @@
        <target name="^x86_64-.*darwin.*$" />
     </targets>
     <config>
-   for Object_Lister use ("nm", "-g");
+   for Object_Lister use ("${PATH(ada)}nm", "-g");
    for Object_Lister_Matcher use " [TDS] (.*)";
 
    package Linker is
@@ -156,7 +156,7 @@
       <target name="^aarch64-linux-gnu$" />
     </targets>
     <config>
-   for Object_Lister use ("aarch64-linux-gnu-nm", "-g");
+   for Object_Lister use ("${PATH(ada)}aarch64-linux-gnu-nm", "-g");
    for Object_Lister_Matcher use " [TDSR] (.*)";
 
    package Linker is
@@ -171,7 +171,7 @@
       <target name="^arm-linux-gnueabi$" />
     </targets>
     <config>
-   for Object_Lister use ("arm-linux-gnueabi-nm", "-g");
+   for Object_Lister use ("${PATH(ada)}arm-linux-gnueabi-nm", "-g");
    for Object_Lister_Matcher use " [TDSR] (.*)";
 
    package Linker is
@@ -186,7 +186,7 @@
       <target name="^powerpc-.*linux.*$" />
     </targets>
     <config>
-   for Object_Lister use ("nm", "-g");
+   for Object_Lister use ("${PATH(ada)}nm", "-g");
    for Object_Lister_Matcher use " [TDRBSG] (.*)";
 
    package Linker is
@@ -202,9 +202,9 @@
       <target name="^visium-elf$" />
     </targets>
     <config>
-   for Archive_Builder  use ("visium-elf-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}visium-elf-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("visium-elf-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}visium-elf-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -214,9 +214,9 @@
       <target name="^powerpc-elf$" />
     </targets>
     <config>
-   for Archive_Builder  use ("powerpc-elf-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}powerpc-elf-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-elf-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}powerpc-elf-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -226,7 +226,7 @@
       <target name="^powerpc-elf-lynxos$" />
     </targets>
     <config>
-   for Archive_Builder  use ("ar", "crs");
+   for Archive_Builder  use ("${PATH(ada)}ar", "crs");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Suffix   use ".a";
     </config>
@@ -237,9 +237,9 @@
       <target name="^powerpc-xcoff-lynxos178$" />
     </targets>
     <config>
-   for Archive_Builder  use ("powerpc-xcoff-lynxos178-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}powerpc-xcoff-lynxos178-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-xcoff-lynxos178-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}powerpc-xcoff-lynxos178-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -249,9 +249,9 @@
       <target name="^powerpc-eabispe$" />
     </targets>
     <config>
-   for Archive_Builder  use ("powerpc-eabispe-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}powerpc-eabispe-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-eabispe-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}powerpc-eabispe-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -265,9 +265,9 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Archive_Builder  use ("i686-pc-mingw32-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}i686-pc-mingw32-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("i686-pc-mingw32-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}i686-pc-mingw32-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -281,9 +281,9 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -297,9 +297,9 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Archive_Builder  use ("x86_64-pc-mingw32-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}x86_64-pc-mingw32-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("x86_64-pc-mingw32-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}x86_64-pc-mingw32-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -313,9 +313,9 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -325,9 +325,9 @@
       <target name="^powerpc-generic-linux-gnu$" />
     </targets>
     <config>
-   for Archive_Builder  use ("powerpc-generic-linux-gnu-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}powerpc-generic-linux-gnu-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-generic-linux-gnu-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}powerpc-generic-linux-gnu-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -337,9 +337,9 @@
       <target name="^powerpc64-generic-linux-gnu$" />
     </targets>
     <config>
-   for Archive_Builder  use ("powerpc64-generic-linux-gnu-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}powerpc64-generic-linux-gnu-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc64-generic-linux-gnu-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}powerpc64-generic-linux-gnu-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -349,9 +349,9 @@
       <target name="^arm-linux-androideabi$" />
     </targets>
     <config>
-   for Archive_Builder  use ("arm-linux-androideabi-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}arm-linux-androideabi-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("arm-linux-androideabi-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}arm-linux-androideabi-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -361,9 +361,9 @@
       <target name="^arm-linux-gnueabi$" />
     </targets>
     <config>
-   for Archive_Builder  use ("arm-linux-gnueabi-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}arm-linux-gnueabi-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("arm-linux-gnueabi-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}arm-linux-gnueabi-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -373,9 +373,9 @@
       <target name="^arm-linux-gnueabihf$" />
     </targets>
     <config>
-   for Archive_Builder  use ("arm-linux-gnueabihf-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}arm-linux-gnueabihf-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("arm-linux-gnueabihf-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}arm-linux-gnueabihf-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -385,9 +385,9 @@
       <target name="^aarch64-linux-gnu$" />
     </targets>
     <config>
-   for Archive_Builder  use ("aarch64-linux-gnu-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}aarch64-linux-gnu-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("aarch64-linux-gnu-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}aarch64-linux-gnu-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -397,9 +397,9 @@
       <target name="^e500v2-gnu-linux$" />
     </targets>
     <config>
-   for Archive_Builder  use ("e500v2-gnu-linux-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}e500v2-gnu-linux-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("e500v2-gnu-linux-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}e500v2-gnu-linux-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -409,9 +409,9 @@
       <target name="^erc32-elf$" />
     </targets>
     <config>
-   for Archive_Builder  use ("erc32-elf-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}erc32-elf-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("erc32-elf-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}erc32-elf-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -421,9 +421,9 @@
       <target name="^leon-elf$" />
     </targets>
     <config>
-   for Archive_Builder  use ("leon-elf-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}leon-elf-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("leon-elf-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}leon-elf-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -433,9 +433,9 @@
       <target name="^leon3-elf$" />
     </targets>
     <config>
-   for Archive_Builder  use ("leon3-elf-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}leon3-elf-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("leon3-elf-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}leon3-elf-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -445,9 +445,9 @@
       <target name="^arm-eabi$" />
     </targets>
     <config>
-   for Archive_Builder  use ("arm-eabi-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}arm-eabi-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("arm-eabi-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}arm-eabi-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -457,9 +457,9 @@
       <target name="^aarch64-elf$" />
     </targets>
     <config>
-   for Archive_Builder  use ("aarch64-elf-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}aarch64-elf-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("aarch64-elf-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}aarch64-elf-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -469,9 +469,9 @@
       <target name="^avr$" />
     </targets>
     <config>
-   for Archive_Builder  use ("avr-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}avr-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("avr-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}avr-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -481,9 +481,9 @@
       <target name="^arm-sysgo-pikeos$" />
     </targets>
     <config>
-   for Archive_Builder  use ("arm-sysgo-pikeos-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}arm-sysgo-pikeos-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("arm-sysgo-pikeos-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}arm-sysgo-pikeos-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -493,9 +493,9 @@
       <target name="^i586-sysgo-pikeos$" />
     </targets>
     <config>
-   for Archive_Builder  use ("i586-sysgo-pikeos-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}i586-sysgo-pikeos-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("i586-sysgo-pikeos-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}i586-sysgo-pikeos-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -505,9 +505,9 @@
       <target name="^powerpc-sysgo-pikeos$" />
     </targets>
     <config>
-   for Archive_Builder  use ("powerpc-sysgo-pikeos-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}powerpc-sysgo-pikeos-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-sysgo-pikeos-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}powerpc-sysgo-pikeos-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -518,7 +518,7 @@
       <target name="^.*aix.*$" />
     </targets>
     <config>
-   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Suffix   use ".a";
 
@@ -537,7 +537,7 @@
       <target name=".*ia64.*hpux.*" />
     </targets>
     <config>
-   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Suffix   use ".a";
     </config>
@@ -577,9 +577,9 @@
       <target name="^c$" />
     </targets>
     <config>
-   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -591,9 +591,9 @@
       <target name="^powerpc-elf-lynxos178e$" />
     </targets>
     <config>
-   for Archive_Builder  use ("powerpc-elf-lynxos178e-ar", "cr");
+   for Archive_Builder  use ("${PATH(ada)}powerpc-elf-lynxos178e-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-elf-lynxos178e-ranlib");
+   for Archive_Indexer  use ("${PATH(ada)}powerpc-elf-lynxos178e-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -616,7 +616,6 @@
        <target name="^.*wrs-vxworks.*$" />
        <target name="^avr$" />
        <target name="^.*-pikeos$" />
-       <target name="^c$" />
     </targets>
     <config>
    for Library_Support  use "static_only";
