@@ -1794,7 +1794,8 @@ package body GPR.Conf is
       --  again after the project path is extended with directories rooted
       --  at the compiler roots.
 
-      Config_Try_Again := Project_Node_Tree.Incomplete_With;
+      Config_Try_Again :=
+        Fallback_Try_Again or Project_Node_Tree.Incomplete_With;
 
       Process_Project_And_Apply_Config
         (Main_Project               => Main_Project,
@@ -1819,43 +1820,53 @@ package body GPR.Conf is
       end if;
 
       if Main_Project /= No_Project then
-         if Auto_Generated and then Fallback_Try_Again then
-            declare
-               Variable : constant Variable_Value :=
-                 Value_Of
-                   (Name_Target,
-                    Main_Project.Decl.Attributes,
-                    Project_Tree.Shared);
-            begin
-               if Native_Target
-                 and then
-                  Opt.Target_Value.all /= Get_Name_String (Variable.Value)
-               then
-                  Free (N_Hostname);
-                  N_Hostname := new String'(Get_Name_String (Variable.Value));
-                  Free (Opt.Target_Value);
-                  Opt.Target_Value  := new String'(N_Hostname.all);
-               end if;
-            end;
-
-         end if;
-
          if Fallback_Try_Again then
-            Success          := False;
-            Target_Try_Again := True;
-            Fallback_Try_Again := False;
+            if Auto_Generated then
+               declare
+                  Variable : constant Variable_Value :=
+                    Value_Of
+                      (Name_Target,
+                       Main_Project.Decl.Attributes,
+                       Project_Tree.Shared);
+               begin
+                  if Native_Target
+                    and then
+                      Opt.Target_Value.all /= Get_Name_String (Variable.Value)
+                  then
+                     --  The target is not the default one. Try again with
+                     --  the new one.
+
+                     Free (N_Hostname);
+                     N_Hostname :=
+                       new String'(Get_Name_String (Variable.Value));
+                     Free (Opt.Target_Value);
+                     Opt.Target_Value  := new String'(N_Hostname.all);
+
+                     Success          := False;
+                     Target_Try_Again := True;
+                     Fallback_Try_Again := False;
+                     Env.Flags := Store_Flags;
+                     Setup_Projects := Store_Setup_Projects;
+                     Warn_For_RTS := False;
+
+                     goto Parse_Again;
+                  end if;
+               end;
+            end if;
+
+            --  Restore the flags and cancel Fallback_Try_Again
+
             Env.Flags := Store_Flags;
             Setup_Projects := Store_Setup_Projects;
-            Warn_For_RTS := False;
-
-            goto Parse_Again;
+            Fallback_Try_Again := False;
          end if;
       end if;
 
-      --  Exit if there was an error. Otherwise, if Config_Try_Again is True,
-      --  update the project path and try again.
+      --  If there was no error and Config_Try_Again is True, update the
+      --  project path and try again.
 
       if Main_Project /= No_Project and then Config_Try_Again then
+         Config_Try_Again := False;
          Set_Ignore_Missing_With (Env.Flags, False);
 
          if Config_File_Path /= null then
