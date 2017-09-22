@@ -4054,6 +4054,20 @@ Here are some examples of attribute declarations:
        --  package.
        for Default_Switches use Default.Builder'Default_Switches;
 
+When an attribute is defined in the configuration project but not in the user
+project, it is inherited in the user project.
+
+When a single string attribute is defined in both the configuration project
+and the user project, its value in the user project is as declared; the value
+in the configuration project does not matter.
+
+For string list attributes, there are two cases. Some of these attributes are
+**configuration concatenable**. For these attributes, when they are declared
+in both the configuration project and the user project, the final value is
+the concatenation of the value in the configuration project with the value
+in the user project. The configuration concatenable attributes are indicated
+in the list below.
+
 Attributes references may appear anywhere in expressions, and are used
 to retrieve the value previously assigned to the attribute. If an attribute
 has not been set in a given package or project, its value defaults to the
@@ -4146,6 +4160,11 @@ The characteristics of each attribute are indicated as follows:
   When **others** is used as the index of an indexed attribute, the value of
   the attribute indexed by **others** is used when no other index would apply.
 
+* **configuration concatenable**
+
+  For a string list attribute, the final value if the attribute is declared
+  in both the configuration project and the user project is the concatenation
+  of the two value, configuration then user.
 
 .. _Project_Level_Attributes:
 
@@ -4305,7 +4324,7 @@ Project Level Attributes
     Only authorized case-insensitive values are "standard" for non encapsulated
     SALs, "encapsulated" for encapsulated SALs or "no" for non SAL library project.
 
-  * **Library_Encapsulated_Options**: list
+  * **Library_Encapsulated_Options**: list, configuration concatenable
 
     Value is a list of options that need to be used when linking an encapsulated
     Stand-Alone Library.
@@ -4320,16 +4339,16 @@ Project Level Attributes
     Indicates if a Stand-Alone Library is auto-initialized. Only authorized
     case-insensitive values are "true" and "false".
 
-  * **Leading_Library_Options**: list
+  * **Leading_Library_Options**: list, configuration concatenable
 
     Value is a list of options that are to be used at the beginning of
     the command line when linking a shared library.
 
-  * **Library_Options**: list
+  * **Library_Options**: list, configuration concatenable
 
     Value is a list of options that are to be used when linking a shared library.
 
-  * **Library_Rpath_Options**: list, indexed, case-insensitive index
+  * **Library_Rpath_Options**: list, indexed, case-insensitive index, configuration concatenable
 
     Index is a language name. Value is a list of options for an invocation of the
     compiler of the language. This invocation is done for a shared library project
@@ -4524,11 +4543,11 @@ Project Level Attributes
     Indicates if auto-initialization of Stand-Alone Libraries is supported. Only
     authorized case-insensitive values are "true" and "false" (the default).
 
-  * **Shared_Library_Minimum_Switches**: list
+  * **Shared_Library_Minimum_Switches**: list, configuration concatenable
 
     Value is the list of required switches when linking a shared library.
 
-  * **Library_Version_Switches**: list
+  * **Library_Version_Switches**: list, configuration concatenable
 
     Value is the list of switches to specify a internal name for a shared library.
 
@@ -4545,13 +4564,14 @@ Package Binder Attributes
 
 * **General**
 
-  * **Default_Switches**: list, indexed, case-insensitive index
+  * **Default_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to be used when binding
     code of the language, if there is no applicable attribute Switches.
 
-  * **Switches**: list, optional index, indexed,
-    case-insensitive index, others allowed
+  * **Switches**: list, optional index, indexed, case-insensitive index,
+    others allowed, configuration concatenable
 
     Index is either a language name or a source file name. Value is the list of
     switches to be used when binding code. Index is either the source file name
@@ -4564,7 +4584,8 @@ Package Binder Attributes
     Index is a language name. Value is the name of the application to be used when
     binding code of the language.
 
-  * **Required_Switches**: list, indexed, case-insensitive index
+  * **Required_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of the required switches to be
     used when binding code of the language.
@@ -4592,21 +4613,22 @@ Package Binder Attributes
 Package Builder Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
   Index is a language name. Value is the list of builder switches to be used when
   building an executable of the language, if there is no applicable attribute
   Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+    others allowed, configuration concatenable
 
   Index is either a language name or a source file name. Value is the list of
   builder switches to be used when building an executable. Index is either the
   source file name of the executable to be built or its language name.
 
 * **Global_Compilation_Switches**: list, optional index, indexed,
-  case-insensitive index
+    case-insensitive index, configuration concatenable
 
   Index is a language name. Value is the list of compilation switches to be
   used when building an executable. Index is either the source file name of
@@ -4639,14 +4661,15 @@ Package Builder Attributes
 Package Check Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+  configuration concatenable
 
   Index is a language name. Value is a list of switches to be used when invoking
   `gnatcheck` for a source of the language, if there is no applicable
   attribute Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+  others allowed, configuration concatenable
 
   Index is a source file name. Value is the list of switches to be used when
   invoking `gnatcheck` for the source.
@@ -4656,7 +4679,7 @@ Package Check Attributes
 Package Clean Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Switches**: list
+* **Switches**: list, configuration concatenable
 
   Value is a list of switches to be used by the cleaning application.
 
@@ -4689,14 +4712,15 @@ Package Compiler Attributes
 
 * **General**
 
-  * **Default_Switches**: list, indexed, case-insensitive index
+  * **Default_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is a list of switches to be used when invoking
     the compiler for the language for a source of the project, if there is no
     applicable attribute Switches.
 
   * **Switches**: list, optional index, indexed, case-insensitive index,
-    others allowed
+    others allowed, configuration concatenable
 
     Index is a source file name or a language name. Value is the list of switches
     to be used when invoking the compiler for the source or for its language.
@@ -4731,17 +4755,20 @@ Package Compiler Attributes
     language. Only authorized case-insensitive values are "makefile", "ali_file",
     "ali_closure" or "none" (the default).
 
-  * **Required_Switches**: list, indexed, case-insensitive index
+  * **Required_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Equivalent to attribute Leading_Required_Switches.
 
-  * **Leading_Required_Switches**: list, indexed, case-insensitive index
+  * **Leading_Required_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of the minimum switches to be used
     at the beginning of the command line when invoking the compiler for the
     language.
 
-  * **Trailing_Required_Switches**: list, indexed, case-insensitive index
+  * **Trailing_Required_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of the minimum switches to be used
     at the end of the command line when invoking the compiler for the language.
@@ -4759,6 +4786,7 @@ Package Compiler Attributes
     values are "canonical" and "host" (the default).
 
   * **Source_File_Switches**: single, indexed, case-insensitive index
+    configuration concatenable
 
     Index is a language name. Value is a list of switches to be used just before
     the path name of the source to compile when invoking the compiler for a source
@@ -4770,13 +4798,15 @@ Package Compiler Attributes
     by the compiler of the language. When not specified, the extension is the
     default one for the platform.
 
-  * **Object_File_Switches**: list, indexed, case-insensitive index
+  * **Object_File_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to be used by the
     compiler of the language to specify the path name of the object file. When not
     specified, the switch used is "-o".
 
-  * **Multi_Unit_Switches**: list, indexed, case-insensitive index
+  * **Multi_Unit_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to be used to compile
     a unit in a multi unit source of the language. The index of the unit in the
@@ -4790,7 +4820,8 @@ Package Compiler Attributes
 
 * **Configuration - Mapping Files**
 
-  * **Mapping_File_Switches**: list, indexed, case-insensitive index
+  * **Mapping_File_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to be used to specify
     a mapping file when invoking the compiler for a source of the language.
@@ -4807,7 +4838,8 @@ Package Compiler Attributes
 
 * **Configuration - Config Files**
 
-  * **Config_File_Switches**: list: single, indexed, case-insensitive index
+  * **Config_File_Switches**: list: single, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to specify to the
     compiler of the language a configuration file.
@@ -4856,7 +4888,8 @@ Package Compiler Attributes
 
 * **Configuration - Dependencies**
 
-  * **Dependency_Switches**: list, indexed, case-insensitive index
+  * **Dependency_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to be used to specify
     to the compiler the dependency file when the dependency kind of the language is
@@ -4870,7 +4903,8 @@ Package Compiler Attributes
 
 * **Configuration - Search Paths**
 
-  * **Include_Switches**: list, indexed, case-insensitive index
+  * **Include_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to specify to the
     compiler of the language to indicate a directory to look for sources.
@@ -4887,12 +4921,33 @@ Package Compiler Attributes
     value of which is the path name of a text file that contains the directories
     that the compiler of the language may search for sources.
 
-  * **Object_Path_Switches**: list, indexed, case-insensitive index
+  * **Object_Path_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is the list of switches to specify to the
     compiler of the language the name of a text file that contains the list of
     object directories. When this attribute is not declared, the text file is
     not created.
+
+* **Configuration - Response Files**
+
+  * **Max_Command_Line_Length**: single
+
+    Value is the maximum number of character in the command line when invoking
+    a compiler that supports response files.
+
+  * **Response_File_Format**: single, indexed, case-insensitive index
+
+    Indicates the kind of response file to create when the length of the compiling
+    command line is too large. The index is the name of the language for the compiler.
+    Only authorized case-insensitive values are "none",
+    "gnu", "object_list", "gcc_gnu", "gcc_option_list" and "gcc_object_list".
+
+  * **Response_File_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
+
+    Value is the list of switches to specify a response file for a compiler.
+    The index is the name of the language for the compiler.
 
 
 .. _Package_Cross_Reference_Attributes:
@@ -4900,14 +4955,15 @@ Package Compiler Attributes
 Package Cross_Reference Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+  configuration concatenable
 
   Index is a language name. Value is a list of switches to be used when invoking
   `gnatxref` for a source of the language, if there is no applicable
   attribute Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+  others allowed, configuration concatenable
 
   Index is a source file name. Value is the list of switches to be used when
   invoking `gnatxref` for the source.
@@ -4918,14 +4974,15 @@ Package Cross_Reference Attributes
 Package Eliminate Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+  configuration concatenable
 
   Index is a language name. Value is a list of switches to be used when invoking
   `gnatelim` for a source of the language, if there is no applicable
   attribute Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+  others allowed, configuration concatenable
 
   Index is a source file name. Value is the list of switches to be used when
   invoking `gnatelim` for the source.
@@ -4936,14 +4993,15 @@ Package Eliminate Attributes
 Package Finder Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+  configuration concatenable
 
   Index is a language name. Value is a list of switches to be used when invoking
   `gnatfind` for a source of the language, if there is no applicable
   attribute Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+  others allowed, configuration concatenable
 
   Index is a source file name. Value is the list of switches to be used when
   invoking `gnatfind` for the source.
@@ -4962,14 +5020,15 @@ Package Gnatls Attributes
 Package gnatstub Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+  configuration concatenable
 
   Index is a language name. Value is a list of switches to be used when invoking
   `gnatstub` for a source of the language, if there is no applicable
   attribute Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+  others allowed, configuration concatenable
 
   Index is a source file name. Value is the list of switches to be used when
   invoking `gnatstub` for the source.
@@ -4980,7 +5039,7 @@ Package gnatstub Attributes
 Package IDE Attributes
 ^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed
+* **Default_Switches**: list, indexed, configuration concatenable
 
   Index is the name of an external tool that the GNAT Programming System (GPS)
   is supporting. Value is a list of switches to use when invoking that tool.
@@ -5123,33 +5182,34 @@ Package Linker Attributes
 
 * **General**
 
-  * **Required_Switches**: list
+  * **Required_Switches**: list, configuration concatenable
 
     Value is a list of switches that are required when invoking the linker to link
     an executable.
 
-  * **Default_Switches**: list, indexed, case-insensitive index
+  * **Default_Switches**: list, indexed, case-insensitive index,
+    configuration concatenable
 
     Index is a language name. Value is a list of switches for the linker when
     linking an executable for a main source of the language, when there is no
     applicable Switches.
 
   * **Leading_Switches**: list, optional index, indexed,
-    case-insensitive index, others allowed
+    case-insensitive index, others allowed, configuration concatenable
 
     Index is a source file name or a language name. Value is the list of switches
     to be used at the beginning of the command line when invoking the linker to
     build an executable for the source or for its language.
 
   * **Switches**: list, optional index, indexed, case-insensitive index,
-    others allowed
+    others allowed, configuration concatenable
 
     Index is a source file name or a language name. Value is the list of switches
     to be used when invoking the linker to build an executable for the source or
     for its language.
 
   * **Trailing_Switches**: list, optional index, indexed,
-    case-insensitive index, others allowed
+    case-insensitive index, others allowed, configuration concatenable
 
     Index is a source file name or a language name. Value is the list of switches
     to be used at the end of the command line when invoking the linker to
@@ -5158,7 +5218,7 @@ Package Linker Attributes
 
   .. index:: Linker_Options attribute
 
-  * **Linker_Options**: list
+  * **Linker_Options**: list, configuration concatenable
 
     This attribute specifies a list of additional switches to be given to the
     linker when linking an executable. It is ignored when defined in the main
@@ -5194,7 +5254,7 @@ Package Linker Attributes
     command line is too large. Only authorized case-insensitive values are "none",
     "gnu", "object_list", "gcc_gnu", "gcc_option_list" and "gcc_object_list".
 
-  * **Response_File_Switches**: list
+  * **Response_File_Switches**: list, configuration concatenable
 
     Value is the list of switches to specify a response file to the linker.
 
@@ -5204,14 +5264,15 @@ Package Linker Attributes
 Package Metrics Attribute
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+  configuration concatenable
 
   Index is a language name. Value is a list of switches to be used when invoking
   `gnatmetric` for a source of the language, if there is no applicable
   attribute Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+  others allowed, configuration concatenable
 
   Index is a source file name. Value is the list of switches to be used when
   invoking `gnatmetric` for the source.
@@ -5290,14 +5351,15 @@ Package Naming Attributes
 Package Pretty_Printer Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, case-insensitive index
+* **Default_Switches**: list, indexed, case-insensitive index,
+  configuration concatenable
 
   Index is a language name. Value is a list of switches to be used when invoking
   `gnatpp` for a source of the language, if there is no applicable
   attribute Switches.
 
 * **Switches**: list, optional index, indexed, case-insensitive index,
-  others allowed
+  others allowed, configuration concatenable
 
   Index is a source file name. Value is the list of switches to be used when
   invoking `gnatpp` for the source.
@@ -5338,7 +5400,7 @@ Package Remote Attributes
 Package Stack Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **Switches**: list
+* **Switches**: list, configuration concatenable
 
   Value is the list of switches to be used when invoking `gnatstack`.
 

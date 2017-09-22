@@ -250,7 +250,7 @@ package body GPR.Attr is
    "Sainclude_path_file#" &
    "LaCobject_path_switches#" &
 
-   --  Configuraation - Response Files
+   --  Configuration - Response Files
    "SVmax_command_line_length#" &
    "Saresponse_file_format#" &
    "LaCresponse_file_switches#" &
