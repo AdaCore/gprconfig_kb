@@ -460,6 +460,12 @@ package Builder of the main project:
 Then, the switches that may be specified on the command line as well as in
 package Builder of the main project (attribute Switches):
 
+* :samp:`--keep-temp-files`
+
+  Normally, GPRbuild delete the temporary files that it creates.
+  When this switch is used, the temporary files that GPRbuild creates are
+  not deleted.
+
 * :samp:`--create-map-file`
 
   When linking an executable, if supported by the platform, create a map file

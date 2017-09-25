@@ -714,7 +714,11 @@ procedure Gprbuild.Main is
 
       elsif Arg (1) = '-' then
 
-         if Arg = Complete_Output_Option then
+         if Arg = Keep_Temp_Files_Option then
+            --  This is equivalent to switch -dn: Keep temporary files
+            Set_Debug_Flag ('n');
+
+         elsif Arg = Complete_Output_Option then
             Forbidden_In_Package_Builder;
 
             if Distributed_Mode then
@@ -2097,11 +2101,18 @@ procedure Gprbuild.Main is
          New_Line;
          Put ("           Create map file mainprog.map");
          New_Line;
+
          Put ("  ");
          Put (Create_Map_File_Switch);
          Put ("=mapfile");
          New_Line;
          Put ("           Create map file mapfile");
+         New_Line;
+
+         Put ("  ");
+         Put (Keep_Temp_Files_Option);
+         New_Line;
+         Put ("           Do not delete temporary files");
          New_Line;
          New_Line;
 
@@ -2287,11 +2298,6 @@ procedure Gprbuild.Main is
 
          Put_Line ("  --compiler-pkg-subst=pkg    Specify alternate " &
                      "package");
-         New_Line;
-
-         --  Line for -dn
-
-         Put ("  -dn      Do not delete temporary files");
          New_Line;
          New_Line;
 
