@@ -1208,15 +1208,13 @@ package body Gpr_Build_Util is
       begin
          Complete_All (Root_Project, Project_Tree);
 
-         if Mains.Count_Of_Mains_With_No_Tree > 0 then
-            for J in Names.First .. Names.Last loop
-               if Names.Table (J).Source = No_Source then
-                  Fail_Program
-                    (Project_Tree, '"' & Get_Name_String (Names.Table (J).File)
-                     & """ is not a source of any project");
-               end if;
-            end loop;
-         end if;
+         for J in Names.First .. Names.Last loop
+            if Names.Table (J).Source = No_Source then
+               Fail_Program
+                 (Project_Tree, '"' & Get_Name_String (Names.Table (J).File)
+                  & """ is not a source of any project");
+            end if;
+         end loop;
       end Complete_Mains;
 
       ------------
