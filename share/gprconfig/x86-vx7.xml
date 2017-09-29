@@ -26,7 +26,7 @@
        <compiler name="GCC-WRS7X86" />
      </compilers>'>
 
-<!ENTITY this_wrs_rtp_base '0x80000000'>
+<!ENTITY this_wrs_rtp_base '0x400000'>
 ]>
 <gprconfig>
 
