@@ -1753,8 +1753,8 @@ package body GPR.Conf is
          end;
       end if;
 
-      --  If --target was not specified on the command line, then do Phase 1 to
-      --  check if attribute Target is declared in the main project.
+      --  If --target was not specified on the command line, then check if
+      --  attribute Target is declared in the main project.
 
       if Opt.Target_Origin /= Specified then
          declare

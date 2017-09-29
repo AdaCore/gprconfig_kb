@@ -959,7 +959,7 @@ package body GPR.Nmsc is
 
    function Canonical_Case_File_Name (Name : Name_Id) return File_Name_Type is
    begin
-      if Osint.File_Names_Case_Sensitive then
+      if Osint.File_Names_Case_Sensitive or else Name = No_Name then
          return File_Name_Type (Name);
       else
          Get_Name_String (Name);
