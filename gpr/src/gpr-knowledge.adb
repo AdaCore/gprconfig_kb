@@ -4131,38 +4131,56 @@ package body GPR.Knowledge is
                      end;
                   end if;
 
-                  Put (Standard_Error, "Error: no ");
-
-                  if not Specified_Target then
-                     Put (Standard_Error, "native ");
-                  end if;
-
-                  Put (Standard_Error, "compiler found for language '");
-                  Put
-                    (Standard_Error,
-                     Get_Name_String_Or_Null (Comp.Language_Case));
-                  Put (Standard_Error, "'");
-
                   if Specified_Target then
-                     Put (Standard_Error, ", target = ");
+                     Put
+                       (Standard_Error,
+                        "gprconfig: can't find a toolchain "
+                        & "for the following configuration:");
+
+                     New_Line (Standard_Error);
+
+                     Put
+                       (Standard_Error,
+                        "gprconfig: language '"
+                        & Get_Name_String_Or_Null (Comp.Language_Case));
+
+                     Put (Standard_Error, ", target '");
 
                      declare
                         Tgt : constant String :=  To_String (Selected_Target);
                      begin
                         if Tgt = "" then
-                           Put (Standard_Error, "all");
+                           Put (Standard_Error, "all'");
                         else
-                           Put (Standard_Error, Tgt);
+                           Put (Standard_Error, Tgt & "'");
                         end if;
                      end;
-                  end if;
 
-                  if Comp.Runtime = No_Name then
-                     Put (Standard_Error, ", default runtime");
+                     if Comp.Runtime = No_Name then
+                        Put (Standard_Error, ", default runtime");
+                     else
+                        Put
+                          (Standard_Error,
+                           ", runtime '"
+                           & Get_Name_String (Comp.Runtime) & "'");
+                     end if;
                   else
                      Put
                        (Standard_Error,
-                        ", runtime = " & Get_Name_String (Comp.Runtime));
+                        "gprconfig: "
+                        & "can't find a native toolchain for language '");
+
+                     Put
+                       (Standard_Error,
+                        Get_Name_String_Or_Null (Comp.Language_Case));
+                     Put (Standard_Error, "'");
+
+                     if Comp.Runtime /= No_Name then
+                        Put
+                          (Standard_Error,
+                           ", runtime '"
+                           & Get_Name_String (Comp.Runtime) & "'");
+                     end if;
                   end if;
 
                   Ada.Command_Line.Set_Exit_Status (1);
