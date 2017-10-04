@@ -4680,7 +4680,12 @@ package body GPR.Util is
                                  if Dep_Src.Project = Projects (J) then
                                     if Opt.Verbosity_Level > Opt.Low then
                                        Put_Line
-                                         ("   -> wrong object directory");
+                                         ("   -> dependency file not in " &
+                                          "object directory of project """ &
+                                          Get_Name_String
+                                            (Projects
+                                               (Projects'Last).Display_Name) &
+                                          """");
                                     end if;
 
                                     return True;
@@ -4966,7 +4971,12 @@ package body GPR.Util is
                               if Dep_Src.Project = Projects (J) then
                                  if Opt.Verbosity_Level > Opt.Low then
                                     Put_Line
-                                      ("   -> wrong object directory");
+                                      ("   -> dependency file not in " &
+                                       "object directory of project """ &
+                                       Get_Name_String
+                                         (Projects
+                                           (Projects'Last).Display_Name) &
+                                       """");
                                  end if;
 
                                  return True;
