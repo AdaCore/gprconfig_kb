@@ -4144,7 +4144,7 @@ package body GPR.Knowledge is
                         "gprconfig: language '"
                         & Get_Name_String_Or_Null (Comp.Language_Case));
 
-                     Put (Standard_Error, ", target '");
+                     Put (Standard_Error, "', target '");
 
                      declare
                         Tgt : constant String :=  To_String (Selected_Target);
