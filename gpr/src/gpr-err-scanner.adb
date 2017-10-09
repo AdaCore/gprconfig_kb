@@ -1347,9 +1347,7 @@ package body Scanner is
          --  as apostrophe if previous token is an identifier, right paren
          --  or the reserved word "all" (latter case as in A.all'Address)
          --  (or the reserved word "project" in project files). Also treat
-         --  it as apostrophe after a literal (this catches some legitimate
-         --  cases, like A."abs"'Address, and also gives better error
-         --  behavior for impossible cases like 123'xxx).
+         --  it as apostrophe after a literal.
 
             if Prev_Token = Tok_Identifier
                or else Prev_Token = Tok_Right_Paren
@@ -1360,7 +1358,8 @@ package body Scanner is
                Token := Tok_Apostrophe;
                return;
 
-            --  Otherwise the apostrophe starts a character literal
+            --  Otherwise the apostrophe starts a character literal or is just
+            --  an apostrophe.
 
             else
                --  Case of wide character literal
@@ -1378,31 +1377,9 @@ package body Scanner is
                      Scan_Ptr := Scan_Ptr + 1;
                   end if;
 
-               --  If we do not find a closing quote in the expected place then
-               --  assume that we have a misguided attempt at a string literal.
-
-               --  However, if previous token is RANGE, then we return an
-               --  apostrophe instead since this gives better error recovery
-
-               elsif Source (Scan_Ptr + 1) /= ''' then
-                  if Prev_Token = Tok_Range then
-                     Token := Tok_Apostrophe;
-                     return;
-
-                  else
-                     Scan_Ptr := Scan_Ptr - 1;
-                     Slit;
-                     Post_Scan;
-                     return;
-                  end if;
-
-               --  Otherwise we have a (non-wide) character literal
-
                else
-                  Accumulate_Checksum (Source (Scan_Ptr));
-
-                  Code := Get_Char_Code (Source (Scan_Ptr));
-                  Scan_Ptr := Scan_Ptr + 2;
+                  Token := Tok_Apostrophe;
+                  return;
                end if;
 
                --  Fall through here with Scan_Ptr updated past the closing
