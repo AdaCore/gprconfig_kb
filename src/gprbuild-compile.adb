@@ -1280,6 +1280,10 @@ package body Gprbuild.Compile is
       Finish   : Natural;
       Last_Obj : Natural;
 
+      The_Config_Paths : Config_Paths (1 .. 2);
+      --  Paths of eventual global and local configuration pragmas files
+      Last_Config_Path : Natural := 0;
+
       procedure Add_Config_File_Switch
         (Config    : Language_Config;
          Path_Name : Path_Name_Type);
@@ -1330,6 +1334,12 @@ package body Gprbuild.Compile is
       --  If attribute Compiler'Object_Path_Switches has been specified, create
       --  the temporary object path file, if not already done, and add the
       --  switch(es) to the invocation of the compiler.
+
+      procedure Get_Config_Paths
+        (Id             : Source_Id;
+         Source_Project : Project_Id);
+      --  Find the config files for the source and put their paths in
+      --  The_Config_Paths.
 
       procedure Add_Config_File_Switches
         (Id             : Source_Id;
@@ -2528,6 +2538,50 @@ package body Gprbuild.Compile is
          end if;
       end Add_Object_Path_Switches;
 
+      procedure Get_Config_Paths
+        (Id             : Source_Id;
+         Source_Project : Project_Id)
+      is
+         Config           : constant Language_Config := Id.Language.Config;
+         Config_File_Path : Path_Name_Type;
+      begin
+         Last_Config_Path := 0;
+
+         if Config.Config_File_Switches /= No_Name_List
+           and then (Config.Config_Body /= No_Name
+                     or else Config.Config_Body_Index /= No_Name
+                     or else Config.Config_Body_Pattern /= No_Name
+                     or else Config.Config_Spec /= No_Name
+                     or else Config.Config_Spec_Index /= No_Name
+                     or else Config.Config_Spec_Pattern /= No_Name)
+           and then not Config.Config_File_Unique
+         then
+            Config_File_Path :=
+              Config_File_For
+                (Project        => Main_Project,
+                 Package_Name   => Name_Builder,
+                 Attribute_Name => Name_Global_Config_File,
+                 Language       => Id.Language.Name);
+
+            if Config_File_Path /= No_Path then
+               Last_Config_Path := 1;
+               The_Config_Paths (Last_Config_Path) := Config_File_Path;
+            end if;
+
+            Config_File_Path :=
+              Config_File_For
+                (Project        => Source_Project,
+                 Package_Name   => Name_Compiler,
+                 Attribute_Name => Name_Local_Config_File,
+                 Language       => Id.Language.Name);
+
+            if Config_File_Path /= No_Path then
+               Last_Config_Path := Last_Config_Path + 1;
+               The_Config_Paths (Last_Config_Path) := Config_File_Path;
+            end if;
+         end if;
+      end Get_Config_Paths;
+
       ------------------------------
       -- Add_Config_File_Switches --
       ------------------------------
@@ -2537,7 +2591,7 @@ package body Gprbuild.Compile is
          Source_Project : Project_Id)
       is
          Config           : constant Language_Config := Id.Language.Config;
-         Config_File_Path : Path_Name_Type;
+         --  Config_File_Path : Path_Name_Type;
       begin
          if Config.Config_File_Switches /= No_Name_List
            and then (Config.Config_Body /= No_Name
@@ -2558,33 +2612,39 @@ package body Gprbuild.Compile is
                   Path_Name => Source_Project.Config_File_Name);
             end if;
 
-            if not Config.Config_File_Unique then
-               Config_File_Path :=
-                 Config_File_For
-                   (Project        => Main_Project,
-                    Package_Name   => Name_Builder,
-                    Attribute_Name => Name_Global_Config_File,
-                    Language       => Id.Language.Name);
+            for J in 1 .. Last_Config_Path loop
+               Add_Config_File_Switch
+                 (Config    => Config,
+                  Path_Name => The_Config_Paths (J));
+            end loop;
 
-               if Config_File_Path /= No_Path then
-                  Add_Config_File_Switch
-                    (Config    => Config,
-                     Path_Name => Config_File_Path);
-               end if;
-
-               Config_File_Path :=
-                 Config_File_For
-                   (Project        => Source_Project,
-                    Package_Name   => Name_Compiler,
-                    Attribute_Name => Name_Local_Config_File,
-                    Language       => Id.Language.Name);
-
-               if Config_File_Path /= No_Path then
-                  Add_Config_File_Switch
-                    (Config    => Config,
-                     Path_Name => Config_File_Path);
-               end if;
-            end if;
+--              if not Config.Config_File_Unique then
+--                 Config_File_Path :=
+--                   Config_File_For
+--                     (Project        => Main_Project,
+--                      Package_Name   => Name_Builder,
+--                      Attribute_Name => Name_Global_Config_File,
+--                      Language       => Id.Language.Name);
+--
+--                 if Config_File_Path /= No_Path then
+--                    Add_Config_File_Switch
+--                      (Config    => Config,
+--                       Path_Name => Config_File_Path);
+--                 end if;
+--
+--                 Config_File_Path :=
+--                   Config_File_For
+--                     (Project        => Source_Project,
+--                      Package_Name   => Name_Compiler,
+--                      Attribute_Name => Name_Local_Config_File,
+--                      Language       => Id.Language.Name);
+--
+--                 if Config_File_Path /= No_Path then
+--                    Add_Config_File_Switch
+--                      (Config    => Config,
+--                       Path_Name => Config_File_Path);
+--                 end if;
+--              end if;
          end if;
       end Add_Config_File_Switches;
 
@@ -3241,12 +3301,21 @@ package body Gprbuild.Compile is
          Mapping_File           : Path_Name_Type;
          The_ALI                : ALI.ALI_Id;
 
+         Last_Conf_Path : Natural := Last_Config_Path;
+
       begin
+         Get_Config_Paths (Id, Source_Project);
+
+         if Distributed_Mode then
+            Last_Conf_Path := 0;
+         end if;
+
          if Always_Compile or else not Source_Project.Externally_Built then
             Need_To_Compile
               (Source         => Source.Id,
                Tree           => Source.Tree,
                In_Project     => Source_Project,
+               Conf_Paths     => The_Config_Paths (1 .. Last_Conf_Path),
                Must_Compile   => Compilation_Needed,
                The_ALI        => The_ALI,
                Object_Check   => Object_Checked,

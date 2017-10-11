@@ -3881,6 +3881,7 @@ package body GPR.Util is
      (Source         : GPR.Source_Id;
       Tree           : Project_Tree_Ref;
       In_Project     : Project_Id;
+      Conf_Paths     : Config_Paths;
       Must_Compile   : out Boolean;
       The_ALI        : out ALI.ALI_Id;
       Object_Check   : Boolean;
@@ -4394,6 +4395,9 @@ package body GPR.Util is
          return False;
       end Process_Makefile_Deps;
 
+      type Config_Paths_Found is array (Positive range <>) of Boolean;
+      --  Type to record what config files are included in the ALI file
+
       ----------------------
       -- Process_ALI_Deps --
       ----------------------
@@ -4408,6 +4412,8 @@ package body GPR.Util is
          Proj     : Project_Id;
 
          Found : Boolean := False;
+
+         Conf_Paths_Found :  Config_Paths_Found := (Conf_Paths'Range => False);
 
       begin
          if Text = null then
@@ -4541,6 +4547,16 @@ package body GPR.Util is
                         if Is_Absolute_Path (File) then
                            Path := Path_Name_Type (Sfile);
                            Stamp := File_Stamp (Path);
+
+                           --  This may be a config file. Check if it is one
+                           --  the config files expected.
+
+                           for J in Conf_Paths'Range loop
+                              if Path = Conf_Paths (J) then
+                                 Conf_Paths_Found (J) := True;
+                              end if;
+                           end loop;
+
                         end if;
 
                         --  Look in the directory of the source
@@ -4742,6 +4758,20 @@ package body GPR.Util is
                         end if;
                      end if;
                   end if;
+               end if;
+            end loop;
+
+            --  Check that all the config files have been found in the ALI file
+
+            for J in Conf_Paths_Found'Range loop
+               if not Conf_Paths_Found (J) then
+                  if Opt.Verbosity_Level > Opt.Low then
+                     Put_Line
+                       ("   -> new config file " &
+                        Get_Name_String (Conf_Paths (J)));
+                  end if;
+
+                  return True;
                end if;
             end loop;
          end;
