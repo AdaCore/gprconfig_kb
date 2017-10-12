@@ -3301,13 +3301,13 @@ package body Gprbuild.Compile is
          Mapping_File           : Path_Name_Type;
          The_ALI                : ALI.ALI_Id;
 
-         Last_Conf_Path : Natural := Last_Config_Path;
+         Last_Conf_Path : Natural := 0;
 
       begin
          Get_Config_Paths (Id, Source_Project);
 
-         if Distributed_Mode then
-            Last_Conf_Path := 0;
+         if not Distributed_Mode then
+            Last_Conf_Path := Last_Config_Path;
          end if;
 
          if Always_Compile or else not Source_Project.Externally_Built then
