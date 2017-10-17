@@ -4548,15 +4548,26 @@ package body GPR.Util is
                            Path := Path_Name_Type (Sfile);
                            Stamp := File_Stamp (Path);
 
-                           --  This may be a config file. Check if it is one
+                           if Conf_Paths'Length > 0 then
+                           --  This may be a config file. Check if it is one of
                            --  the config files expected.
 
-                           for J in Conf_Paths'Range loop
-                              if Path = Conf_Paths (J) then
-                                 Conf_Paths_Found (J) := True;
-                              end if;
-                           end loop;
-
+                              declare
+                                 Norm_Path : constant String :=
+                                   Normalize_Pathname
+                                     (Name           => File,
+                                      Case_Sensitive => False);
+                              begin
+                                 for J in Conf_Paths'Range loop
+                                    if Normalize_Pathname
+                                      (Get_Name_String (Conf_Paths (J)),
+                                       Case_Sensitive => False) = Norm_Path
+                                    then
+                                       Conf_Paths_Found (J) := True;
+                                    end if;
+                                 end loop;
+                              end;
+                           end if;
                         end if;
 
                         --  Look in the directory of the source
