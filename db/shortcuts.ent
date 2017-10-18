@@ -11,6 +11,29 @@
     </compilers>'
    >
 
+   <!ENTITY if_ada
+   '<compilers>
+       <compiler language="Ada" />
+    </compilers>'
+   >
+
+   <!ENTITY if_cpp
+   '<compilers>
+       <compiler language="C++" />
+    </compilers>'
+   >
+
+   <!ENTITY if_c_only
+   '<compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler language="C" />
+    </compilers>'
+   >
+
    <!ENTITY if_this_target
     '<targets>
        <target name="^&this_target;$" />

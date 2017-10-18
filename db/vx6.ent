@@ -74,6 +74,55 @@
      </config>'
   >
 
+  <!ENTITY config_rtp_lib
+    '
+     <!-- As a special exception, on arm-vx6, rts-rtp is smp-based. -->
+     <config>
+     rtp_smp_suffix := "";
+     case TARGET_ADA is
+       when "arm-wrs-vxworks" =>
+         rtp_smp_suffix := "_smp";
+       when others =>
+         rtp_smp_suffix := "";
+     end case;
+
+     package Linker is
+        for Required_Switches use
+          Linker &apos; Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/lib" &amp; rtp_smp_suffix &amp; "/usr/lib/"
+                 &amp; "&this_cpu_subdir;",
+                 "-L" &amp; Wind_Base
+                 &amp; "/target/usr/lib" &amp; rtp_smp_suffix &amp; "/"
+                 &amp; "&this_cpu_subdir;");
+     end Linker;
+     </config>'
+  >
+
+  <!ENTITY config_rtp_smp_lib
+    '<config>
+     package Linker is
+        for Required_Switches use
+          Linker &apos; Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/lib_smp/usr/lib/"
+                 &amp; "&this_cpu_subdir;");
+     end Linker;
+     </config>'
+  >
+
+  <!ENTITY config_rtp_cert_lib
+    '<config>
+     package Linker is
+        for Required_Switches use
+          Linker &apos; Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/usr/lib_cert_rtp/"
+                 &amp; "&this_cpu_subdir;");
+     end Linker;
+     </config>'
+  >
+
   <!ENTITY config_kernel_cflags
     '<config>
    package Compiler is
@@ -104,7 +153,7 @@
   <!ENTITY configurations_vx6
   '
   <!--  Note: vx6 and vx6cert share the same target name, so
-   	in configurations chunks are added into vx6-specific
+        in configurations chunks are added into vx6-specific
         files if_this_target will match both vx6 and vx6cert.
         A way to discriminate the two kind of platforms is to
         use runtime names and compiler names.
@@ -201,6 +250,33 @@
      <!-- vx6cert -->
 
      &config_no_builtin;
+   </configuration>
+
+   <configuration>
+     &if_these_c_compilers;
+     &if_rtp_strict;
+     &if_this_target;
+     <!-- vx6 and vx6cert -->
+
+     &config_rtp_lib;
+   </configuration>
+
+   <configuration>
+     &if_these_c_compilers;
+     &if_rtp_smp;
+     &if_this_target;
+     <!-- vx6 and vx6cert -->
+
+     &config_rtp_smp_lib;
+   </configuration>
+
+   <configuration>
+    &if_these_c_compilers;
+    &if_ravenscar_cert_rtp;
+    &if_this_target;
+    <!-- vx6cert -->
+
+    &config_rtp_cert_lib;
    </configuration>
   '
   >

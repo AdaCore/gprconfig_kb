@@ -33,7 +33,10 @@
 
 <!ENTITY this_wrs_rtp_base '0x40000000'>
 <!-- For vx6cert -->
+
+<!ENTITY this_cpu_subdir 'arm/ARMARCH7/common'>
 ]>
+
 <gprconfig>
 
   &environment;
