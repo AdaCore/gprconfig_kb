@@ -161,6 +161,18 @@
      </compilers>'
   >
 
+  <!ENTITY if_rtp_strict
+    '<compilers>
+       <compiler runtime="^rtp$" />
+     </compilers>'
+  >
+
+  <!ENTITY if_rtp_smp
+    '<compilers>
+       <compiler runtime="^rtp-smp$" />
+     </compilers>'
+  >
+
   <!-- Our naming scheme is such that the name of full dkm runtimes
        start with a "kernel" token -->
 
@@ -237,6 +249,22 @@
      </config>'
   >
 
+  <!ENTITY config_cpp_linker
+    '<config>
+   package Linker is
+      for Driver use Compiler &apos; Driver ("C++");
+   end Linker;
+     </config>'
+  >
+
+  <!ENTITY config_ada_linker
+    '<config>
+   package Linker is
+      for Driver use Compiler &apos; Driver ("Ada");
+   end Linker;
+     </config>'
+  >
+
   <!ENTITY configurations_vxworks_gpp
   '
   <!--  Note: vx6 and vx6cert share the same target name, so
@@ -300,5 +328,25 @@
      <!-- vx6 and vx7 -->
 
      &config_mlongcall_cpp;
+   </configuration>
+
+  <!-- For VxWorks use Ada driver as default for linking, since cc*
+       and c++* do not recognize the -crtbe switch needed for ZCX -->
+  <configuration>
+     &if_ada;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_ada_linker;
+  </configuration>
+
+   <configuration>
+     &if_no_ada;
+     &if_cpp;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_cpp_linker;
    </configuration>'
+
   >
