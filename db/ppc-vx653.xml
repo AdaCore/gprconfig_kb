@@ -12,7 +12,7 @@
 
 <!ENTITY if_these_c_compilers
     '<compilers>
-       <compiler name="GCC_pro" />
+       <compiler name="GCC_Pro" />
        <!--  ??? Eventually GCC_Pro will be replaced by a e500v2-vx6-specific
        definition:
        <compiler name="PPC-VX653-GCC-ADACORE" />

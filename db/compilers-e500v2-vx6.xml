@@ -8,7 +8,7 @@
 <gprconfig>
 
   <compiler_description>
-    <name>E500V2-VX6-GCC-WRS6</name>
+    <name>E500V2-VX6-GCC-WRS</name>
     <executable prefix="1">cc(ppc)</executable>
 
     &version_from_wind_base;
@@ -18,7 +18,7 @@
   </compiler_description>
 
   <compiler_description>
-    <name>E500V2-VX6-G++-WRS6</name>
+    <name>E500V2-VX6-G++-WRS</name>
     <executable prefix="1">c\+\+(ppc)</executable>
 
     &version_from_wind_base;
