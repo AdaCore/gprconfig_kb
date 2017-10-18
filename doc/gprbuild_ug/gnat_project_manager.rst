@@ -924,6 +924,8 @@ The following attributes can be defined in package `Naming`:
 
   * It cannot contain a dot ``'.'`` unless the entire string is ``"."``
 
+  * It cannot include a space or a character that is not printable ASCII
+
 .. index:: Spec_Suffix attribute
 .. index:: Specification_Suffix attribute
 

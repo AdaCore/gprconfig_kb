@@ -4478,7 +4478,9 @@ package body GPR.Nmsc is
             Dot_Repl_Loc    := Dot_Repl.Location;
 
             declare
-               Repl : constant String := Get_Name_String (Dot_Replacement);
+               Repl   : constant String := Get_Name_String (Dot_Replacement);
+               Not_OK : Boolean;
+               subtype Printable_ASCII is Character range '!' .. '~';
 
             begin
                --  Dot_Replacement cannot
@@ -4488,7 +4490,7 @@ package body GPR.Nmsc is
                --   - start with an '_' followed by an alphanumeric
                --   - contain a '.' except if it is "."
 
-               if Repl'Length = 0
+               Not_OK := Repl'Length = 0
                  or else Is_Alphanumeric (Repl (Repl'First))
                  or else Is_Alphanumeric (Repl (Repl'Last))
                  or else (Repl (Repl'First) = '_'
@@ -4498,8 +4500,21 @@ package body GPR.Nmsc is
                                  Is_Alphanumeric (Repl (Repl'First + 1))))
                  or else (Repl'Length > 1
                            and then
-                             Index (Source => Repl, Pattern => ".") /= 0)
-               then
+                          Index (Source => Repl, Pattern => ".") /= 0);
+
+               --  Dot_Replacement cannot include any character that is not
+               --  printable ASCII except space (' ').
+
+               if not Not_OK then
+                  for J in Repl'Range loop
+                     if not (Repl (J) in Printable_ASCII) then
+                        Not_OK := True;
+                        exit;
+                     end if;
+                  end loop;
+               end if;
+
+               if Not_OK then
                   Error_Msg
                     (Data.Flags,
                      '"' & Repl &
