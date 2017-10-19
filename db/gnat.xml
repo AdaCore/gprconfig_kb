@@ -250,6 +250,7 @@
       <target name="^powerpc-.*darwin.*$" />
       <target name="^x86_64-.*darwin.*$" />
       <target name="^.*android.*$" />
+      <target name="^.*-qnx[0-9]*$" />
    </targets>
    <config>
       for Library_Encapsulated_Supported use "true";

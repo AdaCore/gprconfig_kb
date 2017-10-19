@@ -44,6 +44,7 @@
        <target name="^.*-elinos-linux$" />
        <target name="^.*-generic-linux-gnu$" />
        <target name="^.*-pikeos$" />
+       <target name="^.*-qnx[0-9]*$" />
        <target name="^arm-linux-androideabi" />
        <target name="^arm-linux-gnueabi" />
        <target name="^arm-linux-gnueabihf" />
