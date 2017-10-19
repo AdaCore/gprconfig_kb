@@ -196,6 +196,21 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^aarch64-nto-qnx$" />
+    </targets>
+    <config>
+   for Object_Lister use ("aarch64-nto-qnx-nm", "-g");
+   for Object_Lister_Matcher use " [TDSR] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  Archiver.  -->
   <configuration>
     <targets>
@@ -406,6 +421,18 @@
 
   <configuration>
     <targets>
+      <target name="^aarch64-nto-qnx$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("aarch64-nto-qnx-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("aarch64-nto-qnx-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^e500v2-gnu-linux$" />
     </targets>
     <config>
@@ -588,6 +615,7 @@
       <target name="^.*-gnueabihf$" />
       <target name="^.*-gnueabi$" />
       <target name="^c$" />
+      <target name="^.*-qnx[0-9]*$"/>
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
@@ -760,6 +788,7 @@
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*irix.*$" />
+       <target name="^.*qnx[0-9]*$" />
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
@@ -779,6 +808,7 @@
   <configuration>
     <targets>
        <target name="^.*linux.*$" />
+       <target name="^.*qnx[0-9]*$" />
     </targets>
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
@@ -798,6 +828,7 @@
     </compilers>
     <targets>
        <target name="linux" />
+       <target name="^.*qnx[0-9]*$" />
     </targets>
     <config>
    Target_Name := project'Target;
@@ -820,6 +851,7 @@
     </compilers>
     <targets>
        <target name="linux" />
+       <target name="^.*qnx[0-9]*$" />
     </targets>
     <config>
    Target_Name := project'Target;

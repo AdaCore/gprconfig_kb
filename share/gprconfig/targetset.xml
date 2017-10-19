@@ -352,6 +352,12 @@
     <target>e500v2-wrs-vxworksae</target>
   </targetset>
 
+  <!-- aarch64-qnx  -->
+  <targetset>
+    <target>aarch64-qnx</target>
+    <target>aarch64-nto-qnx</target>
+  </targetset>
+
   <!-- ppc-elf-.*  -->
   <targetset>
     <target>ppc-elf</target>
