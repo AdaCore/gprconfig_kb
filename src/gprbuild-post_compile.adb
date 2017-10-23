@@ -1707,6 +1707,13 @@ package body Gprbuild.Post_Compile is
                                        Project_Tree.Shared.Packages.Table
                                          (Binder_Package).Decl.Arrays,
                                      Shared    => Project_Tree.Shared);
+                     Switch_Array : constant Array_Element_Id :=
+                                  Value_Of
+                                    (Name      => Name_Switches,
+                                     In_Arrays =>
+                                       Project_Tree.Shared.Packages.Table
+                                         (Binder_Package).Decl.Arrays,
+                                     Shared    => Project_Tree.Shared);
                      Switches : Variable_Value := Nil_Variable_Value;
 
                   begin
@@ -1717,6 +1724,22 @@ package body Gprbuild.Post_Compile is
                              Src_Index => 0,
                              In_Array  => Defaults,
                              Shared    => Project_Tree.Shared);
+
+                        if not Switches.Default then
+                           Write_List
+                             (Exchange_File, Gprexch.Binding_Options,
+                              Switches.Values);
+                        end if;
+                     end if;
+
+                     if Switch_Array /= No_Array_Element then
+                        Switches :=
+                          Value_Of
+                            (Index                  => Name_Ada,
+                             Src_Index              => 0,
+                             In_Array               => Switch_Array,
+                             Force_Lower_Case_Index => True,
+                             Shared                 => Project_Tree.Shared);
 
                         if not Switches.Default then
                            Write_List
