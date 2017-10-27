@@ -70,5 +70,22 @@
 
     &config_gnat_ar;
    </configuration>
+
+  <!-- For VxWorks use Ada driver as default for linking, since cc*
+       and c++* do not recognize the -crtbe switch needed for ZCX -->
+  <configuration>
+     &if_ada;
+     &if_this_target;
+
+     &config_ada_linker;
+  </configuration>
+
+   <configuration>
+     &if_no_ada;
+     &if_cpp;
+     &if_this_target;
+
+     &config_cpp_linker;
+   </configuration>
   '
   >
