@@ -963,11 +963,23 @@ package body Gprinstall.Install is
               or else (Sym_Link and then not Exists (From))
             then
                if Create_Dest_Dir then
-                  if Sym_Link then
-                     Create_Path (Containing_Directory (From));
-                  else
-                     Create_Path (To);
-                  end if;
+                  begin
+                     if Sym_Link then
+                        Create_Path (Containing_Directory (From));
+                     else
+                        Create_Path (To);
+                     end if;
+                  exception
+                     when Text_IO.Use_Error =>
+                        --  Cannot create path, permission issue
+                        Put ("cannot create destination directory ");
+                        Put (if Sym_Link
+                             then Containing_Directory (From)
+                             else To);
+                        Put (" check permissions");
+                        New_Line;
+                        Finish_Program (Project_Tree);
+                  end;
 
                else
                   Put_Line
