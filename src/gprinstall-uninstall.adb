@@ -215,7 +215,8 @@ package body Gprinstall.Uninstall is
                Changed.Iterate (Display'Access);
             end;
 
-            Put_Line ("use option -f to force file deletion.");
+            Fail_Program
+              (Project_Tree, "use option -f to force file deletion.");
          end if;
       end if;
    end Process;

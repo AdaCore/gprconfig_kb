@@ -912,7 +912,7 @@ package body Gprinstall.Install is
             Put (File);
             Put (" exists, use -f to overwrite");
             New_Line;
-            Finish_Program (Project_Tree);
+            Finish_Program (Project_Tree, E_Fatal);
          end if;
 
          if Dry_Run or else Opt.Verbose_Mode then
@@ -946,7 +946,7 @@ package body Gprinstall.Install is
                      Put (Dest_Filename);
                      Put (" check permissions");
                      New_Line;
-                     Finish_Program (Project_Tree);
+                     Finish_Program (Project_Tree, E_Fatal);
                   end if;
                end;
             end if;
@@ -956,7 +956,7 @@ package body Gprinstall.Install is
                Put (From);
                Put (" does not exist, build may not be complete");
                New_Line;
-               Finish_Program (Project_Tree);
+               Finish_Program (Project_Tree, E_Fatal);
             end if;
 
             if (not Sym_Link and then not Exists (To))
@@ -978,7 +978,7 @@ package body Gprinstall.Install is
                              else To);
                         Put (" check permissions");
                         New_Line;
-                        Finish_Program (Project_Tree);
+                        Finish_Program (Project_Tree, E_Fatal);
                   end;
 
                else
@@ -986,7 +986,7 @@ package body Gprinstall.Install is
                     (Standard_Error,
                      "target directory "
                      & To & " does not exist, use -p to create");
-                  Finish_Program (Project_Tree);
+                  Finish_Program (Project_Tree, E_Fatal);
                end if;
             end if;
 
@@ -1015,7 +1015,7 @@ package body Gprinstall.Install is
                      Put_Line
                        ("cannot overwrite file " & Dest_Filename
                         & " check permissions.");
-                     Finish_Program (Project_Tree);
+                     Finish_Program (Project_Tree, E_Fatal);
                end;
 
                if Executable then
@@ -2518,7 +2518,7 @@ package body Gprinstall.Install is
                Put (Filename);
                Put (" exists, use -f to overwrite");
                New_Line;
-               Finish_Program (Project_Tree);
+               Finish_Program (Project_Tree, E_Fatal);
             end if;
          end if;
 
@@ -2554,8 +2554,9 @@ package body Gprinstall.Install is
                         P := Fixed.Index (Line, ");");
 
                         if P = 0 then
-                           Put_Line ("cannot parse the BUILD_KIND line");
-                           Finish_Program (Project_Tree);
+                           Fail_Program
+                             (Project_Tree,
+                              "cannot parse the BUILD_KIND line");
 
                         else
                            Content.Replace_Element
@@ -2573,8 +2574,8 @@ package body Gprinstall.Install is
                      P := Fixed.Index (Line, """");
 
                      if P = 0 then
-                        Put_Line ("cannot parse the BUILD line");
-                        Finish_Program (Project_Tree);
+                        Fail_Program
+                          (Project_Tree, "cannot parse the BUILD line");
 
                      else
                         L := P + 1;
@@ -2583,8 +2584,8 @@ package body Gprinstall.Install is
                         end loop;
 
                         if Line (L) /= '"' then
-                           Put_Line ("cannot parse the BUILD line");
-                           Finish_Program (Project_Tree);
+                           Fail_Program
+                             (Project_Tree, "cannot parse the BUILD line");
 
                         else
                            Content.Replace_Element
@@ -2912,7 +2913,7 @@ package body Gprinstall.Install is
                   Put_Line
                     ("   - force installation under the same name, "
                      & "use --install-name=" & Install_Name.V.all);
-                  Finish_Program (Project_Tree);
+                  Finish_Program (Project_Tree, E_Fatal);
                end if;
 
                Reset (File, Append_File);
