@@ -3077,6 +3077,29 @@ package body Gprbuild.Post_Compile is
             end if;
          end loop;
 
+         --  Check a possible different library version
+
+         if not Library_Needs_To_Be_Built
+           and then not Is_Static (For_Project)
+           and then For_Project.Config.Symbolic_Link_Supported
+           and then not End_Of_File (Exchange_File)
+           and then Name_Buffer (1 .. Name_Len) =
+                      Library_Label (Gprexch.Library_Version)
+         then
+            Get_Line (Exchange_File, Name_Buffer, Name_Len);
+
+            if Name_Buffer (1 .. Name_Len) /=
+                 Get_Name_String (For_Project.Lib_Internal_Name)
+            then
+               Library_Needs_To_Be_Built := True;
+
+               if Opt.Verbosity_Level > Opt.Low then
+                  Put_Line
+                    ("      -> different library version");
+               end if;
+            end if;
+         end if;
+
          Close (Exchange_File);
 
          if not Library_Needs_To_Be_Built then

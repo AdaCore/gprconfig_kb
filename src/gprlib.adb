@@ -2657,6 +2657,14 @@ begin
       end loop;
    end if;
 
+   if Relocatable and then
+     Library_Version.all /= "" and then
+     Symbolic_Link_Supported
+   then
+      Put_Line (IO_File, Library_Label (Gprexch.Library_Version));
+      Put_Line (IO_File, Library_Version.all);
+   end if;
+
    Close (IO_File);
 
    Delete_All_Temp_Files (null);
