@@ -957,9 +957,12 @@ be any of:
   This filter contains a list of `<host>` children. It matches when
   any of its children matches. You can specify only one `<hosts>`
   node.
-  The format of `<host>` is a node with a single mandatory attribute
+  The format of `<host>` is a node with one mandatory attribute
   `name`, which is a regexp matched against the architecture on
-  which GPRconfig is running. The name of the architecture was
+  which GPRconfig is running, and one optional attribute `except`, which
+  is also a regexp, but a negative one. If both `name` and `except` match
+  the architecture, corresponding `<configuration>` node is ignored.
+  The name of the architecture was
   computed by `configure` when GPRconfig was built. Note that
   the regexp might match a substring of the host name, so you might want
   to surround it with "^" and "$" so that it only matches the whole host

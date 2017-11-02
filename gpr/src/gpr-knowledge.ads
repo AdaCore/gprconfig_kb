@@ -317,6 +317,15 @@ package GPR.Knowledge is
    package String_Lists is
      new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 
+   type Double_String is record
+      Positive_Regexp : Unbounded_String;
+      Negative_Regexp : Unbounded_String;
+   end record;
+
+   package Double_String_Lists is
+     new Ada.Containers.Indefinite_Doubly_Linked_Lists (Double_String);
+   use Double_String_Lists;
+
    procedure Put_Verbose (Str : String; Indent_Delta : Integer := 0);
    --  Print Str if verbose mode is activated.
    --  Indent_Delta will increase the current indentation level for all further
@@ -495,7 +504,7 @@ private
 
    type Configuration is record
       Compilers_Filters : Compilers_Filter_Lists.List;
-      Targets_Filters   : String_Lists.List;  --  these are regexps
+      Targets_Filters   : Double_String_Lists.List;  --  these are regexps
       Negate_Targets    : Boolean  := False;
       Config            : Name_Id;
 

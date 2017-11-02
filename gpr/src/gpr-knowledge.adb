@@ -305,7 +305,7 @@ package body GPR.Knowledge is
    --  to set the first compiler that matched in that node
 
    function Match
-     (Target_Filter : String_Lists.List;
+     (Target_Filter : Double_String_Lists.List;
       Negate        : Boolean;
       Compilers     : Compiler_Lists.List) return Boolean;
    --  Return True if Filter matches the list of selected configurations
@@ -984,8 +984,17 @@ package body GPR.Knowledge is
                         null;
 
                      elsif Node_Name (N2) = "target" then
-                        Append (Config.Targets_Filters,
-                                Get_Attribute (N2, "name", ""));
+                        declare
+                           Double_Regexp : Double_String;
+                        begin
+                           Double_Regexp.Positive_Regexp :=
+                             To_Unbounded_String
+                               (Get_Attribute (N2, "name", ""));
+                           Double_Regexp.Negative_Regexp :=
+                             To_Unbounded_String
+                               (Get_Attribute (N2, "except", ""));
+                           Append (Config.Targets_Filters, Double_Regexp);
+                        end;
                      else
                         Put_Line
                           (Standard_Error, "Unknown XML tag in " & File & ": "
@@ -1014,6 +1023,11 @@ package body GPR.Knowledge is
                   elsif Node_Name (N2) = "host" then
                      if Match
                        (Get_Attribute (N2, "name", ""), Sdefault.Hostname)
+                       and then
+                         (Get_Attribute (N2, "except", "") = ""
+                          or else not Match
+                            (Get_Attribute (N2, "except", ""),
+                             Sdefault.Hostname))
                      then
                         Ignore_Config := Negate;
                         exit;
@@ -3182,11 +3196,11 @@ package body GPR.Knowledge is
    -----------
 
    function Match
-     (Target_Filter : String_Lists.List;
+     (Target_Filter : Double_String_Lists.List;
       Negate        : Boolean;
       Compilers     : Compiler_Lists.List) return Boolean
    is
-      Target : String_Lists.Cursor := First (Target_Filter);
+      Target : Double_String_Lists.Cursor := First (Target_Filter);
       Comp   : Compiler_Lists.Cursor;
    begin
       if Is_Empty (Target_Filter) then
@@ -3195,21 +3209,36 @@ package body GPR.Knowledge is
       else
          while Has_Element (Target) loop
             declare
-               Pattern : constant Pattern_Matcher :=
-                           Compile
-                             (String_Lists.Element (Target), Case_Insensitive);
+               Positive_Pattern : constant Pattern_Matcher :=
+                 Compile
+                   (To_String
+                      (Double_String_Lists.Element (Target).Positive_Regexp),
+                    Case_Insensitive);
+               Negative_Pattern : constant Pattern_Matcher :=
+                 Compile
+                   (To_String
+                      (Double_String_Lists.Element (Target).Negative_Regexp),
+                    Case_Insensitive);
+
+               Ignore_Negative : constant Boolean :=
+                 Double_String_Lists.Element (Target).Negative_Regexp = "";
             begin
                Comp := First (Compilers);
                while Has_Element (Comp) loop
                   if Compiler_Lists.Element (Comp).Selected then
                      if Compiler_Lists.Element (Comp).Target = No_Name then
-                        if Match (Pattern, "") then
+                        if Match (Positive_Pattern, "") then
                            return not Negate;
                         end if;
 
                      elsif Match
-                       (Pattern,
+                       (Positive_Pattern,
                         Get_Name_String (Compiler_Lists.Element (Comp).Target))
+                       and then
+                         (Ignore_Negative or else not Match
+                            (Negative_Pattern,
+                             Get_Name_String
+                               (Compiler_Lists.Element (Comp).Target)))
                      then
                         return not Negate;
                      end if;

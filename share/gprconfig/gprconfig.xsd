@@ -170,6 +170,7 @@
 
    <xsd:complexType name="Ttarget"> <!-- No text allowed, no children -->
       <xsd:attribute name="name" type="xsd:string"/>
+      <xsd:attribute name="except" type="xsd:string"/>
    </xsd:complexType>
 
    <xsd:complexType name="Thosts">
@@ -181,6 +182,7 @@
 
    <xsd:complexType name="Thost"> <!-- No text allowed, no children -->
       <xsd:attribute name="name" type="xsd:string"/>
+      <xsd:attribute name="except" type="xsd:string"/>
    </xsd:complexType>
 
 
