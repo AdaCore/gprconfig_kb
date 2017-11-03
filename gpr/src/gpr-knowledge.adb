@@ -1297,6 +1297,9 @@ package body GPR.Knowledge is
       when Ada.Directories.Name_Error =>
          Put_Verbose ("Directory not found: " & Directory);
 
+      when Ada.Directories.Use_Error =>
+         Put_Verbose ("Directory not readable: " & Directory);
+
       when Invalid_Knowledge_Base | Knowledge_Base_Validation_Error =>
          raise;
 

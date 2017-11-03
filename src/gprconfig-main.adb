@@ -340,8 +340,6 @@ procedure GprConfig.Main is
       Put_Line ("            optional parameters");
    end Usage;
 
-   Saved_Verbosity : Verbosity := Default;
-
 begin
    Util.Set_Program_Name ("gprconfig");
 
@@ -414,9 +412,6 @@ begin
       Native_Target := False;
    end if;
 
-   Saved_Verbosity := Current_Verbosity;
-   Current_Verbosity := Default;
-
    if Load_Standard_Base then
       Parse_Knowledge_Base
         (Base, Default_Knowledge_Base_Directory, Validate => Opt_Validate);
@@ -478,8 +473,6 @@ begin
             exit;
       end case;
    end loop;
-
-   Current_Verbosity := Saved_Verbosity;
 
    Put_Verbose ("Only compilers matching target "
                 & To_String (Selected_Target)
