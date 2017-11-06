@@ -369,7 +369,7 @@ procedure Gprinstall.Main is
                Set_Param (Global_Project_Subdir, Project_Subdir_Option);
 
             elsif Has_Prefix (Build_Var_Option) then
-               Build_Var := new String'
+               Build_Vars := new String'
                  (Arg (Build_Var_Option'Length + 2 .. Arg'Last));
 
             elsif Has_Prefix (No_Build_Var_Option) then
@@ -609,12 +609,12 @@ procedure Gprinstall.Main is
            (Project_Tree, "cannot specify --build-name in uninstall mode");
       end if;
 
-      if Build_Var /= null and then Usage_Mode = Uninstall_Mode then
+      if Build_Vars /= null and then Usage_Mode = Uninstall_Mode then
          Fail_Program
            (Project_Tree, "cannot specify --build-var in uninstall mode");
       end if;
 
-      if Build_Var /= null and then No_Build_Var then
+      if Build_Vars /= null and then No_Build_Var then
          Fail_Program
            (Project_Tree, "cannot specify --build-var and --no-build-var");
       end if;

@@ -93,8 +93,8 @@ private
    Global_Install_Project : Boolean := True;
    --  If set to False no project is generated/installed
 
-   Build_Var  : String_Access;
-   --  Name of the build variable for installed project file
+   Build_Vars  : String_Access;
+   --  Name of the build variables for the installed project file
 
    No_Build_Var : Boolean := False;
    --  Whether a build variable is to be generated

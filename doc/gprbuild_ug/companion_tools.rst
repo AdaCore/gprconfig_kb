@@ -2070,8 +2070,29 @@ The switches for GPRinstall are:
 
 * :samp:`--build-var`
 
-  Specify the name of the build variable in
-  the installed project. The default value being `<PROJECT_NAME>_BUILD`.
+  Specify the name of the build variable in the installed project.
+  If this options is not used, the default build variable used is
+  `<PROJECT_NAME>_BUILD`.
+
+  It is possible to specify multiple variables in --build-var
+  option. In this case, if the first build variable is not found, the
+  second one will be checked, and so on. This makes it possible to
+  have a project specific variable to select the corresponding build
+  and a more generic build variable shared by multiple projects.
+
+  ::
+      $ gprinstall -Pproject1 \
+        --build-var=PROJECT1_BUILD,LIBRARY_TYPE
+                    ^
+                    Scenario variable to control
+                    specifically this project
+
+                                   ^
+                                   Scenario variable to control
+                                   the default for a set of projects
+
+      $ gprinstall -Pproject2 \
+        --build-var=PROJECT2_BUILD,LIBRARY_TYPE
 
 * :samp:`--no-build-var`
 

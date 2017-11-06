@@ -30,6 +30,7 @@ with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.MD5;    use GNAT.MD5;
 with GNAT.OS_Lib;
+with GNAT.String_Split;
 
 with GPR.Names;      use GPR.Names;
 with GPR.Opt;
@@ -1678,6 +1679,10 @@ package body Gprinstall.Install is
            (Project : Project_Id; Pkg_Name : Name_Id) return Package_Id;
          --  Returns the package Name for the given project
 
+         function Get_Build_Line (Vars, Default : String) return String;
+         --  Returns the build line for Var1 and possibly Var2 if not empty
+         --  string. Default is the default build name.
+
          --------------------
          -- Add_Empty_Line --
          --------------------
@@ -1688,6 +1693,46 @@ package body Gprinstall.Install is
                Content.Append ("");
             end if;
          end Add_Empty_Line;
+
+         --------------------
+         -- Get_Build_Line --
+         --------------------
+
+         function Get_Build_Line (Vars, Default : String) return String is
+            use Strings.Fixed;
+            Variables : String_Split.Slice_Set;
+            Line      : Unbounded_String;
+         begin
+            Line := +"   BUILD : BUILD_KIND := ";
+
+            if not No_Build_Var then
+               String_Split.Create (Variables, Vars, ",");
+
+               if Vars = "" then
+                  --  No variable specified, use default value
+                  Line := Line & "external(""";
+                  Line := Line & To_Upper (Dir_Name (Suffix => False));
+                  Line := Line & "_BUILD"", ";
+
+               else
+                  for K in 1 .. String_Split.Slice_Count (Variables) loop
+                     Line := Line & "external(""";
+                     Line := Line & String_Split.Slice (Variables, K) & """, ";
+                  end loop;
+               end if;
+            end if;
+
+            Line := Line & '"' & Default & '"';
+
+            if not No_Build_Var then
+               Line := Line
+                 & (+(Natural (String_Split.Slice_Count (Variables)) * ')'));
+            end if;
+
+            Line := Line & ';';
+
+            return -Line;
+         end Get_Build_Line;
 
          ---------------------
          -- Create_Packages --
@@ -2566,34 +2611,30 @@ package body Gprinstall.Install is
                         end if;
                      end if;
 
-                  elsif Fixed.Index (Line, ":= external") /= 0
-                    and then Build_Var /= null
-                  then
-                     --  Replace build-var with new one
+                  elsif Fixed.Index (Line, ":= external(") /= 0 then
 
-                     P := Fixed.Index (Line, """");
+                     --  This is the BUILD line, get build vars
 
-                     if P = 0 then
-                        Fail_Program
-                          (Project_Tree, "cannot parse the BUILD line");
+                     declare
+                        Default : Unbounded_String;
+                     begin
+                        --  Get default value
 
-                     else
-                        L := P + 1;
-                        while L <= Line'Last and then Line (L) /= '"' loop
-                           L := L + 1;
-                        end loop;
+                        L := Fixed.Index
+                          (Line, """", Going => Strings.Backward);
+                        P := Fixed.Index
+                          (Line (Line'First .. L - 1), """",
+                           Going => Strings.Backward);
 
-                        if Line (L) /= '"' then
-                           Fail_Program
-                             (Project_Tree, "cannot parse the BUILD line");
+                        Default := +Line (P + 1 .. L - 1);
 
-                        else
-                           Content.Replace_Element
-                             (Pos,
-                              Line (Line'First .. P)
-                              & Build_Var.all & Line (L .. Line'Last));
-                        end if;
-                     end if;
+                        Content.Replace_Element
+                          (Pos,
+                           Get_Build_Line
+                             ((if Build_Vars = null
+                              then ""
+                              else Build_Vars.all), -Default));
+                     end;
 
                   elsif Fixed.Index (Line, "package Naming is") /= 0 then
                      Current_Section := Naming;
@@ -2757,23 +2798,11 @@ package body Gprinstall.Install is
                Content.Append
                  ("   type BUILD_KIND is (""" & Build_Name.all & """);");
 
-               Line := +"   BUILD : BUILD_KIND := ";
+               Line := +Get_Build_Line
+                 (Vars    =>
+                    (if Build_Vars = null then "" else Build_Vars.all),
+                  Default => Build_Name.all);
 
-               if not No_Build_Var then
-                  Line := Line & "external(""";
-
-                  if Build_Var /= null then
-                     Line := Line & Build_Var.all;
-                  else
-                     Line := Line & To_Upper (Dir_Name (Suffix => False));
-                     Line := Line & "_BUILD";
-                  end if;
-
-                  Line := Line & """, ";
-               end if;
-
-               Line := Line & '"' & Build_Name.all & '"'
-                 & (if No_Build_Var then ";" else ");");
                Content.Append (-Line);
 
                --  Add languages, for an aggregate library we want all unique
