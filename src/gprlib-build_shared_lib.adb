@@ -231,6 +231,14 @@ procedure Build_Shared_Lib is
                   PL_Options (1 .. Last_PL_Option),
                   Success);
 
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer
+                 (Ada.Directories.Current_Directory &
+                  '/' & Partial.all);
+               Record_Temp_File
+                 (Shared => null,
+                  Path   => Name_Find);
+
                if not Success then
                   Fail_Program
                     (null,

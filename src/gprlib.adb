@@ -21,6 +21,7 @@
 --  through the same text file.
 
 with Ada.Command_Line;  use Ada.Command_Line;
+with Ada.Directories;
 with Ada.Text_IO;       use Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
@@ -1796,6 +1797,14 @@ procedure Gprlib is
                  (Partial_Linker_Path.all,
                   PL_Options (1 .. Last_PL_Option),
                   Success);
+
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer
+                 (Ada.Directories.Current_Directory &
+                  '/' & Partial.all);
+               Record_Temp_File
+                 (Shared => null,
+                  Path   => Name_Find);
 
                if not Success then
                   Fail_Program
