@@ -482,9 +482,9 @@ package body Gprls is
          end if;
 
          if Kind = 's' then
-            Put ("spec");
+            Put_Line ("spec");
          else
-            Put ("body");
+            Put_Line ("body");
          end if;
       end if;
 
@@ -505,7 +505,6 @@ package body Gprls is
            U.Body_Needed_For_SAL or else
            U.Elaborate_Body
          then
-            New_Line;
             Put ("     Flags  =>");
 
             if U.Preelab then
