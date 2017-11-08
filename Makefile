@@ -79,7 +79,7 @@ GPRBUILD_BUILDER=$(BUILDER) $(GPRBUILD_GPR) \
 	-XLIBRARY_TYPE=static -XXMLADA_BUILD=static
 LIBGPR_BUILDER=$(BUILDER) $(GPR_GPR)
 LIBGPR_INSTALLER=$(LIB_INSTALLER) $(GPR_GPR) -XBUILD=${BUILD} \
-	--install-name=gpr --build-var=LIBRARY_TYPE $(GTARGET)
+	--install-name=gpr --build-var=GPR_BUILD,LIBRARY_TYPE $(GTARGET)
 LIBGPR_UNINSTALLER=$(LIB_INSTALLER) $(GPR_GPR) --install-name=gpr --uninstall
 
 #########
