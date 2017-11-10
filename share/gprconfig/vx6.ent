@@ -252,8 +252,19 @@
      &config_no_builtin;
    </configuration>
 
+   <!-- -L options. Should only be needed for non-Ada projects.
+        They would be useless for programs that have Ada in them,
+        since these are passed by specs file passed to gcc
+        by a pragma Linker_Options in system; and would be harmless
+        if it were for x86-vx6: on this target,
+        to discriminate between vxsim and real target, we only
+        have an option on command line, and gprconfig/gprbuild
+        do not have a way to look for such an option on the command line.
+        All in all, we do not pass them if there is Ada in the project.
+    -->
+
    <configuration>
-     &if_these_c_compilers;
+     &if_no_ada;
      &if_rtp_strict;
      &if_this_target;
      <!-- vx6 and vx6cert -->
@@ -262,7 +273,7 @@
    </configuration>
 
    <configuration>
-     &if_these_c_compilers;
+     &if_no_ada;
      &if_rtp_smp;
      &if_this_target;
      <!-- vx6 and vx6cert -->
@@ -271,7 +282,7 @@
    </configuration>
 
    <configuration>
-    &if_these_c_compilers;
+    &if_no_ada;
     &if_ravenscar_cert_rtp;
     &if_this_target;
     <!-- vx6cert -->
