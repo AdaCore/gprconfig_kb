@@ -369,8 +369,14 @@ procedure Gprinstall.Main is
                Set_Param (Global_Project_Subdir, Project_Subdir_Option);
 
             elsif Has_Prefix (Build_Var_Option) then
-               Build_Vars := new String'
-                 (Arg (Build_Var_Option'Length + 2 .. Arg'Last));
+               if Build_Vars = null then
+                  Build_Vars := new String'
+                    (Arg (Build_Var_Option'Length + 2 .. Arg'Last));
+               else
+                  Build_Vars := new String'
+                    ((Arg (Build_Var_Option'Length + 2 .. Arg'Last))
+                     & ',' & Build_Vars.all);
+               end if;
 
             elsif Has_Prefix (No_Build_Var_Option) then
                No_Build_Var := True;
