@@ -1309,6 +1309,7 @@
        <target name="^.*mingw.*$" />
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
+       <target name="^.*-qnx[0-9]*"/>
      </targets>
     <config>
    package Linker is
