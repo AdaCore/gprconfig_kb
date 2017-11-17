@@ -4347,7 +4347,7 @@ package body GPR.Nmsc is
             if Lib_Data_Table.Table (J).Name = Project.Library_Name
               and then Lib_Data_Table.Table (J).Tree = Data.Tree
             then
-               Error_Msg_Name_1 := Lib_Data_Table.Table (J).Proj.Name;
+               Error_Msg_Name_1 := Lib_Data_Table.Table (J).Proj.Display_Name;
                Error_Msg
                  (Data.Flags,
                   "Library name cannot be the same as in project %%",
@@ -4359,13 +4359,15 @@ package body GPR.Nmsc is
 
       if Project.Library
         and then not Lib_Standalone.Default
-        and then Project.Library_Kind = Static
+        and then
+          (Project.Library_Kind /= Relocatable and then
+           Project.Library_Kind /= Dynamic)
       then
          if To_Lower (Get_Name_String (Lib_Standalone.Value)) = "encapsulated"
          then
             --  An encapsulated library must be a shared library
 
-            Error_Msg_Name_1 := Project.Name;
+            Error_Msg_Name_1 := Project.Display_Name;
 
             Error_Msg
               (Data.Flags,
