@@ -202,7 +202,7 @@
     </targets>
     <config>
    for Object_Lister use ("aarch64-nto-qnx-nm", "-g");
-   for Object_Lister_Matcher use " [TDSR] (.*)";
+   for Object_Lister_Matcher use " [TDRBS] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
