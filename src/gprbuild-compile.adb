@@ -3389,10 +3389,11 @@ package body Gprbuild.Compile is
             else
                Print_Compilation_Outputs (Source.Id);
 
-               if Builder_Data (Source.Tree).Closure_Needed
-                 and then
+               if Source.Closure or else
+                 (Builder_Data (Source.Tree).Closure_Needed
+                  and then
                    (Id.Language.Config.Dependency_Kind = ALI_File
-                    or else Id.Language.Config.Dependency_Kind = ALI_Closure)
+                    or else Id.Language.Config.Dependency_Kind = ALI_Closure))
                then
                   Record_ALI_For (Source, The_ALI);
 
