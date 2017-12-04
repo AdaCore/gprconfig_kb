@@ -480,6 +480,8 @@ begin
    Get_Targets_Set
      (Base, To_String (Selected_Target), Selected_Targets_Set);
 
+--     Put_Line (Normalized_Target (Base, Selected_Targets_Set));
+
    if Batch then
       Complete_Command_Line_Compilers
         (Base,
@@ -626,7 +628,8 @@ begin
         (Base,
          Compilers,
          To_String (Output_File),
-         To_String (Selected_Target));
+         To_String (Selected_Target),
+         Selected_Targets_Set);
    end if;
 
 exception

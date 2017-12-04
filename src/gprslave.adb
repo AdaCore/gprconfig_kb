@@ -1392,7 +1392,8 @@ procedure Gprslave is
 
             Generate_Configuration
               (Base, Compilers, "slave_tmp.cgpr",
-               To_String (Builder.D.Target));
+               To_String (Builder.D.Target),
+               Selected_Targets_Set);
 
             GPR.Tree.Initialize (Env, GPR.Gprbuild_Flags);
             GPR.Initialize (GPR.No_Project_Tree);

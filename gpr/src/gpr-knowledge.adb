@@ -1112,7 +1112,19 @@ package body GPR.Knowledge is
          Set     : Target_Lists.List;
          Pattern : Pattern_Matcher_Access;
          N       : Node := First_Child (Description);
+         Canon   : constant String :=
+           Get_Attribute (Description, "canonical", "");
       begin
+         if Canon = "" then
+            Put_Line
+              ("No canonical target specified for target-set in "
+               & Node_Name (N) & " in "
+               & File);
+            raise Invalid_Knowledge_Base;
+         end if;
+
+         Name := Get_String (Canon);
+
          while N /= null loop
             if Node_Type (N) /= Element_Node then
                null;
@@ -1123,10 +1135,6 @@ package body GPR.Knowledge is
                begin
                   Pattern := new Pattern_Matcher'(Compile ("^" & Val & "$"));
                   Target_Lists.Append (Set, Pattern);
-
-                  if Name = No_Name then
-                     Name := Get_String (Val);
-                  end if;
 
                exception
                   when Expression_Error =>
@@ -3449,10 +3457,11 @@ package body GPR.Knowledge is
    ----------------------------
 
    procedure Generate_Configuration
-     (Base        : Knowledge_Base;
-      Compilers   : Compiler_Lists.List;
-      Output_File : String;
-      Target      : String)
+     (Base                 : Knowledge_Base;
+      Compilers            : Compiler_Lists.List;
+      Output_File          : String;
+      Target               : String;
+      Selected_Targets_Set : Targets_Set_Id)
    is
       Config            : Configuration_Lists.Cursor :=
                             First (Base.Configurations);
@@ -3557,6 +3566,11 @@ package body GPR.Knowledge is
 
       if Target'Length > 0 and then Target /= "all" then
          Put_Line (Output, "   for Target use """ & Target & """;");
+         Put_Line
+           (Output,
+            "   for Canonical_Target use """
+            & Normalized_Target (Base, Selected_Targets_Set)
+            & """;");
       end if;
 
       --  Generate known packages in order.  This takes care of possible

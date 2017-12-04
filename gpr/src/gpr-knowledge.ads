@@ -308,10 +308,11 @@ package GPR.Knowledge is
    --  Set List to the comma-separated list of known compilers
 
    procedure Generate_Configuration
-     (Base        : Knowledge_Base;
-      Compilers   : Compiler_Lists.List;
-      Output_File : String;
-      Target      : String);
+     (Base                 : Knowledge_Base;
+      Compilers            : Compiler_Lists.List;
+      Output_File          : String;
+      Target               : String;
+      Selected_Targets_Set : Targets_Set_Id);
    --  Generate the configuration file for the list of selected compilers
 
    package String_Lists is

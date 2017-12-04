@@ -53,6 +53,7 @@
             <xsd:element name="target" type="xsd:string"
                maxOccurs="unbounded" minOccurs="1"/>
          </xsd:sequence>
+         <xsd:attribute name="canonical" type="xsd:string" />
       </xsd:complexType>
    </xsd:element>
 
