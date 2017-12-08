@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---            Copyright (C) 2006-2015, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2017, Free Software Foundation, Inc.       --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -194,6 +194,12 @@ package GPR.Conf is
    --  If a project file could be found, it is automatically parsed and
    --  processed (and Packages_To_Check is used to indicate which packages
    --  should be processed).
+
+   procedure Update_Project_Search_Path
+     (Project      : GPR.Project_Id;
+      Project_Tree : GPR.Project_Tree_Ref;
+      Env          : in out GPR.Tree.Environment);
+   --  Add compiler-specific predefined directories to the project search path.
 
 --     procedure Add_Default_GNAT_Naming_Scheme
 --       (Config_File  : in out GPR.Tree.Project_Node_Id;

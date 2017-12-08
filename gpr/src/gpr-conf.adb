@@ -40,6 +40,8 @@ with GPR.Util;   use GPR.Util;
 with GPR.Snames; use GPR.Snames;
 with GPR.Tempdir;
 
+with Ada.Unchecked_Deallocation;
+
 package body GPR.Conf is
 
    Auto_Cgpr : constant String := "auto.cgpr";
@@ -1583,12 +1585,7 @@ package body GPR.Conf is
       Finalization : GPR.Part.Errout_Mode :=
                        GPR.Part.Always_Finalize;
 
-      S : State := No_State;
-
       Conf_File_Name : String_Access;
-
-      procedure Add_Directory (Dir : String);
-      --  Add a directory at the end of the Project Path
 
       Auto_Generated : Boolean;
 
@@ -1596,19 +1593,6 @@ package body GPR.Conf is
       type Path_Names_Ref is access Path_Names_Arr;
 
       Path_Names : Path_Names_Ref := null;
-
-      -------------------
-      -- Add_Directory --
-      -------------------
-
-      procedure Add_Directory (Dir : String) is
-      begin
-         if Opt.Verbosity_Level > Opt.Low then
-            Write_Line ("   Adding directory """ & Dir & """");
-         end if;
-
-         GPR.Env.Add_Directories (Env.Project_Path, Dir);
-      end Add_Directory;
 
    begin
       pragma Assert (GPR.Env.Is_Initialized (Env.Project_Path));
@@ -1862,6 +1846,10 @@ package body GPR.Conf is
          end if;
       end if;
 
+      --  Add the default directories corresponding to the compilers
+      Update_Project_Search_Path
+        (Main_Project, Project_Tree, Env);
+
       --  If there was no error and Config_Try_Again is True, update the
       --  project path and try again.
 
@@ -1879,171 +1867,6 @@ package body GPR.Conf is
 
          Warn_For_RTS := False;
 
-         --  Add the default directories corresponding to the compilers
-
-         Update_Project_Path
-           (By                 => Main_Project,
-            Tree               => Project_Tree,
-            With_State         => S,
-            Include_Aggregated => True,
-            Imported_First     => False);
-
-         declare
-            Compiler_Root : Compiler_Root_Ptr;
-            Prefix        : String_Access;
-            Runtime_Root  : Runtime_Root_Ptr;
-            Path_Value : constant String_Access := Getenv ("PATH");
-
-         begin
-            if Opt.Verbosity_Level > Opt.Low then
-               Write_Line ("Setting the default project search directories");
-
-               if GPR.Current_Verbosity = High then
-                  if Path_Value = null or else Path_Value'Length = 0 then
-                     Write_Line ("No environment variable PATH");
-
-                  else
-                     Write_Line ("PATH =");
-                     Write_Line ("   " & Path_Value.all);
-                  end if;
-               end if;
-            end if;
-
-            --  Reorder the compiler roots in the PATH order
-
-            if First_Compiler_Root /= null
-              and then First_Compiler_Root.Next /= null
-            then
-               declare
-                  Pred : Compiler_Root_Ptr;
-                  First_New_Comp : Compiler_Root_Ptr := null;
-                  New_Comp : Compiler_Root_Ptr := null;
-                  First : Positive := Path_Value'First;
-                  Last  : Positive;
-                  Path_Last : Positive;
-               begin
-                  while First <= Path_Value'Last loop
-                     Last := First;
-
-                     if Path_Value (First) /= Path_Separator then
-                        while Last < Path_Value'Last
-                          and then Path_Value (Last + 1) /= Path_Separator
-                        loop
-                           Last := Last + 1;
-                        end loop;
-
-                        Path_Last := Last;
-                        while Path_Last > First
-                          and then
-                            Path_Value (Path_Last) = Directory_Separator
-                        loop
-                           Path_Last := Path_Last - 1;
-                        end loop;
-
-                        if Path_Last > First + 4
-                          and then
-                            Path_Value (Path_Last - 2 .. Path_Last) = "bin"
-                          and then
-                            Path_Value (Path_Last - 3) = Directory_Separator
-                        then
-                           Path_Last := Path_Last - 4;
-                           Pred := null;
-                           Compiler_Root := First_Compiler_Root;
-                           while Compiler_Root /= null
-                             and then Compiler_Root.Root.all /=
-                               Path_Value (First .. Path_Last)
-                           loop
-                              Pred := Compiler_Root;
-                              Compiler_Root := Compiler_Root.Next;
-                           end loop;
-
-                           if Compiler_Root /= null then
-                              if Pred = null then
-                                 First_Compiler_Root :=
-                                   First_Compiler_Root.Next;
-                              else
-                                 Pred.Next := Compiler_Root.Next;
-                              end if;
-
-                              if First_New_Comp = null then
-                                 First_New_Comp := Compiler_Root;
-                              else
-                                 New_Comp.Next := Compiler_Root;
-                              end if;
-
-                              New_Comp := Compiler_Root;
-                              New_Comp.Next := null;
-                           end if;
-                        end if;
-                     end if;
-
-                     First := Last + 1;
-                  end loop;
-
-                  if First_New_Comp /= null then
-                     New_Comp.Next := First_Compiler_Root;
-                     First_Compiler_Root := First_New_Comp;
-                  end if;
-               end;
-            end if;
-
-            --  Now that the compiler roots are in a correct order, add the
-            --  directories corresponding to these compiler roots in the
-            --  project path.
-
-            Compiler_Root := First_Compiler_Root;
-            while Compiler_Root /= null loop
-               Prefix := Compiler_Root.Root;
-
-               Runtime_Root := Compiler_Root.Runtimes;
-               while Runtime_Root /= null loop
-                  Add_Directory
-                    (Runtime_Root.Root.all &
-                       Directory_Separator &
-                       "lib" &
-                       Directory_Separator &
-                       "gnat");
-                  Add_Directory
-                    (Runtime_Root.Root.all &
-                       Directory_Separator &
-                       "share" &
-                       Directory_Separator &
-                       "gpr");
-                  Runtime_Root := Runtime_Root.Next;
-               end loop;
-
-               Add_Directory
-                 (Prefix.all &
-                    Directory_Separator &
-                    Opt.Target_Value.all &
-                    Directory_Separator &
-                    "lib" &
-                    Directory_Separator &
-                    "gnat");
-               Add_Directory
-                 (Prefix.all &
-                    Directory_Separator &
-                    Opt.Target_Value.all &
-                    Directory_Separator &
-                    "share" &
-                    Directory_Separator &
-                    "gpr");
-               Add_Directory
-                 (Prefix.all &
-                    Directory_Separator &
-                    "share" &
-                    Directory_Separator &
-                    "gpr");
-               Add_Directory
-                 (Prefix.all &
-                    Directory_Separator &
-                    "lib" &
-                    Directory_Separator &
-                    "gnat");
-               Compiler_Root := Compiler_Root.Next;
-            end loop;
-         end;
-
          --  And parse again the project files. There will be no missing
          --  withed projects, as Ignore_Missing_With is set to False in
          --  the environment flags, so there is no risk of endless loop here.
@@ -2051,6 +1874,261 @@ package body GPR.Conf is
          goto Parse_Again;
       end if;
    end Parse_Project_And_Apply_Config;
+
+   procedure Update_Project_Search_Path
+     (Project      : GPR.Project_Id;
+      Project_Tree : GPR.Project_Tree_Ref;
+      Env          : in out GPR.Tree.Environment)
+   is
+      S : State := No_State;
+
+      procedure Add_Directory (Dir : String);
+      --  Add a directory at the end of the Project Path
+
+      procedure Free_Pointers (Ptr : in out Compiler_Root_Ptr);
+      --  Clean up temporary compiler data gathered during path search.
+
+      Compiler_Root : Compiler_Root_Ptr;
+      Prefix        : String_Access;
+      Runtime_Root  : Runtime_Root_Ptr;
+      Path_Value : constant String_Access := Getenv ("PATH");
+
+      -------------------
+      -- Add_Directory --
+      -------------------
+
+      procedure Add_Directory (Dir : String) is
+      begin
+         if Opt.Verbosity_Level > Opt.Low then
+            Write_Line ("   Adding directory """ & Dir & """");
+         end if;
+
+         GPR.Env.Add_Directories (Env.Project_Path, Dir);
+      end Add_Directory;
+
+      -------------------
+      -- Free_Pointers --
+      -------------------
+      procedure Free_Pointers (Ptr : in out Compiler_Root_Ptr) is
+         procedure Free is new Ada.Unchecked_Deallocation
+           (Compiler_Root_Data, Compiler_Root_Ptr);
+         procedure Free is new Ada.Unchecked_Deallocation
+           (Runtime_Root_Data, Runtime_Root_Ptr);
+
+         procedure Free_Runtimes (Ptr : in out Runtime_Root_Ptr);
+         procedure Free_Runtimes (Ptr : in out Runtime_Root_Ptr) is
+         begin
+            if Ptr = null then
+               return;
+            end if;
+            Free_Runtimes (Ptr.Next);
+            Free (Ptr.Root);
+            Free (Ptr);
+         end Free_Runtimes;
+      begin
+         if Ptr = null then
+            return;
+         end if;
+         Free_Pointers (Ptr.Next);
+         Free (Ptr.Root);
+         Free_Runtimes (Ptr.Runtimes);
+         Free (Ptr);
+      end Free_Pointers;
+
+   begin
+      if Project = No_Project or else Project_Tree = No_Project_Tree then
+         return;
+      end if;
+
+      Update_Project_Path
+        (By                 => Project,
+         Tree               => Project_Tree,
+         With_State         => S,
+         Include_Aggregated => True,
+         Imported_First     => False);
+
+      if Opt.Verbosity_Level > Opt.Low then
+         Write_Line ("Setting the default project search directories");
+
+         if GPR.Current_Verbosity = High then
+            if Path_Value = null or else Path_Value'Length = 0 then
+               Write_Line ("No environment variable PATH");
+
+            else
+               Write_Line ("PATH =");
+               Write_Line ("   " & Path_Value.all);
+            end if;
+         end if;
+      end if;
+
+      --  Reorder the compiler roots in the PATH order
+
+      if First_Compiler_Root /= null
+        and then First_Compiler_Root.Next /= null
+      then
+         declare
+            Pred : Compiler_Root_Ptr;
+            First_New_Comp : Compiler_Root_Ptr := null;
+            New_Comp : Compiler_Root_Ptr := null;
+            First : Positive := Path_Value'First;
+            Last  : Positive;
+            Path_Last : Positive;
+         begin
+            while First <= Path_Value'Last loop
+               Last := First;
+
+               if Path_Value (First) /= Path_Separator then
+                  while Last < Path_Value'Last
+                    and then Path_Value (Last + 1) /= Path_Separator
+                  loop
+                     Last := Last + 1;
+                  end loop;
+
+                  Path_Last := Last;
+                  while Path_Last > First
+                    and then
+                      Path_Value (Path_Last) = Directory_Separator
+                  loop
+                     Path_Last := Path_Last - 1;
+                  end loop;
+
+                  if Path_Last > First + 4
+                    and then
+                      Path_Value (Path_Last - 2 .. Path_Last) = "bin"
+                    and then
+                      Path_Value (Path_Last - 3) = Directory_Separator
+                  then
+                     Path_Last := Path_Last - 4;
+                     Pred := null;
+                     Compiler_Root := First_Compiler_Root;
+                     while Compiler_Root /= null
+                       and then Compiler_Root.Root.all /=
+                         Path_Value (First .. Path_Last)
+                     loop
+                        Pred := Compiler_Root;
+                        Compiler_Root := Compiler_Root.Next;
+                     end loop;
+
+                     if Compiler_Root /= null then
+                        if Pred = null then
+                           First_Compiler_Root :=
+                             First_Compiler_Root.Next;
+                        else
+                           Pred.Next := Compiler_Root.Next;
+                        end if;
+
+                        if First_New_Comp = null then
+                           First_New_Comp := Compiler_Root;
+                        else
+                           New_Comp.Next := Compiler_Root;
+                        end if;
+
+                        New_Comp := Compiler_Root;
+                        New_Comp.Next := null;
+                     end if;
+                  end if;
+               end if;
+
+               First := Last + 1;
+            end loop;
+
+            if First_New_Comp /= null then
+               New_Comp.Next := First_Compiler_Root;
+               First_Compiler_Root := First_New_Comp;
+            end if;
+         end;
+      end if;
+
+      --  Now that the compiler roots are in a correct order, add the
+      --  directories corresponding to these compiler roots in the
+      --  project path.
+
+      Compiler_Root := First_Compiler_Root;
+      while Compiler_Root /= null loop
+         Prefix := Compiler_Root.Root;
+
+         Runtime_Root := Compiler_Root.Runtimes;
+         while Runtime_Root /= null loop
+            Add_Directory
+              (Runtime_Root.Root.all &
+                 Directory_Separator &
+                 "share" &
+                 Directory_Separator &
+                 "gpr");
+            Add_Directory
+              (Runtime_Root.Root.all &
+                 Directory_Separator &
+                 "lib" &
+                 Directory_Separator &
+                 "gnat");
+            Runtime_Root := Runtime_Root.Next;
+         end loop;
+
+         Add_Directory
+           (Prefix.all &
+              Directory_Separator &
+              Opt.Target_Value.all &
+              Directory_Separator &
+              "share" &
+              Directory_Separator &
+              "gpr");
+         Add_Directory
+           (Prefix.all &
+              Directory_Separator &
+              Opt.Target_Value.all &
+              Directory_Separator &
+              "lib" &
+              Directory_Separator &
+              "gnat");
+
+         declare
+            CT_Variable : constant Variable_Value :=
+              Value_Of
+                (Name_Canonical_Target,
+                 Project.Decl.Attributes,
+                 Project_Tree.Shared);
+            Canonical_Target : constant String :=
+              Get_Name_String (CT_Variable.Value);
+         begin
+            if Canonical_Target not in Opt.Target_Value.all | "" then
+               Add_Directory
+                 (Prefix.all &
+                    Directory_Separator &
+                    Canonical_Target    &
+                    Directory_Separator &
+                    "share" &
+                    Directory_Separator &
+                    "gpr");
+               Add_Directory
+                 (Prefix.all &
+                    Directory_Separator &
+                    Canonical_Target    &
+                    Directory_Separator &
+                    "lib" &
+                    Directory_Separator &
+                    "gnat");
+            end if;
+         end;
+
+         Add_Directory
+           (Prefix.all &
+              Directory_Separator &
+              "share" &
+              Directory_Separator &
+              "gpr");
+         Add_Directory
+           (Prefix.all &
+              Directory_Separator &
+              "lib" &
+              Directory_Separator &
+              "gnat");
+         Compiler_Root := Compiler_Root.Next;
+      end loop;
+
+      --  Need to reset compilers for possible future reloads.
+      Free_Pointers (First_Compiler_Root);
+
+   end Update_Project_Search_Path;
 
    --------------------------------------
    -- Process_Project_And_Apply_Config --
