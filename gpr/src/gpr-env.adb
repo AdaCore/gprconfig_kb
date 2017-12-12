@@ -764,6 +764,23 @@ package body GPR.Env is
       Key         => Name_Id,
       Hash        => Hash,
       Equal       => "=");
+   --  A table to store the non excluded sources
+
+   type Source_Unit is record
+      Source : Source_Id := No_Source;
+      Unit   : Name_Id   := No_Name;
+   end record;
+
+   No_Source_Unit : constant Source_Unit := (No_Source, No_Name);
+
+   package Mapping_Excluded_Paths is new GNAT.HTable.Simple_HTable
+     (Header_Num => Header_Num,
+      Element     => Source_Unit,
+      No_Element  => No_Source_Unit,
+      Key         => Path_Name_Type,
+      Hash        => Hash,
+      Equal       => "=");
+   --  A table to store the excluded sources
 
    procedure Create_Mapping_File
      (Project  : Project_Id;
@@ -861,7 +878,17 @@ package body GPR.Env is
                   if Src = No_Source or else
                     not (Source.Locally_Removed or else Source.Suppressed)
                   then
-                     Mapping.Set (Unit, Source);
+                     if Source.Locally_Removed or else Source.Suppressed then
+                        Mapping_Excluded_Paths.Set
+                          (Source.Path.Name, (Source, Unit));
+
+                     else
+                        Mapping.Set (Unit, Source);
+
+                        --  Remove any excluded source with the same path, if
+                        --  any.
+                        Mapping_Excluded_Paths.Remove (Source.Path.Name);
+                     end if;
                   end if;
                end;
             end if;
@@ -891,17 +918,24 @@ package body GPR.Env is
       end if;
 
       Mapping.Reset;
+      Mapping_Excluded_Paths.Reset;
 
       For_Every_Imported_Project
         (Project, In_Tree, Dummy, Include_Aggregated => False);
 
       declare
-         Last   : Natural;
-         Status : Boolean := False;
-         Unit   : Name_Id := No_Name;
-         Source : Source_Id;
+         Last     : Natural;
+         Status   : Boolean        := False;
+         Unit     : Name_Id        := No_Name;
+         Source   : Source_Id;
+         Path     : Path_Name_Type := No_Path;
+         Src_Unit : Source_Unit;
+
       begin
          if File /= Invalid_FD then
+
+            --  First the non excluded sources
+
             Mapping.Get_First (Unit, Source);
             while Source /= No_Source loop
                Get_Name_String (Unit);
@@ -910,16 +944,27 @@ package body GPR.Env is
                Get_Name_String (Source.Display_File);
                Put_Name_Buffer;
 
-               if Source.Locally_Removed or else Source.Suppressed then
-                  Name_Len := 1;
-                  Name_Buffer (1) := '/';
-               else
-                  Get_Name_String (Source.Path.Display_Name);
-               end if;
-
+               Get_Name_String (Source.Path.Display_Name);
                Put_Name_Buffer;
 
                Mapping.Get_Next (Unit, Source);
+            end loop;
+
+            --  Then the excluded sources, if any
+
+            Mapping_Excluded_Paths.Get_First (Path, Src_Unit);
+            while Src_Unit /= No_Source_Unit loop
+               Get_Name_String (Src_Unit.Unit);
+               Put_Name_Buffer;
+
+               Get_Name_String (Src_Unit.Source.Display_File);
+               Put_Name_Buffer;
+
+               Name_Len := 1;
+               Name_Buffer (1) := '/';
+               Put_Name_Buffer;
+
+               Mapping_Excluded_Paths.Get_Next (Path, Src_Unit);
             end loop;
 
             Last := Write (File, Buffer (1)'Address, Buffer_Last);
