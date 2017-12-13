@@ -821,7 +821,9 @@ package body GPR is
 
                --  Visit all extended projects
 
-               if Project.Extends /= No_Project then
+               if Project.Extends /= No_Project and then
+                  Project.Extends.Qualifier /= Abstract_Project
+               then
                   Recursive_Check
                     (Project.Extends, Tree,
                      In_Aggregate_Lib, From_Encapsulated_Lib);

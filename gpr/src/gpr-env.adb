@@ -879,8 +879,10 @@ package body GPR.Env is
                     not (Source.Locally_Removed or else Source.Suppressed)
                   then
                      if Source.Locally_Removed or else Source.Suppressed then
-                        Mapping_Excluded_Paths.Set
-                          (Source.Path.Name, (Source, Unit));
+                        if Src = No_Source then
+                           Mapping_Excluded_Paths.Set
+                             (Source.Path.Name, (Source, Unit));
+                        end if;
 
                      else
                         Mapping.Set (Unit, Source);
@@ -888,6 +890,24 @@ package body GPR.Env is
                         --  Remove any excluded source with the same path, if
                         --  any.
                         Mapping_Excluded_Paths.Remove (Source.Path.Name);
+
+                        --  Also remove any excluded source with the same unit
+                        --  name.
+
+                        declare
+                           Src_Unit : Source_Unit := No_Source_Unit;
+                           Path     : Path_Name_Type := No_Path;
+                        begin
+                           Mapping_Excluded_Paths.Get_First (Path, Src_Unit);
+                           while Src_Unit /= No_Source_Unit loop
+                              if Src_Unit.Unit = Unit then
+                                 Mapping_Excluded_Paths.Remove (Path);
+                                 exit;
+                              end if;
+
+                              Mapping_Excluded_Paths.Get_Next (Path, Src_Unit);
+                           end loop;
+                        end;
                      end if;
                   end if;
                end;
