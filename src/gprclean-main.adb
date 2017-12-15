@@ -1000,6 +1000,15 @@ begin
       Delete_All_Temp_Files (Project_Tree.Shared);
    end if;
 
+   --  Warn if auto-configuration returns a failure status
+
+   if Problem_During_Auto_Configuration then
+      New_Line;
+      Put_Line
+        ("Cleaning may be incomplete, " &
+         "as there were problems during auto-configuration");
+   end if;
+
    --  In verbose mode, if Delete has not been called, indicate that
    --  no file needs to be deleted.
 

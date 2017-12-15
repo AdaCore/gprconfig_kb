@@ -228,4 +228,13 @@ package GPR.Conf is
    function Runtime_Name_Set_For (Language : Name_Id) return Boolean;
    --  Returns True only if Set_Runtime_For has been called for the Language
 
+   ------------------------
+   -- Auto-configuration --
+   ------------------------
+
+   function Problem_During_Auto_Configuration return Boolean;
+   --  Return True if the last invocation of gprconfig for auto-configuration
+   --  returns a failure status. Returns False otherwise, including if there is
+   --  no auto-configuration.
+
 end GPR.Conf;

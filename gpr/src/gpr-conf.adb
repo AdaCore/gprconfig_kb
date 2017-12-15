@@ -52,6 +52,10 @@ package body GPR.Conf is
 
    Gprconfig_Name : constant String := "gprconfig";
 
+   Auto_Configuration_Success : Boolean := True;
+   --  False when invocation of gprconfig for auto-configuration returned a
+   --  failure status.
+
    Warn_For_RTS : Boolean := True;
    --  Set to False when gprbuild parse again the project files, to avoid
    --  an incorrect warning.
@@ -471,6 +475,15 @@ package body GPR.Conf is
       end loop;
    end Apply_Config_File;
 
+   ---------------------------------------
+   -- Problem_During_Auto_Configuration --
+   ---------------------------------------
+
+   function Problem_During_Auto_Configuration return Boolean is
+   begin
+      return not Auto_Configuration_Success;
+   end Problem_During_Auto_Configuration;
+
    ------------------
    -- Check_Target --
    ------------------
@@ -828,7 +841,6 @@ package body GPR.Conf is
                         Shared);
 
          Gprconfig_Path : String_Access;
-         Success        : Boolean;
 
       begin
          Gprconfig_Path := Locate_Exec_On_Path (Gprconfig_Name);
@@ -1040,7 +1052,7 @@ package body GPR.Conf is
 
             Spawn (Gprconfig_Path.all, Args (1 .. Arg_Last) &
                    Config_Switches.all & Db_Switches.all,
-                   Success);
+                   Auto_Configuration_Success);
 
             Free (Config_Switches);
 
