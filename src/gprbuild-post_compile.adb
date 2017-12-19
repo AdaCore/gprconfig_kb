@@ -405,27 +405,33 @@ package body Gprbuild.Post_Compile is
            (The_ALI  : File_Name_Type;
             ALI_Path : in out Path_Name_Type;
             Proj     : Project_Id;
-            Tree     : Project_Tree_Ref) is
+            Tree     : Project_Tree_Ref)
+         is
 
             Source : Source_Id;
             Iter   : Source_Iterator;
 
             Aggr_Projs : Aggregated_Project_List;
 
+            Prj : Project_Id := Proj;
          begin
-            Iter := For_Each_Source (Tree, Proj);
-            loop
-               Source := GPR.Element (Iter);
-               exit when Source = No_Source;
+            while Prj /= No_Project loop
+               Iter := For_Each_Source (Tree, Prj);
+               loop
+                  Source := GPR.Element (Iter);
+                  exit when Source = No_Source;
 
-               Initialize_Source_Record (Source);
+                  Initialize_Source_Record (Source);
 
-               if Source.Dep_Name = The_ALI then
-                  ALI_Path := Source.Dep_Path;
-                  return;
-               end if;
+                  if Source.Dep_Name = The_ALI then
+                     ALI_Path := Source.Dep_Path;
+                     return;
+                  end if;
 
-               Next (Iter);
+                  Next (Iter);
+               end loop;
+
+               Prj := Prj.Extends;
             end loop;
 
             if Proj.Qualifier = Aggregate_Library then
@@ -582,8 +588,6 @@ package body Gprbuild.Post_Compile is
             OK   : Boolean;
 
          begin
-            Library_ALIs.Reset;
-
             if Proj.Qualifier /= Aggregate_Library
               and then Proj.Extended_By = No_Project
             then
@@ -1040,6 +1044,7 @@ package body Gprbuild.Post_Compile is
          Library_SAL_Projs.Init;
          Processed_ALIs.Reset;
          Interface_ALIs.Reset;
+         Library_ALIs.Reset;
          Complete_Interface_ALIs.Reset;
 
          if For_Project.Qualifier = Aggregate_Library then
