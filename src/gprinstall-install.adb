@@ -2957,6 +2957,14 @@ package body Gprinstall.Install is
 
             Put_Line (File, Sig_Line & Prj_Sig);
          end if;
+
+      exception
+         when Text_IO.Use_Error =>
+            Put_Line
+              ("cannot open or create the manifest file "
+               & Project_Subdir.V.all & Install_Name.V.all);
+            Put_Line ("check permissions on this location");
+            Finish_Program (Project_Tree, E_Fatal);
       end Open_Check_Manifest;
 
       ------------------------
