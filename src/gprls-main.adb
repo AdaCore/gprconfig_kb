@@ -471,10 +471,35 @@ procedure Gprls.Main is
 
          else
             declare
-               Text    : Text_Buffer_Ptr;
+               Text   : Text_Buffer_Ptr;
+               Source : constant GPR.Source_Id := File_Names (J).Source;
+
             begin
                Text := Osint.Read_Library_Info
-                 (File_Name_Type (File_Names (J).Source.Dep_Path));
+                 (File_Name_Type (Source.Dep_Path));
+
+               --  If the ALI file cannot be found and the project is an
+               --  externally built library project, look for the ALI file
+               --  in the library directory.
+
+               if Text = null and then
+                  Source.Project.Externally_Built and then
+                  Source.Project.Library
+               then
+                  declare
+                     Dep_Path_Name : constant String :=
+                       Get_Name_String (Source.Project.Library_Dir.Name) &
+                       Directory_Separator &
+                       Get_Name_String (Source.Dep_Name);
+                     Dep_Path : File_Name_Type;
+
+                  begin
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Dep_Path_Name);
+                     Dep_Path := Name_Find;
+                     Text := Osint.Read_Library_Info (Dep_Path);
+                  end;
+               end if;
 
                if Text /= null then
                   File_Names (J).The_ALI := Scan_ALI
