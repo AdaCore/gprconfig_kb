@@ -793,10 +793,11 @@ package body GPR is
          --  Start of processing for Recursive_Check
 
          begin
-            --  If an imported project is extended, then the actual imported
-            --  is the extending project.
+            --  If a non abstract imported project is extended, then the actual
+            --  imported is the extending project.
 
-            if Project.Extended_By /= No_Project and then
+            if Project.Qualifier /= Abstract_Project and then
+              Project.Extended_By /= No_Project and then
               not Seen_Name.Contains (Project.Extended_By.Name)
             then
                Recursive_Check
@@ -812,18 +813,22 @@ package body GPR is
                Seen_Name.Include (Project.Name);
 
                if not Imported_First then
-                  Action
-                    (Get_From_Tree (Project),
-                     Tree,
-                     Project_Context'(In_Aggregate_Lib, From_Encapsulated_Lib),
-                     With_State);
+                  if Project.Qualifier /= Abstract_Project or else
+                    Project.Extended_By = No_Project
+                  then
+                     Action
+                       (Get_From_Tree (Project),
+                        Tree,
+                        Project_Context'
+                          (In_Aggregate_Lib,
+                           From_Encapsulated_Lib),
+                        With_State);
+                  end if;
                end if;
 
                --  Visit all extended projects
 
-               if Project.Extends /= No_Project and then
-                  Project.Extends.Qualifier /= Abstract_Project
-               then
+               if Project.Extends /= No_Project then
                   Recursive_Check
                     (Project.Extends, Tree,
                      In_Aggregate_Lib, From_Encapsulated_Lib);
@@ -880,11 +885,17 @@ package body GPR is
                end if;
 
                if Imported_First then
-                  Action
-                    (Get_From_Tree (Project),
-                     Tree,
-                     Project_Context'(In_Aggregate_Lib, From_Encapsulated_Lib),
-                     With_State);
+                  if Project.Qualifier /= Abstract_Project or else
+                    Project.Extended_By = No_Project
+                  then
+                     Action
+                       (Get_From_Tree (Project),
+                        Tree,
+                        Project_Context'
+                          (In_Aggregate_Lib,
+                           From_Encapsulated_Lib),
+                        With_State);
+                  end if;
                end if;
             end if;
          end Recursive_Check;
