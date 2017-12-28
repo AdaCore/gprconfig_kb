@@ -1009,7 +1009,7 @@ package body GPR.Util is
 
       procedure Add_To_Closures (Source : Source_Id; Added : out Boolean);
       --  Add Source to the list of closures. Added is True when Source is
-      --  effectively added. IfSource was already in the list of closures, it
+      --  effectively added. If Source was already in the list of closures, it
       --  is not added again and Added is False.
 
       procedure Look_For_Mains;
@@ -1338,7 +1338,7 @@ package body GPR.Util is
                     T          => Text,
                     Ignore_ED  => False,
                     Err        => True,
-                    Read_Lines => "W");
+                    Read_Lines => "WD");
                Free (Text);
 
                if Idread = No_ALI_Id then
@@ -1352,7 +1352,68 @@ package body GPR.Util is
                      Unit_Data := ALI.Units.Table (Unit);
 
                      if Unit = First_Unit then
-                        Find_Unit (Get_Name_String (Unit_Data.Uname));
+                        declare
+                           Uname : constant String :=
+                             Get_Name_String (Unit_Data.Uname);
+                        begin
+                           Find_Unit (Uname);
+
+                           --  For a body, check if there are subunits
+
+                           if Uname (Uname'Last - 1 .. Uname'Last) = "%b" then
+                              for D in ALI.ALIs.Table (Idread).First_Sdep ..
+                                ALI.ALIs.Table (Idread).Last_Sdep
+                              loop
+                                 declare
+                                    Sdep : constant Sdep_Record :=
+                                      ALI.Sdep.Table (D);
+                                 begin
+                                    if Sdep.Subunit_Name /= No_Name then
+                                       declare
+                                          Subunit_Name : constant String :=
+                                            Get_Name_String
+                                              (Sdep.Subunit_Name);
+                                          File_Name :
+                                            constant File_Name_Type :=
+                                               Sdep.Sfile;
+                                          Iter : Source_Iterator;
+                                          Src : Source_Id;
+                                       begin
+                                          if Subunit_Name
+                                               (Subunit_Name'First ..
+                                                Subunit_Name'First +
+                                                Uname'Length - 3) =
+                                             Uname (Uname'First ..
+                                                    Uname'Last - 2)
+                                          then
+                                             --  Add the subunit to the closure
+                                             --  First, find the source
+                                             Iter := For_Each_Source
+                                               (In_Tree           => Tree,
+                                                Project           => Project,
+                                                Language          => Name_Ada,
+                                                Encapsulated_Libs => True,
+                                                Locally_Removed   => False);
+
+                                             loop
+                                                Src := Element (Iter);
+                                                exit when Src = No_Source;
+                                                exit when Src.File = File_Name;
+                                                Next (Iter);
+                                             end loop;
+
+                                             --  If the source has been found,
+                                             --  add it to the closure.
+                                             if Src /= No_Source then
+                                                Add_To_Closures (Src, Added);
+                                             end if;
+                                          end if;
+                                       end;
+                                    end if;
+                                 end;
+                              end loop;
+                           end if;
+                        end;
                      end if;
 
                      for W in Unit_Data.First_With ..
