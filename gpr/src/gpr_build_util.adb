@@ -18,6 +18,7 @@
 
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
+with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 
 with GNAT.Case_Util;             use GNAT.Case_Util;
 with GNAT.Directory_Operations;  use GNAT.Directory_Operations;
@@ -604,26 +605,70 @@ package body Gpr_Build_Util is
          OK        : Boolean := False;
          Lang_Proc : Language_Ptr := Project.Languages;
 
+         Lang_Is_Ada : Boolean := False;
+
       begin
          --  Add to path all directories of this project
 
          if Activity = Compilation then
-            Lang_Loop :
-            while Lang_Proc /= No_Language_Index loop
-               for J in Languages'Range loop
-                  OK := Lang_Proc.Name = Languages (J);
-                  exit Lang_Loop when OK;
-               end loop;
+            for J in Languages'Range loop
+               if Languages (J) = Name_Ada then
+                  OK := True;
+                  Lang_Is_Ada := True;
+                  exit;
+               end if;
+            end loop;
 
-               Lang_Proc := Lang_Proc.Next;
-            end loop Lang_Loop;
+            if not OK then
+               Lang_Loop :
+               while Lang_Proc /= No_Language_Index loop
+                  for J in Languages'Range loop
+                     OK := Lang_Proc.Name = Languages (J);
+                     exit Lang_Loop when OK;
+                  end loop;
+
+                  Lang_Proc := Lang_Proc.Next;
+               end loop Lang_Loop;
+            end if;
 
             if OK then
                Current := Project.Source_Dirs;
 
                while Current /= Nil_String loop
                   Dir := Tree.Shared.String_Elements.Table (Current);
-                  Add_Dir (Path_Name_Type (Dir.Value));
+
+                  --  For Ada we put all the source directories, as a
+                  --  preprocessing data file may be in a source directory
+                  --  with no source.
+
+                  if Lang_Is_Ada then
+                     Add_Dir (Path_Name_Type (Dir.Value));
+
+                  else
+
+                     --  For other languages, we only put the source
+                     --  directories with at least one source of the
+                     --  language(s).
+
+                     declare
+                        Dir_Name : constant String :=
+                                     Get_Name_String (Dir.Value);
+                        Src : GPR.Source_Id := Lang_Proc.First_Source;
+
+                     begin
+                        while Src /= No_Source loop
+                           if Index
+                             (Get_Name_String (Src.Path.Name), Dir_Name) = 1
+                           then
+                              Add_Dir (Path_Name_Type (Dir.Value));
+                              exit;
+                           end if;
+
+                           Src := Src.Next_In_Lang;
+                        end loop;
+                     end;
+                  end if;
+
                   Current := Dir.Next;
                end loop;
             end if;

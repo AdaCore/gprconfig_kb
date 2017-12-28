@@ -1672,7 +1672,6 @@ package body GPR is
                Index         => 0,
                Display_Value => The_Dot_String,
                Location      => No_Location,
-               Flag          => False,
                Next          => Nil_String));
          Tree.Shared.Dot_String_List :=
            String_Element_Table.Last (Tree.Shared.String_Elements);

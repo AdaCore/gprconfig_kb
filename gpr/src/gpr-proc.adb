@@ -606,7 +606,6 @@ package body GPR.Proc is
                  Location_Of
                    (The_Current_Term,
                     From_Project_Node_Tree),
-               Flag          => False,
                Next          => Nil_String,
                Index         => 0);
          end loop;
@@ -677,7 +676,6 @@ package body GPR.Proc is
                         Location      => Location_Of
                                            (The_Current_Term,
                                             From_Project_Node_Tree),
-                        Flag          => False,
                         Next          => Nil_String);
                end case;
 
@@ -731,7 +729,6 @@ package body GPR.Proc is
                        (Value         => Value.Value,
                         Display_Value => No_Name,
                         Location      => Value.Location,
-                        Flag          => False,
                         Next          => Nil_String,
                         Index         => Value.Index);
 
@@ -768,7 +765,6 @@ package body GPR.Proc is
                           (Value         => Value.Value,
                            Display_Value => No_Name,
                            Location      => Value.Location,
-                           Flag          => False,
                            Next          => Nil_String,
                            Index         => Value.Index);
                      end loop;
@@ -1193,7 +1189,6 @@ package body GPR.Proc is
                                  Location      => Location_Of
                                                    (The_Current_Term,
                                                     From_Project_Node_Tree),
-                                 Flag          => False,
                                  Next          => Nil_String,
                                  Index         => 0);
 
@@ -1235,7 +1230,6 @@ package body GPR.Proc is
                                          Location_Of
                                            (The_Current_Term,
                                             From_Project_Node_Tree),
-                                       Flag         => False,
                                        Next         => Nil_String,
                                        Index        => 0);
 
@@ -1476,7 +1470,6 @@ package body GPR.Proc is
                                       Location_Of
                                         (The_Current_Term,
                                          From_Project_Node_Tree),
-                                    Flag          => False,
                                     Next          => Nil_String,
                                     Index         => 0);
 
@@ -1499,7 +1492,6 @@ package body GPR.Proc is
                                    Location_Of
                                      (The_Current_Term,
                                       From_Project_Node_Tree),
-                                 Flag          => False,
                                  Next          => Nil_String,
                                  Index         => 0);
                            end if;

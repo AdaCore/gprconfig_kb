@@ -442,12 +442,9 @@ package GPR is
       Index         : Int            := 0;
       Display_Value : Name_Id        := No_Name;
       Location      : Source_Ptr     := No_Location;
-      Flag          : Boolean        := False;
       Next          : String_List_Id := Nil_String;
    end record;
    --  To hold values for string list variables and array elements.
-   --  Component Flag may be used for various purposes. For source
-   --  directories, it indicates if the directory contains Ada source(s).
 
    package String_Element_Table is new GNAT.Dynamic_Tables
      (Table_Component_Type => String_Element,

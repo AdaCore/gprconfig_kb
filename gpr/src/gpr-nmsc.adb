@@ -3306,7 +3306,6 @@ package body GPR.Nmsc is
                               Index         => 0,
                               Display_Value => Name_Id (Source.Dep_Name),
                               Location      => No_Location,
-                              Flag          => False,
                               Next          => Interface_ALIs);
 
                            Interface_ALIs :=
@@ -3326,7 +3325,6 @@ package body GPR.Nmsc is
                               Index         => 0,
                               Display_Value => Name_Id (Source.Display_File),
                               Location      => No_Location,
-                              Flag          => False,
                               Next          => Other_Interfaces);
 
                            Other_Interfaces :=
@@ -3442,7 +3440,6 @@ package body GPR.Nmsc is
                            Index         => 0,
                            Display_Value => Name_Id (Source.Dep_Name),
                            Location      => No_Location,
-                           Flag          => False,
                            Next          => Interface_ALIs);
 
                         Interface_ALIs :=
@@ -5997,7 +5994,6 @@ package body GPR.Nmsc is
                   Index         => 0,
                   Display_Value => Name_Id (Path.Display_Name),
                   Location      => No_Location,
-                  Flag          => False,
                   Next          => Nil_String);
 
                Number_List_Table.Increment_Last (Shared.Number_Lists);
