@@ -293,6 +293,9 @@ package Builder of the main project:
   subdirectories of the directories specified in the project files. This applies
   in particular to object directories, library directories and exec directories.
   If the directories do not exist, they are created automatically.
+  For externally built projects, the directories are never created. If such a
+  subdirectory exists, it is used, otherwise the directory without --subdirs=
+  is used in externally built projects.
 
 * :samp:`--relocate-build-tree[={dir}]`
 
