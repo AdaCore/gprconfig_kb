@@ -315,6 +315,7 @@ package GPR.Snames is
    Name_Split                            : constant Name_Id := N + 287;
    Name_Create_Missing_Dirs              : constant Name_Id := N + 288;
    Name_Canonical_Target                 : constant Name_Id := N + 289;
+   Name_Warning_Message                  : constant Name_Id := N + 290;
 
    subtype Reserved_Ada_95 is Name_Id
       range Name_Abort .. Name_Tagged;

@@ -2617,6 +2617,21 @@ package body GPR.Nmsc is
                           From_List => List,
                           In_Tree   => Data.Tree);
                   end if;
+
+               elsif Attribute.Name = Name_Warning_Message then
+                  Project.Warning_Message := Attribute.Value.Value;
+
+                  if Project.Extended_By = No_Project and then
+                    Project.Warning_Message /= No_Name and then
+                    Project.Warning_Message /= Empty_String
+                  then
+                     Error_Msg
+                       (Data.Flags,
+                        "?" & Get_Name_String (Project.Warning_Message),
+                        Project.Location,
+                        Project);
+                  end if;
+
                end if;
             end if;
 

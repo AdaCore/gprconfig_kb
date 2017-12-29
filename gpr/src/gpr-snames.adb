@@ -342,6 +342,7 @@ package body GPR.Snames is
       Add_Name ("split");
       Add_Name ("create_missing_dirs");
       Add_Name ("canonical_target");
+      Add_Name ("warning_message");
 
       Initialized := True;
    end Initialize;
