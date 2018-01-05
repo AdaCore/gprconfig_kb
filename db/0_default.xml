@@ -27,6 +27,7 @@
    end Naming;
 
    for Inherit_Source_Path ("C++") use ("C");
+   for Inherit_Source_Path ("Asm_Cpp") use ("Asm");
    for Default_Language use "Ada";
 
    package Compiler is
