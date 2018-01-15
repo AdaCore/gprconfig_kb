@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2017, AdaCore                     --
+--                     Copyright (C) 2012-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -147,11 +147,10 @@ package body Gprinstall.Uninstall is
             declare
                F_Name   : constant String := Buffer (Name_Range'First .. Last);
                Pathname : constant String :=
-                            (if Exists (Global_Prefix_Dir.V.all & F_Name)
-                             then Global_Prefix_Dir.V.all & F_Name
-                             else Dir & DS & F_Name);
-               --  For upward compatibility we do check first for file
-               --  existence in the previous location.
+                            (if Exists (Dir & DS & F_Name)
+                             then Dir & DS & F_Name
+                             else Global_Prefix_Dir.V.all & F_Name);
+               --  For upward compatibility we fallback into previous location
 
             begin
                Expected_Digest := Buffer (MD5_Range);
