@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2017, AdaCore                     --
+--                     Copyright (C) 2011-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1645,38 +1645,7 @@ procedure Gprbuild.Main is
                "illegal option """ & Arg & """ on the command line");
 
          else
-            --  If --compiler-pkg-subst was given, we don't want to pass
-            --  builder switches down to the "compiler", which probably won't
-            --  understand them, because it's likely some tool like gnatpp.
-
-            if Subst_Switch_Present then
-               null;
-
-            --  If we have a switch and there is a Builder Switches language
-            --  set, pass this switch to the compiler of the language.
-
-            elsif Arg (1) = '-' and then Builder_Switches_Lang /= No_Name then
-               Current_Builder_Comp_Option_Table :=
-                 Builder_Compiling_Options_HTable.Get (Builder_Switches_Lang);
-
-               if Current_Builder_Comp_Option_Table =
-                 No_Builder_Comp_Option_Table
-               then
-                  Current_Builder_Comp_Option_Table :=
-                    new Builder_Compiling_Options.Instance;
-                  Builder_Compiling_Options_HTable.Set
-                    (Builder_Switches_Lang, Current_Builder_Comp_Option_Table);
-                  Builder_Compiling_Options.Init
-                    (Current_Builder_Comp_Option_Table.all);
-               end if;
-
-               Current_Processor := Compiler;
-               Add_Option (Arg, False);
-               Current_Processor := None;
-
-            else
-               Success := False;
-            end if;
+            Success := False;
          end if;
       end if;
    end Scan_Arg;
