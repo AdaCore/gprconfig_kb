@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -885,6 +885,10 @@ package GPR is
       --  Name of environment variable declared by attribute Include_Path_File
       --  for the language.
 
+      Only_Dirs_With_Sources : Boolean := False;
+      --  When True, only the directories that contain sources of the language
+      --  are used as included directories when compiling.
+
       Objects_Path : Name_Id := No_Name;
       --  Name of environment variable declared by attribute Objects_Path for
       --  the language.
@@ -990,6 +994,7 @@ package GPR is
                            Include_Option               => No_Name_List,
                            Include_Path                 => No_Name,
                            Include_Path_File            => No_Name,
+                           Only_Dirs_With_Sources       => False,
                            Objects_Path                 => No_Name,
                            Objects_Path_File            => No_Name,
                            Config_Body                  => No_Name,

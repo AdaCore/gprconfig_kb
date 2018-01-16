@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2017, AdaCore                     --
+--                     Copyright (C) 2004-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -641,14 +641,15 @@ package body Gpr_Build_Util is
                   --  preprocessing data file may be in a source directory
                   --  with no source.
 
-                  if Lang_Is_Ada then
+                  if Lang_Is_Ada or else
+                    not Lang_Proc.Config.Only_Dirs_With_Sources
+                  then
                      Add_Dir (Path_Name_Type (Dir.Value));
 
                   else
-
-                     --  For other languages, we only put the source
-                     --  directories with at least one source of the
-                     --  language(s).
+                     --  For other languages, if Only_Dirs_With_Sources has
+                     --  been set to True, put the source directories with
+                     --  at least one source of the language(s).
 
                      declare
                         Dir_Name : constant String :=

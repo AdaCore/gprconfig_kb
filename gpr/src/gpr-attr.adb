@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -94,6 +94,7 @@ package body GPR.Attr is
    "Lainherit_source_path#" &
    "LVexcluded_source_dirs#" &
    "LVignore_source_sub_dirs#" &
+   "Saonly_dirs_with_sources#" &
 
    --  Source files
 

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2000-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2000-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -3053,6 +3053,31 @@ package body GPR.Nmsc is
                               "invalid value """
                               & Get_Name_String (Element.Value.Value)
                               & """ for Objects_Linked",
+                              Element.Value.Location, Project);
+                     end;
+
+                  elsif Current_Array.Name = Name_Only_Dirs_With_Sources then
+                     declare
+                        pragma Unsuppress (All_Checks);
+                        Value : Boolean;
+
+                     begin
+                        Value :=
+                          Boolean'Value
+                            (Get_Name_String (Element.Value.Value));
+
+                        --  No change if Object_Generated is False, as this
+                        --  forces Objects_Linked to be False too.
+
+                        Lang_Index.Config.Only_Dirs_With_Sources := Value;
+
+                     exception
+                        when Constraint_Error =>
+                           Error_Msg
+                             (Data.Flags,
+                              "invalid value """
+                              & Get_Name_String (Element.Value.Value)
+                              & """ for Only_Dirs_With_Sources",
                               Element.Value.Location, Project);
                      end;
                   end if;

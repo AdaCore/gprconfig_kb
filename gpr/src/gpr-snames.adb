@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---      Copyright (C) 2015-2017, Free Software Foundation, Inc.             --
+--      Copyright (C) 2015-2018, Free Software Foundation, Inc.             --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -343,6 +343,7 @@ package body GPR.Snames is
       Add_Name ("create_missing_dirs");
       Add_Name ("canonical_target");
       Add_Name ("warning_message");
+      Add_Name ("only_dirs_with_sources");
 
       Initialized := True;
    end Initialize;
