@@ -1564,6 +1564,26 @@ package body GPR.Nmsc is
                                 From_List => List,
                                 In_Tree   => Data.Tree);
 
+                           --  Attribute Include_Switches_Via_Spec
+                           --             (<language>)
+
+                        elsif Current_Array.Name =
+                          Name_Include_Switches_Via_Spec
+                        then
+                           List := Element.Value.Values;
+
+                           if List = Nil_String then
+                              Error_Msg
+                                (Data.Flags,
+                                 "include switches via spec cannot be null",
+                                 Element.Value.Location, Project);
+                           end if;
+
+                           Put (Into_List =>
+                                  Lang_Index.Config.Include_Switches_Via_Spec,
+                                From_List => List,
+                                In_Tree   => Data.Tree);
+
                            --  Attribute Include_Path (<language>)
 
                         elsif Current_Array.Name = Name_Include_Path then

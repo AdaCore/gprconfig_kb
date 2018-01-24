@@ -72,8 +72,7 @@
         ("-c", "-x", "c++") &amp;
         Compiler'Leading_Required_Switches ("C++");
       for Dependency_Switches ("C++") use ("-MMD", "-MF", "");
-      --  for Include_Path        ("C++") use "CPATH";
-      for Include_Switches        ("C++") use ("-I");
+      for Include_Switches_Via_Spec ("C++") use ("cc1plus", "-I");
       for Max_Command_Line_Length use "8192";
       for Response_File_Format    ("C++") use "GCC_GNU";
    end Compiler;
