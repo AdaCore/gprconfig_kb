@@ -881,6 +881,12 @@ package GPR is
       --  Name of environment variable declared by attribute Include_Path for
       --  the language.
 
+      Include_Switches_Via_Spec : Name_List_Index := No_Name_List;
+      --  Indicate the name of the underlying compiler and the switch to
+      --  specify an included source directory.
+      --  Used to invoke a GNU compiler with switch -specs, to avoid long
+      --  command lines.
+
       Include_Path_File : Name_Id := No_Name;
       --  Name of environment variable declared by attribute Include_Path_File
       --  for the language.
@@ -993,6 +999,7 @@ package GPR is
                            Compute_Dependency           => No_Name_List,
                            Include_Option               => No_Name_List,
                            Include_Path                 => No_Name,
+                           Include_Switches_Via_Spec    => No_Name_List,
                            Include_Path_File            => No_Name,
                            Only_Dirs_With_Sources       => False,
                            Objects_Path                 => No_Name,

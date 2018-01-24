@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2017, AdaCore                     --
+--                     Copyright (C) 2011-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -176,6 +176,9 @@ package body Gprbuild.Compile is
       Table_Initial        => 10,
       Table_Increment      => 100);
    --  A table to store the subunit names when switch --no-split-units is used
+
+   function  Escape_Path (Path : String) return String;
+   --  Escapes the characters '\', ' ' and '#' with character '\' before them.
 
    ------------------------------
    -- Add_Compilation_Switches --
@@ -1238,7 +1241,7 @@ package body Gprbuild.Compile is
          --  These are specific to each language and project.
 
          Include_Path_File      : Path_Name_Type;
-         --  The path name of the of the source search directory file
+         --  The path name of the source search directory file
 
          Imported_Dirs_Switches : Argument_List_Access;
          --  List of the source search switches (-I<source dir>) to be used
@@ -1249,16 +1252,20 @@ package body Gprbuild.Compile is
          --  environment variable, specified by attribute Include_Path
          --  (<langu>). The names of the environment variables are in component
          --  Include_Path of the records Language_Config.
+
+         Include_Switches_Spec_File : Path_Name_Type;
+
       end record;
       --  project-specific data required for this procedure. These are not
       --  stored in the Project_Data record so that projects kept in memory do
       --  not have to allocate space for these temporary data
 
       No_Local_Project_Data : constant Local_Project_Data :=
-                                (Include_Language       => No_Language_Index,
-                                 Include_Path           => null,
-                                 Imported_Dirs_Switches => null,
-                                 Include_Path_File      => No_Path);
+                             (Include_Language           => No_Language_Index,
+                              Include_Path               => null,
+                              Imported_Dirs_Switches     => null,
+                              Include_Path_File          => No_Path,
+                              Include_Switches_Spec_File => No_Path);
 
       package Local_Projects_HT is new Simple_HTable
         (Header_Num => GPR.Header_Num,
@@ -2845,8 +2852,8 @@ package body Gprbuild.Compile is
          --  busy.
 
          procedure Escape_Path (Options : in out String_List);
-         --  On Windows, duplicate the directory separators ('\') in Options.
-         --  On other platforms, this procedure does nothing.
+         --  On all platforms, escapes the characters '\', ' ' and '#' with
+         --  character '\' before them.
 
          -----------------
          -- Add_Process --
@@ -2869,10 +2876,6 @@ package body Gprbuild.Compile is
 
             Queue.Set_Obj_Dir_Busy (Source.Id.Project.Object_Directory.Name);
          end Add_Process;
-
-         -----------------
-         -- Escape_Path --
-         -----------------
 
          procedure Escape_Path (Options : in out String_List) is
          begin
@@ -3222,6 +3225,129 @@ package body Gprbuild.Compile is
                Prepare_Imported_Dirs_Switches
                  (Data, Id.Object_Project, Id.Language);
 
+            elsif Id.Language.Config.Include_Switches_Via_Spec /= No_Name_List
+            then
+               declare
+                  Include_Switches_Spec : File_Descriptor := Invalid_FD;
+                  Switches_File_Name    : Path_Name_Type;
+                  Switches_File         : File_Descriptor := Invalid_FD;
+                  Status                : Boolean := False;
+
+                  Compiler : OS_Lib.String_Access;
+                  Switch   : OS_Lib.String_Access;
+
+                  List : Name_List_Index :=
+                          Id.Language.Config.Include_Switches_Via_Spec;
+                  Elem : Name_Node;
+               begin
+                  Elem := Project_Tree.Shared.Name_Lists.Table (List);
+                  Compiler := new String'(Get_Name_String (Elem.Name));
+                  List := Elem.Next;
+                  Elem := Project_Tree.Shared.Name_Lists.Table (List);
+                  Switch := new String'(Get_Name_String (Elem.Name));
+
+                  Get_Directories
+                    (Project_Tree => Project_Tree,
+                     For_Project  => Id.Object_Project,
+                     Activity     => Compilation,
+                     Languages    => Get_Compatible_Languages (Id.Language));
+
+                  GPR.Env.Create_Temp_File
+                    (Project_Tree.Shared,
+                     Switches_File,
+                     Switches_File_Name,
+                     "include switches");
+
+                  for Index in 1 .. Directories.Last loop
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Switch.all);
+                     Add_Str_To_Name_Buffer
+                       (Escape_Path
+                          (Get_Name_String (Directories.Table (Index))));
+                     Name_Len := Name_Len + 1;
+                     Name_Buffer (Name_Len) := ASCII.LF;
+                     if Write
+                       (Switches_File,
+                        Name_Buffer (1)'Address, Name_Len) /= Name_Len
+                     then
+                        Fail_Program
+                          (Project_Tree,
+                           "disk full when writing include switches file");
+                     end if;
+                  end loop;
+
+                  Close (Switches_File, Status);
+
+                  if not Status then
+                     Fail_Program
+                       (Project_Tree,
+                        "disk full when writing include switches file");
+                  end if;
+
+                  GPR.Env.Create_Temp_File
+                    (Project_Tree.Shared,
+                     Include_Switches_Spec,
+                     Data.Include_Switches_Spec_File,
+                     "include switches spec");
+
+                  Name_Len := 1;
+                  Name_Buffer (1) := '*';
+                  Add_Str_To_Name_Buffer (Compiler.all);
+                  Name_Len := Name_Len + 1;
+                  Name_Buffer (Name_Len) := ':';
+                  Name_Len := Name_Len + 1;
+                  Name_Buffer (Name_Len) := ASCII.LF;
+
+                  if Write
+                    (Include_Switches_Spec,
+                     Name_Buffer (1)'Address, Name_Len) /= Name_Len
+                  then
+                     Fail_Program
+                       (Project_Tree,
+                        "disk full when writing include switches spec file");
+                  end if;
+
+                  Name_Len := 0;
+                  Add_Str_To_Name_Buffer ("+ @");
+                  Add_Str_To_Name_Buffer
+                    (Get_Name_String (Switches_File_Name));
+                  Name_Len := Name_Len + 1;
+                  Name_Buffer (Name_Len) := ASCII.LF;
+
+                  if Write
+                    (Include_Switches_Spec,
+                     Name_Buffer (1)'Address, Name_Len) /= Name_Len
+                  then
+                     Fail_Program
+                       (Project_Tree,
+                        "disk full when writing include switches spec file");
+                  end if;
+
+                  Close (Include_Switches_Spec, Status);
+
+                  if not Status then
+                     Fail_Program
+                       (Project_Tree,
+                        "disk full when writing include switches spec file");
+                  end if;
+
+                  Free (Compiler);
+                  Free (Switch);
+
+--                  Data.Imported_Dirs_Switches := new String_List (1 .. 2);
+--                  Data.Imported_Dirs_Switches (1) := new String'("-specs");
+--                  Data.Imported_Dirs_Switches (2) :=
+--                    new String'(Get_Name_String
+--                                  (Data.Include_Switches_Spec_File));
+                  Data.Imported_Dirs_Switches :=
+                    new String_List'
+                      (1 =>
+                          new String'
+                         ("-specs=" &
+                           Get_Name_String
+                            (Data.Include_Switches_Spec_File)));
+               end;
+
             elsif Id.Language.Config.Include_Path_File /= No_Name then
                if Id.Language.Config.Mapping_File_Switches = No_Name_List
                  or else Opt.Use_Include_Path_File
@@ -3562,6 +3688,31 @@ package body Gprbuild.Compile is
          Local_Projects_HT.Reset (Local_Projects);
       end;
    end Compilation_Phase;
+
+   -----------------
+   -- Escape_Path --
+   -----------------
+
+   function Escape_Path (Path : String) return String is
+      Result : String (1 .. Path'Length * 2);
+      Last   : Natural := 0;
+
+   begin
+      for J in Path'Range loop
+         if Path (J) = '\' or else
+           Path (J) = ' ' or else
+           Path (J) = '"'
+         then
+            Last := Last + 1;
+            Result (Last) := '\';
+         end if;
+
+         Last := Last + 1;
+         Result (Last) := Path (J);
+      end loop;
+
+      return Result (1 .. Last);
+   end Escape_Path;
 
    ---------------------
    -- Project_Extends --

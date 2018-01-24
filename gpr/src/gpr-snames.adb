@@ -344,6 +344,7 @@ package body GPR.Snames is
       Add_Name ("canonical_target");
       Add_Name ("warning_message");
       Add_Name ("only_dirs_with_sources");
+      Add_Name ("include_switches_via_spec");
 
       Initialized := True;
    end Initialize;

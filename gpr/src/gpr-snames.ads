@@ -317,6 +317,7 @@ package GPR.Snames is
    Name_Canonical_Target                 : constant Name_Id := N + 289;
    Name_Warning_Message                  : constant Name_Id := N + 290;
    Name_Only_Dirs_With_Sources           : constant Name_Id := N + 291;
+   Name_Include_Switches_Via_Spec        : constant Name_Id := N + 292;
 
    subtype Reserved_Ada_95 is Name_Id
       range Name_Abort .. Name_Tagged;
