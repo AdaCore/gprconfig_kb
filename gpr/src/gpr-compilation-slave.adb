@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -686,6 +686,60 @@ package body GPR.Compilation.Slave is
                   end if;
 
                   return O (O'First .. O'First + 7)
+                    & Translate_Send (S.Channel, File_Name);
+               end;
+
+            elsif O'Length > 7
+              and then O (O'First .. O'First + 6) = "-specs="
+            then
+               --  Send the corresponding file to the slave
+               declare
+                  File_Name : constant String := O (O'First + 7 .. O'Last);
+                  File      : Text_IO.File_Type;
+                  Line      : String (1 .. 2_048);
+                  Last      : Natural;
+               begin
+                  if Exists (File_Name) then
+                     Send_File
+                       (S.Channel, File_Name,
+                        Rewrite         => True,
+                        Keep_Time_Stamp => True);
+
+                     --  And now send the spec filename in the second line
+
+                     Text_IO.Open (File, Text_IO.In_File, File_Name);
+                     Text_IO.Skip_Line (File);
+                     Text_IO.Get_Line (File, Line, Last);
+                     Text_IO.Close (File);
+
+                     --  A spec filename starts with '+ @', so 3 characters
+
+                     declare
+                        Filename_Offset : constant := 3;
+                        Spec_Filename   : constant String :=
+                                            Line (1 + Filename_Offset .. Last);
+                     begin
+                        if Exists (Spec_Filename) then
+                           Send_File
+                             (S.Channel, Spec_Filename,
+                              Rewrite         => True,
+                              Keep_Time_Stamp => True);
+                        else
+                           Put_Line
+                             ("Spec file not found " & Spec_Filename);
+                           Put_Line
+                             ("Please check that Built_Root is properly set");
+                        end if;
+                     end;
+
+                  else
+                     Put_Line
+                       ("File not found " & File_Name);
+                     Put_Line
+                       ("Please check that Built_Root is properly set");
+                  end if;
+
+                  return O (O'First .. O'First + 6)
                     & Translate_Send (S.Channel, File_Name);
                end;
             end if;
