@@ -40,11 +40,13 @@ LIB_DIR       = lib/
 # target options for cross-build
 ifeq ($(HOST),$(TARGET))
 GTARGET=
-INSTALLER=exe/$(LIB_INSTALLER)
+INSTALLER=exe/$(BUILD)/$(LIB_INSTALLER)
 else
 GTARGET=--target=$(TARGET)
 INSTALLER=$(LIB_INSTALLER)
 endif
+
+EXEC_INSTALLER=$(INSTALLER) -XBUILD=${BUILD}
 
 # check for out-of-tree build
 ifeq ($(SOURCE_DIR),.)
@@ -119,9 +121,9 @@ gprls:
 .PHONY: install
 
 install:
-	$(INSTALLER) --mode=usage --install-name=gprbuild \
+	$(EXEC_INSTALLER) --mode=usage --install-name=gprbuild \
 		-XINSTALL_MODE=nointernal $(GPRBUILD_GPR)
-	$(INSTALLER) --target=$(TARGET) --mode=usage  --install-name=gprbuild \
+	$(EXEC_INSTALLER) --target=$(TARGET) --mode=usage  --install-name=gprbuild \
 		-XINSTALL_MODE=internal $(GPRBUILD_GPR)
 
 complete: all install libgpr.install.static
