@@ -611,12 +611,47 @@
       <target name="^.*ia64.*hpux.*$" />
       <target name="^.*pc-mingw32$" />
       <target name="^.*-pikeos$" />
-      <target name="^arm-linux-androideabi$" />
+      <target name="^.*-linux.*" />
       <target name="^.*-gnueabihf$" />
       <target name="^.*-gnueabi$" />
       <target name="^c$" />
       <target name="^.*-qnx[0-9]*$"/>
     </targets>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <!-- Do not use the native ar on cross linuxes.
+       ??? This will be simplified when switching to the new scheme for
+       cross linuxes; then we'll have a simple way to check if a toolchain
+       is native or cross.  -->
+
+  <configuration>
+    <targets>
+      <target name="^i.86-.*linux.*" />
+    </targets>
+    <hosts>
+      <host name="^i.86-.*linux.*" />
+    </hosts>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^x86_64-.*linux.*" />
+    </targets>
+    <hosts>
+      <host name="^x86_64-.*linux.*" />
+    </hosts>
     <config>
    for Archive_Builder  use ("ar", "cr");
    for Archive_Builder_Append_Option use ("q");
