@@ -694,6 +694,30 @@
     </config>
   </configuration>
 
+  <!-- Symbolic links supported everywhere except on mingw and VMS -->
+
+  <configuration>
+    <hosts negate="true">
+      <host name="^.*mingw.*$" />
+      <host name="^.*vms.*$" />
+    </hosts>
+    <config>
+   for Symbolic_Link_Supported use "true";
+   for Library_Major_Minor_Id_Supported use "true";
+    </config>
+  </configuration>
+
+  <configuration>
+    <hosts>
+      <host name="^.*mingw.*$" />
+      <host name="^.*vms.*$" />
+    </hosts>
+    <config>
+   for Symbolic_Link_Supported use "false";
+   for Library_Major_Minor_Id_Supported use "false";
+    </config>
+  </configuration>
+
   <!--  Darwin -->
   <configuration>
     <targets>
@@ -705,8 +729,6 @@
    for Library_Builder use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support use "full";
    for Shared_Library_Prefix use "lib";
-   for Symbolic_Link_Supported use "true";
-   for Library_Major_Minor_Id_Supported use "true";
 
    for Run_Path_Option  use ("-Wl,-rpath,");
    for Separate_Run_Path_Options use "true";
@@ -752,8 +774,6 @@
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
-   for Symbolic_Link_Supported use "true";
-   for Library_Major_Minor_Id_Supported use "true";
    for Shared_Library_Minimum_Switches use ("-shared", "-fPIC");
    for Library_Version_Switches use ("-Wl,-soname,");
 
@@ -794,8 +814,6 @@
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
-   for Symbolic_Link_Supported use "true";
-   for Library_Major_Minor_Id_Supported use "true";
    for Shared_Library_Minimum_Switches use ("-shared");
    for Library_Version_Switches use ("-Wl,-soname,");
 
@@ -969,8 +987,6 @@
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
-   for Symbolic_Link_Supported use "true";
-   for Library_Major_Minor_Id_Supported use "true";
    for Shared_Library_Minimum_Switches use ("-shared");
 
    for Library_Version_Switches use ("-Wl,-h,");
@@ -1007,8 +1023,6 @@
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
-   for Symbolic_Link_Supported use "false";
-   for Library_Major_Minor_Id_Supported use "false";
    for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
    for Library_Version_Switches use ("-Wl,-soname,");
    for Shared_Library_Suffix use ".dll";
@@ -1030,8 +1044,6 @@
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
-   for Symbolic_Link_Supported use "true";
-   for Library_Major_Minor_Id_Supported use "true";
    for Shared_Library_Minimum_Switches use
       ("-shared", "-Wl,-expect_unresolved,*");
    for Library_Version_Switches use ("-Wl,-soname,");
@@ -1059,8 +1071,6 @@
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
    for Shared_Library_Suffix use ".exe";
-   for Symbolic_Link_Supported use "false";
-   for Library_Major_Minor_Id_Supported use "false";
    for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
    for Library_Auto_Init_Supported use "true";
     </config>
