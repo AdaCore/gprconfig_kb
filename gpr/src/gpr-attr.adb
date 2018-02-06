@@ -249,6 +249,7 @@ package body GPR.Attr is
    --  Configuration - Search paths
 
    "LaCinclude_switches#" &
+   "Lainclude_switches_via_spec#" &
    "Sainclude_path#" &
    "Sainclude_path_file#" &
    "LaCobject_path_switches#" &
