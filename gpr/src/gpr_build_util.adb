@@ -501,28 +501,6 @@ package body Gpr_Build_Util is
       end if;
    end Create_Binder_Mapping_File;
 
-   -----------------
-   -- Escape_Path --
-   -----------------
-
-   function Escape_Path (Path : String) return String is
-      Result : String (1 .. Path'Length * 2);
-      Last   : Natural := 0;
-
-   begin
-      for J in Path'Range loop
-         if Path (J) in '\' | ' ' | '"' then
-            Last := Last + 1;
-            Result (Last) := '\';
-         end if;
-
-         Last := Last + 1;
-         Result (Last) := Path (J);
-      end loop;
-
-      return Result (1 .. Last);
-   end Escape_Path;
-
    --------------------------
    -- File_Not_A_Source_Of --
    --------------------------

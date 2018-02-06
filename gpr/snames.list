@@ -289,4 +289,3 @@ Create_Missing_Dirs
 Canonical_Target
 Warning_Message
 Only_Dirs_With_Sources
-Include_Switches_Via_Spec

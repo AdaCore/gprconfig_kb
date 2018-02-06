@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2004-2018, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -195,9 +195,6 @@ package Gpr_Build_Util is
 
    function Unescape (Path : String) return String;
    --  On platforms other than Windows, remove the characters '\'.
-
-   function Escape_Path (Path : String) return String;
-   --  Escapes the characters '\', ' ' and '"' with character '\' before them
 
    --------------
    -- Switches --
