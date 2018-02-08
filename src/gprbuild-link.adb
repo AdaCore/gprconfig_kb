@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2017, AdaCore                     --
+--                     Copyright (C) 2011-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1359,7 +1359,7 @@ package body Gprbuild.Link is
                  Resolve_Links  => Opt.Follow_Links_For_Dirs,
                  Case_Sensitive => False);
 
-            Path : constant String :=
+            Path : String :=
               Normalize_Pathname
                 (Rpaths.Table (Npath).all,
                  Resolve_Links => Opt.Follow_Links_For_Dirs);
@@ -1371,6 +1371,11 @@ package body Gprbuild.Link is
                for J in Insensitive_Path'Range loop
                   if Insensitive_Path (J) = Directory_Separator then
                      Insensitive_Path (J) := '/';
+                  end if;
+               end loop;
+               for J in Path'Range loop
+                  if Path (J) = Directory_Separator then
+                     Path (J) := '/';
                   end if;
                end loop;
             end if;
@@ -1423,14 +1428,14 @@ package body Gprbuild.Link is
                      --  Case of the path being the exec dir
 
                      Rpaths.Table (Npath) :=
-                       new String'(Origin_Name & Directory_Separator & ".");
+                       new String'(Origin_Name & "/.");
 
                   else
                      --  Case of the path being a subdir of the exec dir
 
                      Rpaths.Table (Npath) :=
                        new String'
-                         (Origin_Name & Directory_Separator &
+                         (Origin_Name & "/" &
                           Path (Last_Path + 1 .. Path'Last));
                   end if;
 
@@ -1440,16 +1445,16 @@ package body Gprbuild.Link is
 
                      Rpaths.Table (Npath) :=
                        new String'
-                         (Origin_Name & Directory_Separator &
-                          (Nmb - 1) * (".." & Directory_Separator) & "..");
+                         (Origin_Name & "/" &
+                          (Nmb - 1) * ("../") & "..");
 
                   else
                      --  General case of path and exec dir having a common root
 
                      Rpaths.Table (Npath) :=
                        new String'
-                         (Origin_Name & Directory_Separator &
-                          Nmb * (".." & Directory_Separator) &
+                         (Origin_Name & "/" &
+                          Nmb * ("../") &
                           Path (Last_Path + 1 .. Path'Last));
                   end if;
                end if;
@@ -1593,7 +1598,7 @@ package body Gprbuild.Link is
                      for J in 1 .. Rpaths.Last loop
                         if J /= 1 then
                            Length := Length + 1;
-                           Arg (Length) := Path_Separator;
+                           Arg (Length) := ':';
                         end if;
 
                         Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
