@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---       Copyright (C) 2015-2017, Free Software Foundation, Inc.           --
+--       Copyright (C) 2015-2018, Free Software Foundation, Inc.           --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1649,6 +1649,10 @@ package body Scanner is
               EM  | FS  | GS  | RS  | US  | DEL
          =>
             Error_Illegal_Character;
+            if Language_For_Scanner = Ada then
+               Token := Tok_EOF;
+               return;
+            end if;
 
          --  Invalid graphic characters
 
