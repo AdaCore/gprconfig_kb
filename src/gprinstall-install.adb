@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2017, AdaCore                     --
+--                     Copyright (C) 2012-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -904,6 +904,12 @@ package body Gprinstall.Install is
       is
          Dest_Filename : aliased String := To & File;
       begin
+         if Sym_Link and then On_Windows then
+            Put ("Internal error: cannot use symbolic links on Windows");
+            New_Line;
+            Finish_Program (Project_Tree, E_Fatal);
+         end if;
+
          if not Sym_Link
            and then Exists (Dest_Filename)
            and then not Force_Installations
@@ -1536,30 +1542,53 @@ package body Gprinstall.Install is
                   end if;
 
                elsif Link_Lib_Dir /= Lib_Dir then
-                  Copy_File
-                    (From       => Link_Lib_Dir
-                                     & Get_Name_String (Get_Library_Filename),
-                     To         => Lib_Dir,
-                     File       => Get_Name_String (Get_Library_Filename),
-                     Sym_Link   => True);
-
+                  if On_Windows then
+                     Copy_File
+                       (From       => Lib_Dir
+                          & Get_Name_String (Get_Library_Filename),
+                        To         => Link_Lib_Dir,
+                        File       => Get_Name_String (Get_Library_Filename),
+                        Sym_Link   => False);
+                  else
+                     Copy_File
+                       (From       => Link_Lib_Dir
+                          & Get_Name_String (Get_Library_Filename),
+                        To         => Lib_Dir,
+                        File       => Get_Name_String (Get_Library_Filename),
+                        Sym_Link   => True);
+                  end if;
                   --  Copy also the versioned library if any
 
                   if Project.Lib_Internal_Name /= No_Name
                     and then Project.Library_Name /= Project.Lib_Internal_Name
                   then
-                     Copy_File
-                       (From       =>
-                          Link_Lib_Dir
-                            & Get_Name_String (Project.Lib_Internal_Name),
-                        To         => Lib_Dir,
-                        File       =>
-                          Get_Name_String (Project.Lib_Internal_Name),
-                        From_Ver   => Cat (Link_Lib_Dir,
-                            Major_Id_Name
-                              (Get_Name_String (Get_Library_Filename),
-                               Get_Name_String (Project.Lib_Internal_Name))),
-                        Sym_Link   => True);
+                     if On_Windows then
+                        Copy_File
+                          (From       =>
+                             Lib_Dir
+                               & Get_Name_String (Project.Lib_Internal_Name),
+                           To         => Link_Lib_Dir,
+                           File       =>
+                             Get_Name_String (Project.Lib_Internal_Name),
+                           From_Ver   => Cat (Link_Lib_Dir,
+                             Major_Id_Name
+                               (Get_Name_String (Get_Library_Filename),
+                                Get_Name_String (Project.Lib_Internal_Name))),
+                           Sym_Link   => False);
+                     else
+                        Copy_File
+                          (From       =>
+                             Link_Lib_Dir
+                               & Get_Name_String (Project.Lib_Internal_Name),
+                           To         => Lib_Dir,
+                           File       =>
+                             Get_Name_String (Project.Lib_Internal_Name),
+                           From_Ver   => Cat (Link_Lib_Dir,
+                             Major_Id_Name
+                               (Get_Name_String (Get_Library_Filename),
+                                Get_Name_String (Project.Lib_Internal_Name))),
+                           Sym_Link   => True);
+                     end if;
                   end if;
                end if;
             end if;
