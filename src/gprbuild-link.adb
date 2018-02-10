@@ -78,6 +78,9 @@ package body Gprbuild.Link is
    procedure Add_Rpath (Path : String);
    --  Add a path name to Rpath
 
+   procedure Add_Rpath_From_Arguments (Project : Project_Id);
+   --  Add all explicit -L directives as an rpath
+
    procedure Rpaths_Relative_To
      (Exec_Dir : Path_Name_Type; Origin : Name_Id);
    --  Change all paths in table Rpaths to paths relative to Exec_Dir, if they
@@ -341,21 +344,56 @@ package body Gprbuild.Link is
    ---------------
 
    procedure Add_Rpath (Path : String) is
+      --  Rpaths are always considered case sensitive, as it's a runtime
+      --  property of dynamic objects, so in case of cross compilation is
+      --  independent of the host's way of handling case sensitivity
+      Normalized : constant String :=
+                     Normalize_Pathname
+                       (Path,
+                        Resolve_Links  => Opt.Follow_Links_For_Dirs,
+                        Case_Sensitive => True);
    begin
       --  Nothing to do if Path is empty
 
-      if Path'Length > 0 then
-         --  Nothing to do if the directory is already in the Rpaths table
-
-         for J in 1 .. Rpaths.Last loop
-            if Rpaths.Table (J).all = Path then
-               return;
-            end if;
-         end loop;
-
-         Rpaths.Append (new String'(Path));
+      if Path'Length = 0 then
+         return;
       end if;
+
+      --  Nothing to do if the directory is already in the Rpaths table
+      for J in 1 .. Rpaths.Last loop
+         if Rpaths.Table (J).all = Normalized then
+            return;
+         end if;
+      end loop;
+
+      Rpaths.Append (new String'(Normalized));
    end Add_Rpath;
+
+   ------------------------------
+   -- Add_Rpath_From_Arguments --
+   ------------------------------
+
+   procedure Add_Rpath_From_Arguments (Project : Project_Id) is
+      LSwitch : constant String :=
+                  (if Project.Config.Linker_Lib_Dir_Option = No_Name
+                   then "-L"
+                   else
+                      Get_Name_String (Project.Config.Linker_Lib_Dir_Option));
+   begin
+      for J in Arguments'First .. Last_Argument loop
+         declare
+            Arg : String renames Arguments (J).all;
+         begin
+            if Arg'Length > LSwitch'Length
+              and then Arg (Arg'First .. Arg'First + LSwitch'Length - 1)
+                = LSwitch
+            then
+               Path_Options.Append
+                 (new String'(Arg (Arg'First + LSwitch'Length .. Arg'Last)));
+            end if;
+         end;
+      end loop;
+   end Add_Rpath_From_Arguments;
 
    --------------------------
    -- Build_Global_Archive --
@@ -1354,15 +1392,12 @@ package body Gprbuild.Link is
       for Npath in 1 .. Rpaths.Last loop
          declare
             Insensitive_Path : String :=
-              Normalize_Pathname
-                (Rpaths.Table (Npath).all,
-                 Resolve_Links  => Opt.Follow_Links_For_Dirs,
-                 Case_Sensitive => False);
+                                 Normalize_Pathname
+                                   (Rpaths.Table (Npath).all,
+                                    Case_Sensitive => False);
 
-            Path : String :=
-              Normalize_Pathname
-                (Rpaths.Table (Npath).all,
-                 Resolve_Links => Opt.Follow_Links_For_Dirs);
+            --  No need to normalize: it's done already in Add_Rpath
+            Path : String := Rpaths.Table (Npath).all;
 
          begin
             --  Replace all directory separators with '/' to ease search
@@ -1529,87 +1564,83 @@ package body Gprbuild.Link is
 
       procedure Add_Run_Path_Options is
       begin
-         if Opt.Run_Path_Option
-           and then Main_Proj.Config.Run_Path_Option /= No_Name_List
-         then
-            for J in 1 .. Path_Options.Last loop
-               Add_Rpath (Path_Options.Table (J).all);
-               Add_Rpath (Shared_Libgcc_Dir (Path_Options.Table (J).all));
-            end loop;
+         for J in 1 .. Path_Options.Last loop
+            Add_Rpath (Path_Options.Table (J).all);
+            Add_Rpath (Shared_Libgcc_Dir (Path_Options.Table (J).all));
+         end loop;
 
-            if Rpaths.Last > 0 then
-               declare
-                  Nam_Nod : Name_Node :=
-                    Main_File.Tree.Shared.Name_Lists.Table
-                      (Main_Proj.Config.Run_Path_Option);
-                  Length  : Natural := 0;
-                  Arg     : String_Access := null;
-               begin
-                  if Main_Proj.Config.Run_Path_Origin /= No_Name
-                    and then
-                      Get_Name_String (Main_Proj.Config.Run_Path_Origin) /= ""
-                  then
-                     Rpaths_Relative_To
-                       (Main_Proj.Exec_Directory.Display_Name,
-                        Main_Proj.Config.Run_Path_Origin);
-                  end if;
+         if Rpaths.Last > 0 then
+            declare
+               Nam_Nod : Name_Node :=
+                           Main_File.Tree.Shared.Name_Lists.Table
+                             (Main_Proj.Config.Run_Path_Option);
+               Length  : Natural := 0;
+               Arg     : String_Access := null;
+            begin
+               if Main_Proj.Config.Run_Path_Origin /= No_Name
+                 and then
+                   Get_Name_String (Main_Proj.Config.Run_Path_Origin) /= ""
+               then
+                  Rpaths_Relative_To
+                    (Main_Proj.Exec_Directory.Display_Name,
+                     Main_Proj.Config.Run_Path_Origin);
+               end if;
 
-                  if Main_Proj.Config.Separate_Run_Path_Options then
-                     for J in 1 .. Rpaths.Last loop
-                        Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                          (Main_Proj.Config.Run_Path_Option);
-                        while Nam_Nod.Next /= No_Name_List loop
-                           Add_Argument
-                             (Get_Name_String (Nam_Nod.Name), True);
-                           Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                             (Nam_Nod.Next);
-                        end loop;
-
-                        Get_Name_String (Nam_Nod.Name);
-                        Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
-                        Add_Argument
-                          (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
-                     end loop;
-
-                  else
+               if Main_Proj.Config.Separate_Run_Path_Options then
+                  for J in 1 .. Rpaths.Last loop
+                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                       (Main_Proj.Config.Run_Path_Option);
                      while Nam_Nod.Next /= No_Name_List loop
-                        Add_Argument (Get_Name_String (Nam_Nod.Name), True);
+                        Add_Argument
+                          (Get_Name_String (Nam_Nod.Name), True);
                         Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
                           (Nam_Nod.Next);
                      end loop;
 
-                     --  Compute the length of the argument
-
                      Get_Name_String (Nam_Nod.Name);
-                     Length := Name_Len;
+                     Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
+                     Add_Argument
+                       (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
+                  end loop;
 
-                     for J in 1 .. Rpaths.Last loop
-                        Length := Length + Rpaths.Table (J)'Length + 1;
-                     end loop;
+               else
+                  while Nam_Nod.Next /= No_Name_List loop
+                     Add_Argument (Get_Name_String (Nam_Nod.Name), True);
+                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                       (Nam_Nod.Next);
+                  end loop;
 
-                     Length := Length - 1;
+                  --  Compute the length of the argument
 
-                     --  Create the argument
+                  Get_Name_String (Nam_Nod.Name);
+                  Length := Name_Len;
 
-                     Arg := new String (1 .. Length);
-                     Length := Name_Len;
-                     Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
+                  for J in 1 .. Rpaths.Last loop
+                     Length := Length + Rpaths.Table (J)'Length + 1;
+                  end loop;
 
-                     for J in 1 .. Rpaths.Last loop
-                        if J /= 1 then
-                           Length := Length + 1;
-                           Arg (Length) := ':';
-                        end if;
+                  Length := Length - 1;
 
-                        Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
-                          := Rpaths.Table (J).all;
-                        Length := Length + Rpaths.Table (J)'Length;
-                     end loop;
+                  --  Create the argument
 
-                     Add_Argument (Arg, Opt.Verbose_Mode);
-                  end if;
-               end;
-            end if;
+                  Arg := new String (1 .. Length);
+                  Length := Name_Len;
+                  Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
+
+                  for J in 1 .. Rpaths.Last loop
+                     if J /= 1 then
+                        Length := Length + 1;
+                        Arg (Length) := ':';
+                     end if;
+
+                     Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
+                       := Rpaths.Table (J).all;
+                     Length := Length + Rpaths.Table (J)'Length;
+                  end loop;
+
+                  Add_Argument (Arg, Opt.Verbose_Mode);
+               end if;
+            end;
          end if;
       end Add_Run_Path_Options;
 
@@ -2595,49 +2626,15 @@ package body Gprbuild.Link is
                Arg := Arg - 1;
                exit when Arg = 0;
             end loop;
-
-            --  If -shared-libgcc was the last switch, then put in the
-            --  run path option the shared libgcc dir.
-
-            if Dash_Shared_Libgcc
-              and then Opt.Run_Path_Option
-              and then Main_Proj.Config.Run_Path_Option /= No_Name_List
-            then
-               --  Look for the adalib directory in -L switches.
-               --  If it is found, then add the shared libgcc
-               --  directory to the run path option.
-
-               for J in 1 .. Last_Argument loop
-                  declare
-                     Option : String (1 .. Arguments (J)'Length);
-                     Last   : Natural := Option'Last;
-
-                  begin
-                     Option := Arguments (J).all;
-
-                     if Last > 2 and then Option (1 .. 2) = "-L" then
-                        if Option (Last) = '/'
-                          or else Option (Last) = Directory_Separator
-                        then
-                           Last := Last - 1;
-                        end if;
-
-                        if Last > 10
-                          and then Option (Last - 5 .. Last) = "adalib"
-                        then
-                           Add_Rpath
-                             (Shared_Libgcc_Dir (Option (3 .. Last)));
-                           exit;
-                        end if;
-                     end if;
-                  end;
-               end loop;
-            end if;
          end;
 
          --  Add the run path option, if necessary
-
-         Add_Run_Path_Options;
+         if Opt.Run_Path_Option
+           and then Main_Proj.Config.Run_Path_Option /= No_Name_List
+         then
+            Add_Rpath_From_Arguments (Main_Proj);
+            Add_Run_Path_Options;
+         end if;
 
          --  Add the map file option, if supported and requested
 
