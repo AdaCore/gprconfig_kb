@@ -904,49 +904,8 @@
        <compiler name="GNAT" />
     </compilers>
     <targets>
-       <target name="linux" />
+       <target name="linux" except="androideabi" />
        <target name="^.*qnx[0-9]*$" />
-    </targets>
-    <config>
-   Target_Name := project'Target;
-   case Target_Name is
-      when "arm-android" | "arm-linux-androideabi" =>
-         null;
-      when others =>
-         for Library_Partial_Linker use
-               ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
-   end case;
-    </config>
-  </configuration>
-
-  <configuration>
-    <compilers negate="true">
-       <compiler name="GNAT" />
-    </compilers>
-    <compilers>
-       <compiler name="GCC" />
-    </compilers>
-    <targets>
-       <target name="linux" />
-       <target name="^.*qnx[0-9]*$" />
-    </targets>
-    <config>
-   Target_Name := project'Target;
-   case Target_Name is
-      when "arm-android" | "arm-linux-androideabi" =>
-         null;
-      when others =>
-         for Library_Partial_Linker use
-               ("${PATH(c)}${PREFIX(c)}gcc", "-nostdlib", "-Wl,-r", "-o");
-   end case;
-    </config>
-  </configuration>
-
-  <configuration>
-    <compilers>
-       <compiler name="GNAT" />
-    </compilers>
-    <targets>
        <target name="darwin" />
        <target name="mingw" />
     </targets>
@@ -964,6 +923,8 @@
        <compiler name="GCC" />
     </compilers>
     <targets>
+       <target name="linux" except="androideabi" />
+       <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
        <target name="mingw" />
     </targets>
@@ -1092,22 +1053,6 @@
       for Response_File_Format    use "object_list";
       for Response_File_Switches  use ("-Wl,-input,");
    end Linker;
-    </config>
-  </configuration>
-
-  <!--  VMS -->
-  <configuration>
-    <compilers><compiler name="GNAT" /></compilers>
-    <targets>
-      <target name="^.*vms.*$" />
-    </targets>
-    <config>
-   for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
-   for Library_Support  use "full";
-   for Shared_Library_Prefix use "lib";
-   for Shared_Library_Suffix use ".exe";
-   for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
-   for Library_Auto_Init_Supported use "true";
     </config>
   </configuration>
 
