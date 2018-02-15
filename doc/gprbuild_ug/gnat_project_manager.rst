@@ -1164,13 +1164,20 @@ file is used:
   use :envvar:`GPR_PROJECT_PATH_FILE` or :envvar:`GPR_PROJECT_PATH`.
 
 * Finally, it is searched relative to the default project directories.
-  Such directories depend on the tool used. The locations searched in the
-  specified order are:
+  The following locations are searched, in the specified order:
 
-  * :file:`<prefix>/<target>/lib/gnat` if option :option:`--target` is specified
-  * :file:`<prefix>/<target>/share/gpr` if option :option:`--target` is specified
-  * :file:`<prefix>/share/gpr/`
-  * :file:`<prefix>/lib/gnat/`
+  * :file:`<compiler_prefix>/<target>/<runtime>/share/gpr`
+  * :file:`<compiler_prefix>/<target>/<runtime>/lib/gnat`
+  * :file:`<compiler_prefix>/<target>/share/gpr`
+  * :file:`<compiler_prefix>/<target>/lib/gnat`
+  * :file:`<compiler_prefix>/share/gpr/`
+  * :file:`<compiler_prefix>/lib/gnat/`
+
+The first two paths are only added if the explicit runtime is specified either
+via :option:`--RTS` switch or via ``Runtime`` attribute. <target> can be
+communicated via :option:`--target` switch or ``Target`` attribute, otherwise
+default target will be used. <compiler_prefix> is typically discovered
+automatically based on target, runtime and language information.
 
 In our example, :file:`gtkada.gpr` is found in the predefined directory if
 it was installed at the same root as GNAT.
