@@ -4215,7 +4215,9 @@ package body GPR.Nmsc is
 
             pragma Assert (Lib_Version.Kind = Single);
 
-            if Lib_Version.Value = Empty_String then
+            if Lib_Version.Value = Empty_String or else
+              not Project.Config.Symbolic_Link_Supported
+            then
                Debug_Output ("no library version specified");
 
             else
