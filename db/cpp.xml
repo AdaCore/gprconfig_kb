@@ -5,10 +5,10 @@
 
    <configuration>
      <compilers>
-        <compiler name="G++" language="C++" />
-        <compiler name="G++_Pro" language="C++" />
-        <compiler name="GCC-CYGMING" language="C++" />
-       <compiler name="GCC-MINGW32" language="C++" />
+        <compiler name="^G\+\+$" language="C++" />
+        <compiler name="^G\+\+_Pro$" language="C++" />
+        <compiler name="^GCC-CYGMING$" language="C++" />
+       <compiler name="^GCC-MINGW32$" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -19,17 +19,17 @@
 
    <configuration>
      <compilers>
-        <compiler name="G++-WRS653-PPC" language="C++" />
-        <compiler name="G++-WRS653-E500V2" language="C++" />
-        <compiler name="G++-WRS5" language="C++" />
-        <compiler name="G++-WRS6" language="C++" />
-        <compiler name="G++-WRS6E500V2" language="C++" />
-        <compiler name="G++-WRS6CERT" language="C++" />
-        <compiler name="G++-WRS6CERTE500V2" language="C++" />
-        <compiler name="G++-WRS7ARM" language="C++" />
-        <compiler name="G++-WRS7E500V2" language="C++" />
-        <compiler name="G++-WRS7PPC" language="C++" />
-        <compiler name="G++-WRS7X86" language="C++" />
+        <compiler name="^G\+\+-WRS653-PPC$" language="C++" />
+        <compiler name="^G\+\+-WRS653-E500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS5$" language="C++" />
+        <compiler name="^G\+\+-WRS6$" language="C++" />
+        <compiler name="^G\+\+-WRS6E500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS6CERT$" language="C++" />
+        <compiler name="^G\+\+-WRS6CERTE500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS7ARM$" language="C++" />
+        <compiler name="^G\+\+-WRS7E500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS7PPC$" language="C++" />
+        <compiler name="^G\+\+-WRS7X86$" language="C++" />
     </compilers>
      <config>
    package Compiler is
@@ -40,7 +40,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="DIABC-PPC64" language="C++" />
+       <compiler name="^DIABC-PPC64$" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -51,20 +51,20 @@
 
    <configuration>
      <compilers>
-        <compiler name="G++" language="C++" />
-        <compiler name="G++_Pro" language="C++" />
-        <compiler name="G++-WRS653-PPC" language="C++" />
-        <compiler name="G++-WRS653-E500V2" language="C++" />
-        <compiler name="G++-WRS6" language="C++" />
-        <compiler name="G++-WRS6E500V2" language="C++" />
-        <compiler name="G++-WRS6CERT" language="C++" />
-        <compiler name="G++-WRS6CERTE500V2" language="C++" />
-        <compiler name="G++-WRS7ARM" language="C++" />
-        <compiler name="G++-WRS7E500V2" language="C++" />
-        <compiler name="G++-WRS7PPC" language="C++" />
-        <compiler name="G++-WRS7X86" language="C++" />
-        <compiler name="GCC-CYGMING" language="C++" />
-       <compiler name="GCC-MINGW32" language="C++" />
+        <compiler name="^G\+\+$" language="C++" />
+        <compiler name="^G\+\+_Pro$" language="C++" />
+        <compiler name="^G\+\+-WRS653-PPC$" language="C++" />
+        <compiler name="^G\+\+-WRS653-E500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS6$" language="C++" />
+        <compiler name="^G\+\+-WRS6E500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS6CERT$" language="C++" />
+        <compiler name="^G\+\+-WRS6CERTE500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS7ARM$" language="C++" />
+        <compiler name="^G\+\+-WRS7E500V2$" language="C++" />
+        <compiler name="^G\+\+-WRS7PPC$" language="C++" />
+        <compiler name="^G\+\+-WRS7X86$" language="C++" />
+        <compiler name="^GCC-CYGMING$" language="C++" />
+       <compiler name="^GCC-MINGW32$" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -81,7 +81,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="DIABC-PPC64" language="C++" />
+       <compiler name="^DIABC-PPC64$" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -108,7 +108,7 @@
    <!-- G++-WRS5 does not support -MF switch -->
    <configuration>
      <compilers>
-        <compiler name="G++-WRS5" language="C++" />
+        <compiler name="^G\+\+-WRS5$" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -125,8 +125,8 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++" language="C++" />
-       <compiler name="G++_Pro" language="C++" />
+       <compiler name="^G\+\+$" language="C++" />
+       <compiler name="^G\+\+_Pro$" language="C++" />
      </compilers>
      <targets negate="true">
        <target name="^.*LynxOS.*$" />
@@ -145,7 +145,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-CYGMING" language="C++" />
+       <compiler name="^GCC-CYGMING$" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -157,12 +157,12 @@
 
    <!-- this compiler is not compatible with GNAT's default zcx runtime -->
    <configuration>
-     <compilers><compiler name="GNAT" runtime="default" /></compilers>
+     <compilers><compiler name="^GNAT$" runtime="default" /></compilers>
      <compilers>
-       <compiler name="GCC-CYGMING" language="C++" />
-       <compiler name="GCC-CYGMING" language="Fortran" />
-       <compiler name="GCC-MINGW32" language="C++" />
-       <compiler name="GCC-MINGW32" language="Fortran" />
+       <compiler name="^GCC-CYGMING$" language="C++" />
+       <compiler name="^GCC-CYGMING$" language="Fortran" />
+       <compiler name="^GCC-MINGW32$" language="C++" />
+       <compiler name="^GCC-MINGW32$" language="Fortran" />
      </compilers>
      <config></config>
    </configuration>
@@ -171,11 +171,11 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS7ARM" runtime="^kernel$" />
-       <compiler name="G++-WRS7PPC" runtime="^kernel$" />
-       <compiler name="G++-WRS7E500V2" runtime="^kernel$" />
-       <compiler name="G++-WRS7X86" runtime="^kernel$" />
-       <compiler name="DIABC-PPC64" runtime="^kernel$" />
+       <compiler name="^G\+\+-WRS7ARM$" runtime="^kernel$" />
+       <compiler name="^G\+\+-WRS7PPC$" runtime="^kernel$" />
+       <compiler name="^G\+\+-WRS7E500V2$" runtime="^kernel$" />
+       <compiler name="^G\+\+-WRS7X86$" runtime="^kernel$" />
+       <compiler name="^DIABC-PPC64$" runtime="^kernel$" />
      </compilers>
      <config>
    package Compiler is
@@ -192,10 +192,10 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS7ARM" runtime="^rtp$" />
-       <compiler name="G++-WRS7PPC" runtime="^rtp$" />
-       <compiler name="G++-WRS7E500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS7X86" runtime="^rtp$" />
+       <compiler name="^G\+\+-WRS7ARM$" runtime="^rtp$" />
+       <compiler name="^G\+\+-WRS7PPC$" runtime="^rtp$" />
+       <compiler name="^G\+\+-WRS7E500V2$" runtime="^rtp$" />
+       <compiler name="^G\+\+-WRS7X86$" runtime="^rtp$" />
      </compilers>
      <config>
    package Compiler is
@@ -211,10 +211,10 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS7ARM" />
-       <compiler name="G++-WRS7E500V2" />
-       <compiler name="G++-WRS7PPC" />
-       <compiler name="G++-WRS7X86" />
+       <compiler name="^G\+\+-WRS7ARM$" />
+       <compiler name="^G\+\+-WRS7E500V2$" />
+       <compiler name="^G\+\+-WRS7PPC$" />
+       <compiler name="^G\+\+-WRS7X86$" />
      </compilers>
      <config>
    package Compiler is
@@ -229,7 +229,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="DIABC-PPC64" />
+       <compiler name="^DIABC-PPC64$" />
      </compilers>
      <config>
    package Compiler is
@@ -244,7 +244,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS7ARM" />
+       <compiler name="^G\+\+-WRS7ARM$" />
      </compilers>
      <config>
    package Compiler is
@@ -260,7 +260,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS7E500V2" />
+       <compiler name="^G\+\+-WRS7E500V2$" />
      </compilers>
      <config>
    package Compiler is
@@ -276,7 +276,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS7PPC" />
+       <compiler name="^G\+\+-WRS7PPC$" />
      </compilers>
      <config>
    package Compiler is

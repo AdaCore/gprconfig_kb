@@ -11,19 +11,19 @@
 
 <!ENTITY if_these_c_compilers
     '<compilers>
-       <compiler name="GCC_Pro" />
-       <compiler name="GCC-WRS7E500V2" />
+       <compiler name="^GCC_Pro$" />
+       <compiler name="^GCC-WRS7E500V2$" />
      </compilers>'>
 
 <!ENTITY if_these_cpp_compilers
     '<compilers>
-       <compiler name="G++-WRS7E500V2" />
+       <compiler name="^G\+\+-WRS7E500V2$" />
      </compilers>'>
 
 <!ENTITY if_these_gnu_wrs_compilers
     '<compilers>
-       <compiler name="G++-WRS7E500V2" />
-       <compiler name="GCC-WRS7E500V2" />
+       <compiler name="^G\+\+-WRS7E500V2$" />
+       <compiler name="^GCC-WRS7E500V2$" />
      </compilers>'>
 
 <!ENTITY this_wrs_rtp_base '0x80000000'>
