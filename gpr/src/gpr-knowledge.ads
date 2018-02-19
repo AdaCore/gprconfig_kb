@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2006-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -478,6 +478,7 @@ private
 
    type Compiler_Filter is record
       Name        : Name_Id;
+      Name_Re     : Pattern_Matcher_Access;
       Version     : Name_Id;
       Version_Re  : Pattern_Matcher_Access;
       Runtime     : Name_Id;

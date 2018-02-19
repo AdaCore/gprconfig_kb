@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE gprconfig [
-  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /><compiler name="GNAT_DOTNET" /><compiler name="GNAT_CODEPEER" /><compiler name="GNAT_C" /></compilers>'>
+  <!ENTITY filter_gnat '<compilers><compiler name="^GNAT$" /><compiler name="^GNAT_DOTNET$" /><compiler name="^GNAT_CODEPEER$" /><compiler name="^GNAT_C$" /></compilers>'>
 ] >
 
 <gprconfig>
@@ -8,7 +8,7 @@
   <!--  GNAAMP -->
   <configuration>
    <compilers>
-    <compiler name="GNAAMP" />
+    <compiler name="^GNAAMP$" />
    </compilers>
    <config>
    package Compiler is
@@ -87,7 +87,7 @@
   <!-- DOTNET -->
   <configuration>
    <compilers>
-    <compiler name="GNAT_DOTNET"/>
+    <compiler name="^GNAT_DOTNET$"/>
    </compilers>
    <config>
    package Compiler is
@@ -100,7 +100,7 @@
   <!-- C Target -->
   <configuration>
    <compilers>
-     <compiler name="GNAT_C"/>
+     <compiler name="^GNAT_C$"/>
    </compilers>
    <config>
    package Compiler is
@@ -117,7 +117,7 @@
   <!-- Add -m32 on linux and windows 64bits hosts for C target -->
   <configuration>
    <compilers>
-     <compiler name="GNAT_C"/>
+     <compiler name="^GNAT_C$"/>
    </compilers>
    <hosts>
      <host name="^x86_64-.*linux.*$" />
@@ -260,8 +260,8 @@
   <!-- add switch __RTS= to the compiler and binder for GNAT, if not default -->
   <configuration>
    <compilers>
-     <compiler name="GNAT" />
-     <compiler name="GNAT_CODEPEER" />
+     <compiler name="^GNAT$" />
+     <compiler name="^GNAT_CODEPEER$" />
    </compilers>
    <compilers negate="true">
      <compiler runtime="default" />
@@ -281,8 +281,8 @@
 
   <configuration>
    <compilers>
-     <compiler name="GNAT_DOTNET" runtime="compact" />
-     <compiler name="GNAT_DOTNET" runtime="silverlight" />
+     <compiler name="^GNAT_DOTNET$" runtime="compact" />
+     <compiler name="^GNAT_DOTNET$" runtime="silverlight" />
    </compilers>
    <config>
    package Compiler is
@@ -300,7 +300,7 @@
   <!-- add compiler option -msoft-float when the runtime is soft-float -->
   <configuration>
    <compilers>
-     <compiler name="GNAT" runtime="soft-float" />
+     <compiler name="^GNAT$" runtime="soft-float" />
    </compilers>
    <config>
    package Compiler is

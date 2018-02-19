@@ -185,10 +185,10 @@
 
   <!ENTITY if_ada_rtp
     '<compilers>
-      <compiler name="GNAT" runtime="^rtp$" />
-      <compiler name="GNAT" runtime="-rtp$" />
-      <compiler name="GNAT" runtime="^rtp-" />
-      <compiler name="GNAT" runtime="-rtp-" />
+      <compiler name="^GNAT$" runtime="^rtp$" />
+      <compiler name="^GNAT$" runtime="-rtp$" />
+      <compiler name="^GNAT$" runtime="^rtp-" />
+      <compiler name="^GNAT$" runtime="-rtp-" />
      </compilers>'
   >
 

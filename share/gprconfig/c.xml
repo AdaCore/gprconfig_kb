@@ -5,12 +5,12 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" />
-       <compiler name="GCC_Pro" language="C" />
-       <compiler name="GCC-28" language="C" />
-       <compiler name="GCC-CYGMING" language="C" />
-       <compiler name="GCC-SYSGO-X86" language="C" />
-       <compiler name="GCC-SYSGO-PPC" language="C" />
+       <compiler name="^GCC$" language="C" />
+       <compiler name="^GCC_Pro$" language="C" />
+       <compiler name="^GCC-28$" language="C" />
+       <compiler name="^GCC-CYGMING$" language="C" />
+       <compiler name="^GCC-SYSGO-X86$" language="C" />
+       <compiler name="^GCC-SYSGO-PPC$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -21,7 +21,7 @@
 
    <configuration>
      <compilers>
-        <compiler name="GCC-MINGW32" language="C" />
+        <compiler name="^GCC-MINGW32$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -32,18 +32,18 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS5" language="C" />
-       <compiler name="GCC-WRS6" language="C" />
-       <compiler name="GCC-WRS6CERT" language="C" />
-       <compiler name="GCC-WRS6CERTE500V2" language="C" />
-       <compiler name="GCC-WRS6E500V2" language="C" />
-       <compiler name="GCC-WRS653-PPC" language="C" />
-       <compiler name="GCC-WRS653-E500V2" language="C" />
-       <compiler name="GCC-WRS7ARM" language="C" />
-       <compiler name="GCC-WRS7E500V2" language="C" />
-       <compiler name="GCC-WRS7PPC" language="C" />
-       <compiler name="GCC-WRS7X86" language="C" />
-       <compiler name="GCC-WRS7X86_64" language="C" />
+       <compiler name="^GCC-WRS5$" language="C" />
+       <compiler name="^GCC-WRS6$" language="C" />
+       <compiler name="^GCC-WRS6CERT$" language="C" />
+       <compiler name="^GCC-WRS6CERTE500V2$" language="C" />
+       <compiler name="^GCC-WRS6E500V2$" language="C" />
+       <compiler name="^GCC-WRS653-PPC$" language="C" />
+       <compiler name="^GCC-WRS653-E500V2$" language="C" />
+       <compiler name="^GCC-WRS7ARM$" language="C" />
+       <compiler name="^GCC-WRS7E500V2$" language="C" />
+       <compiler name="^GCC-WRS7PPC$" language="C" />
+       <compiler name="^GCC-WRS7X86$" language="C" />
+       <compiler name="^GCC-WRS7X86_64$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -54,8 +54,8 @@
 
    <configuration>
      <compilers>
-       <compiler name="DIABC-PPC" language="C" />
-       <compiler name="DIABC-PPC64" language="C" />
+       <compiler name="^DIABC-PPC$" language="C" />
+       <compiler name="^DIABC-PPC64$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -66,7 +66,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="LLVM" language="C" />
+       <compiler name="^LLVM$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -77,26 +77,26 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" />
-       <compiler name="GCC_Pro" language="C" />
-       <compiler name="GCC-28" language="C" />
-       <compiler name="GCC-CYGMING" language="C" />
-       <compiler name="GCC-MINGW32" language="C" />
-       <compiler name="GCC-SYSGO-X86" language="C" />
-       <compiler name="GCC-SYSGO-PPC" language="C" />
-       <compiler name="GCC-WRS5" language="C" />
-       <compiler name="GCC-WRS6" language="C" />
-       <compiler name="GCC-WRS6E500V2" language="C" />
-       <compiler name="GCC-WRS6CERT" language="C" />
-       <compiler name="GCC-WRS6CERTE500V2" language="C" />
-       <compiler name="GCC-WRS653-PPC" language="C" />
-       <compiler name="GCC-WRS653-E500V2" language="C" />
-       <compiler name="GCC-WRS7ARM" language="C" />
-       <compiler name="GCC-WRS7E500V2" language="C" />
-       <compiler name="GCC-WRS7PPC" language="C" />
-       <compiler name="GCC-WRS7X86" language="C" />
-       <compiler name="GCC-WRS7X86_64" language="C" />
-       <compiler name="LLVM" language="C" />
+       <compiler name="^GCC$" language="C" />
+       <compiler name="^GCC_Pro$" language="C" />
+       <compiler name="^GCC-28$" language="C" />
+       <compiler name="^GCC-CYGMING$" language="C" />
+       <compiler name="^GCC-MINGW32$" language="C" />
+       <compiler name="^GCC-SYSGO-X86$" language="C" />
+       <compiler name="^GCC-SYSGO-PPC$" language="C" />
+       <compiler name="^GCC-WRS5$" language="C" />
+       <compiler name="^GCC-WRS6$" language="C" />
+       <compiler name="^GCC-WRS6E500V2$" language="C" />
+       <compiler name="^GCC-WRS6CERT$" language="C" />
+       <compiler name="^GCC-WRS6CERTE500V2$" language="C" />
+       <compiler name="^GCC-WRS653-PPC$" language="C" />
+       <compiler name="^GCC-WRS653-E500V2$" language="C" />
+       <compiler name="^GCC-WRS7ARM$" language="C" />
+       <compiler name="^GCC-WRS7E500V2$" language="C" />
+       <compiler name="^GCC-WRS7PPC$" language="C" />
+       <compiler name="^GCC-WRS7X86$" language="C" />
+       <compiler name="^GCC-WRS7X86_64$" language="C" />
+       <compiler name="^LLVM$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -115,8 +115,8 @@
    -->
    <configuration>
      <compilers>
-       <compiler name="GCC-28" language="C" />
-       <compiler name="GCC-WRS5" language="C" />
+       <compiler name="^GCC-28$" language="C" />
+       <compiler name="^GCC-WRS5$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -127,20 +127,20 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" />
-       <compiler name="GCC_Pro" language="C" />
-       <compiler name="GCC-CYGMING" language="C" />
-       <compiler name="GCC-MINGW32" language="C" />
-       <compiler name="GCC-WRS6" language="C" />
-       <compiler name="GCC-WRS6E500V2" language="C" />
-       <compiler name="GCC-WRS6CERT" language="C" />
-       <compiler name="GCC-WRS6CERTE500V2" language="C" />
-       <compiler name="GCC-WRS653-PPC" language="C" />
-       <compiler name="GCC-WRS653-E500V2" language="C" />
-       <compiler name="GCC-WRS7X86" language="C" />
-       <compiler name="GCC-WRS7X86_64" language="C" />
-       <compiler name="GCC-WRS7PPC" language="C" />
-       <compiler name="GCC-WRS7E500V2" language="C" />
+       <compiler name="^GCC$" language="C" />
+       <compiler name="^GCC_Pro$" language="C" />
+       <compiler name="^GCC-CYGMING$" language="C" />
+       <compiler name="^GCC-MINGW32$" language="C" />
+       <compiler name="^GCC-WRS6$" language="C" />
+       <compiler name="^GCC-WRS6E500V2$" language="C" />
+       <compiler name="^GCC-WRS6CERT$" language="C" />
+       <compiler name="^GCC-WRS6CERTE500V2$" language="C" />
+       <compiler name="^GCC-WRS653-PPC$" language="C" />
+       <compiler name="^GCC-WRS653-E500V2$" language="C" />
+       <compiler name="^GCC-WRS7X86$" language="C" />
+       <compiler name="^GCC-WRS7X86_64$" language="C" />
+       <compiler name="^GCC-WRS7PPC$" language="C" />
+       <compiler name="^GCC-WRS7E500V2$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -151,7 +151,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="DIABC-PPC" language="C" />
+       <compiler name="^DIABC-PPC$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -166,7 +166,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="DIABC-PPC64" language="C" />
+       <compiler name="^DIABC-PPC64$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -194,9 +194,9 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" />
-       <compiler name="GCC_Pro" language="C" />
-       <compiler name="GCC-28" language="C" />
+       <compiler name="^GCC$" language="C" />
+       <compiler name="^GCC_Pro$" language="C" />
+       <compiler name="^GCC-28$" language="C" />
      </compilers>
      <targets negate="true">
        <target name="^.*LynxOS.*$" />
@@ -215,7 +215,7 @@
    <!-- for cygming we make sure that the option -mno-cygwin is used -->
    <configuration>
      <compilers>
-       <compiler name="GCC-CYGMING" language="C" />
+       <compiler name="^GCC-CYGMING$" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -229,12 +229,12 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS7ARM" runtime="^kernel$" />
-       <compiler name="GCC-WRS7PPC" runtime="^kernel$" />
-       <compiler name="GCC-WRS7E500V2" runtime="^kernel$" />
-       <compiler name="GCC-WRS7X86" runtime="^kernel$" />
-       <compiler name="GCC-WRS7X86_64" runtime="^kernel$" />
-       <compiler name="DIABC-PPC64" runtime="^kernel$" />
+       <compiler name="^GCC-WRS7ARM$" runtime="^kernel$" />
+       <compiler name="^GCC-WRS7PPC$" runtime="^kernel$" />
+       <compiler name="^GCC-WRS7E500V2$" runtime="^kernel$" />
+       <compiler name="^GCC-WRS7X86$" runtime="^kernel$" />
+       <compiler name="^GCC-WRS7X86_64$" runtime="^kernel$" />
+       <compiler name="^DIABC-PPC64$" runtime="^kernel$" />
      </compilers>
      <config>
    package Compiler is
@@ -251,7 +251,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC_Pro" runtime="^rtp$" />
+       <compiler name="^GCC_Pro$" runtime="^rtp$" />
      </compilers>
      <config>
    package Compiler is
@@ -263,11 +263,11 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS7ARM" runtime="^rtp$" />
-       <compiler name="GCC-WRS7PPC" runtime="^rtp$" />
-       <compiler name="GCC-WRS7E500V2" runtime="^rtp$" />
-       <compiler name="GCC-WRS7X86" runtime="^rtp$" />
-       <compiler name="GCC-WRS7X86_64" runtime="^rtp$" />
+       <compiler name="^GCC-WRS7ARM$" runtime="^rtp$" />
+       <compiler name="^GCC-WRS7PPC$" runtime="^rtp$" />
+       <compiler name="^GCC-WRS7E500V2$" runtime="^rtp$" />
+       <compiler name="^GCC-WRS7X86$" runtime="^rtp$" />
+       <compiler name="^GCC-WRS7X86_64$" runtime="^rtp$" />
      </compilers>
      <config>
    package Compiler is
@@ -283,11 +283,11 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS7ARM" />
-       <compiler name="GCC-WRS7E500V2" />
-       <compiler name="GCC-WRS7PPC" />
-       <compiler name="GCC-WRS7X86" />
-       <compiler name="GCC-WRS7X86_64" />
+       <compiler name="^GCC-WRS7ARM$" />
+       <compiler name="^GCC-WRS7E500V2$" />
+       <compiler name="^GCC-WRS7PPC$" />
+       <compiler name="^GCC-WRS7X86$" />
+       <compiler name="^GCC-WRS7X86_64$" />
      </compilers>
      <config>
    package Compiler is
@@ -302,7 +302,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="DIABC-PPC64" />
+       <compiler name="^DIABC-PPC64$" />
      </compilers>
      <config>
    package Compiler is
@@ -317,7 +317,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS7X86_64" />
+       <compiler name="^GCC-WRS7X86_64$" />
      </compilers>
      <config>
    package Compiler is
@@ -330,7 +330,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS7ARM" />
+       <compiler name="^GCC-WRS7ARM$" />
      </compilers>
      <config>
    package Compiler is
@@ -346,7 +346,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS7E500V2" />
+       <compiler name="^GCC-WRS7E500V2$" />
      </compilers>
      <config>
    package Compiler is
@@ -362,7 +362,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS7PPC" />
+       <compiler name="^GCC-WRS7PPC$" />
      </compilers>
      <config>
    package Compiler is

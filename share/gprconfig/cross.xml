@@ -99,7 +99,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS5" />
+       <compiler name="^GCC-WRS5$" />
      </compilers>
      <targets>
        <target name="^powerpc-wrs-vxworks.*$" />
@@ -116,7 +116,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS5" />
+       <compiler name="^G\+\+-WRS5$" />
      </compilers>
      <targets>
        <target name="^powerpc-wrs-vxworks.*$" />
@@ -133,11 +133,11 @@
 
    <configuration>
      <compilers>
-       <compiler name="GNAT"/>
-       <compiler name="GCC"/>
-       <compiler name="GCC-SYSGO-X86"/>
-       <compiler name="GCC-SYSGO-PPC"/>
-       <compiler name="G++"/>
+       <compiler name="^GNAT$"/>
+       <compiler name="^GCC$"/>
+       <compiler name="^GCC-SYSGO-X86$"/>
+       <compiler name="^GCC-SYSGO-PPC$"/>
+       <compiler name="^G\+\+$"/>
      </compilers>
      <targets>
        <target name="^.*-sysgo-pikeos$" />
@@ -161,8 +161,8 @@
    <!-- require specification of run-time for VxWorks 5 using GNAT for C -->
    <configuration>
      <compilers>
-       <compiler name="GCC" runtime="^soft-float$" />
-       <compiler name="GCC-WRS5" runtime="^soft-float$" />
+       <compiler name="^GCC$" runtime="^soft-float$" />
+       <compiler name="^GCC-WRS5$" runtime="^soft-float$" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworks$" />
@@ -180,9 +180,9 @@
    <!-- require specification of run-time for VxWorks 5 using GNAT for C -->
    <configuration>
      <compilers>
-       <compiler name="GCC" runtime="^default$" />
-       <compiler name="GCC-WRS5" />
-       <compiler name="GCC-WRS5" runtime="^default$" />
+       <compiler name="^GCC$" runtime="^default$" />
+       <compiler name="^GCC-WRS5$" />
+       <compiler name="^GCC-WRS5$" runtime="^default$" />
       </compilers>
      <targets>
        <target name="^.*-wrs-vxworks$" />
@@ -199,10 +199,10 @@
    <!--  Set prefix of gnatbind -->
    <configuration>
      <compilers>
-       <compiler name="GNAT" />
-       <compiler name="GNAT_DOTNET" />
-       <compiler name="GNAT_C" />
-       <compiler name="GNAT_CODEPEER" />
+       <compiler name="^GNAT$" />
+       <compiler name="^GNAT_DOTNET$" />
+       <compiler name="^GNAT_C$" />
+       <compiler name="^GNAT_CODEPEER$" />
      </compilers>
      <config>
    package Binder is

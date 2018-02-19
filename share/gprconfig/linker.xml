@@ -876,7 +876,7 @@
 
   <configuration>
     <compilers>
-        <compiler name="G++" language="C++" />
+        <compiler name="^G\+\+$" language="C++" />
     </compilers>
     <targets>
        <target name="^i.86-.*darwin.*$" />
@@ -989,7 +989,7 @@
   <!-- Settings for Library_Partial_Linker -->
   <configuration>
     <compilers>
-       <compiler name="GNAT" />
+       <compiler name="^GNAT$" />
     </compilers>
     <targets>
        <target name="linux" except="androideabi" />
@@ -1005,10 +1005,10 @@
 
   <configuration>
     <compilers negate="true">
-       <compiler name="GNAT" />
+       <compiler name="^GNAT$" />
     </compilers>
     <compilers>
-       <compiler name="GCC" />
+       <compiler name="^GCC$" />
     </compilers>
     <targets>
        <target name="linux" except="androideabi" />
@@ -1025,7 +1025,7 @@
   <!-- Settings for Library_Rpath_Options -->
   <configuration>
     <compilers>
-        <compiler name="G++" language="C++" />
+        <compiler name="^G\+\+$" language="C++" />
     </compilers>
     <targets>
        <target name="^.*linux.*$" />
@@ -1087,7 +1087,7 @@
 
   <configuration>
     <compilers>
-        <compiler name="G++" language="C++" />
+        <compiler name="^G\+\+$" language="C++" />
     </compilers>
     <targets>
        <target name="^.*sunos.*$" />
@@ -1146,7 +1146,7 @@
 
   <!--  Cygming -->
   <configuration>
-    <compilers><compiler name="GCC-CYGMING"/></compilers>
+    <compilers><compiler name="^GCC-CYGMING$"/></compilers>
     <config>
    package Linker is
        for Required_Switches use ("-mno-cygwin");
@@ -1311,11 +1311,11 @@
        <compiler language="Ada" />
     </compilers>
     <compilers>
-       <compiler name="GCC-WRS7ARM" runtime="rtp"/>
-       <compiler name="GCC-WRS7E500V2" runtime="rtp"/>
-       <compiler name="GCC-WRS7PPC" runtime="rtp"/>
-       <compiler name="GCC-WRS7X86" runtime="rtp"/>
-       <compiler name="GCC-WRS7X86_64" runtime="rtp"/>
+       <compiler name="^GCC-WRS7ARM$" runtime="rtp"/>
+       <compiler name="^GCC-WRS7E500V2$" runtime="rtp"/>
+       <compiler name="^GCC-WRS7PPC$" runtime="rtp"/>
+       <compiler name="^GCC-WRS7X86$" runtime="rtp"/>
+       <compiler name="^GCC-WRS7X86_64$" runtime="rtp"/>
     </compilers>
     <config>
      package Linker is
@@ -1352,8 +1352,8 @@
 
   <configuration>
     <compilers>
-       <compiler name="GCC-WRS7X86_64"/>
-       <compiler name="G++-WRS7X86_64"/>
+       <compiler name="^GCC-WRS7X86_64$"/>
+       <compiler name="^G\+\+-WRS7X86_64$"/>
     </compilers>
     <config>
    package Linker is

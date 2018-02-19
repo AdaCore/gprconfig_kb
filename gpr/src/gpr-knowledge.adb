@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2006-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -915,6 +915,24 @@ package body GPR.Knowledge is
          Ignore_Config : Boolean := False;
          Negate        : Boolean;
          Filter        : Compiler_Filter;
+
+         function Compile_And_Check (Name : String) return Pattern_Matcher;
+         --  Compile pattern and report illegal regexp if needed.
+
+         function Compile_And_Check (Name : String) return Pattern_Matcher
+         is
+         begin
+            return Compile (Name, Case_Insensitive);
+         exception
+            when Expression_Error =>
+               Put_Line
+                 (Standard_Error,
+                  "gprconfig: invalid regexp '"
+                  & Name & "' in " & File
+                  & "; corresponding configuration "
+                  & "node skipped");
+               raise;
+         end Compile_And_Check;
       begin
          Config.Supported := True;
 
@@ -931,14 +949,16 @@ package body GPR.Knowledge is
 
                   elsif Node_Name (N2) = "compiler" then
                      declare
+                        Name : constant String :=
+                                    Get_Attribute (N2, "name", "");
                         Version : constant String :=
                                     Get_Attribute (N2, "version", "");
                         Runtime : constant String :=
                                     Get_Attribute (N2, "runtime", "");
                      begin
                         Filter := Compiler_Filter'
-                          (Name          => Get_String_Or_No_Name
-                             (Get_Attribute (N2, "name", "")),
+                          (Name          => Get_String_Or_No_Name (Name),
+                           Name_Re       => null,
                            Version       => Get_String_Or_No_Name (Version),
                            Version_Re    => null,
                            Runtime       => Get_String_Or_No_Name (Runtime),
@@ -946,14 +966,23 @@ package body GPR.Knowledge is
                            Language_LC   => Get_String_Or_No_Name
                              (To_Lower (Get_Attribute (N2, "language", ""))));
 
+                        --  We do not want to invalidate the whole Knowledge
+                        --  Base because of a wrong regexp. Istead, report it
+                        --  and skip corresponding <configuration> node.
+
+                        if Name /= "" then
+                           Filter.Name_Re := new Pattern_Matcher'
+                             (Compile_And_Check (Name));
+                        end if;
+
                         if Version /= "" then
                            Filter.Version_Re := new Pattern_Matcher'
-                             (Compile (Version, Case_Insensitive));
+                             (Compile_And_Check (Version));
                         end if;
 
                         if Runtime /= "" then
                            Filter.Runtime_Re := new Pattern_Matcher'
-                             (Compile (Runtime, Case_Insensitive));
+                             (Compile_And_Check (Runtime));
                         end if;
                      end;
 
@@ -1065,6 +1094,12 @@ package body GPR.Knowledge is
             Config.Config := Get_String (To_String (Chunk));
             Append (Append_To, Config);
          end if;
+
+      exception
+         when Expression_Error =>
+            null;
+            --  Proper warning message has been already emitted, so we just
+            --  skip corresponding configuration node.
       end Parse_Configuration;
 
       --------------------------------
@@ -3144,8 +3179,15 @@ package body GPR.Knowledge is
 
          if Comp.Selected
            and then (Filter.Name = No_Name
-                     or else Filter.Name = Comp.Name
-                     or else Comp.Base_Name = Filter.Name)
+                     or else
+                       (Comp.Name /= No_Name
+                        and then Match
+                          (Filter.Name_Re.all, Get_Name_String (Comp.Name)))
+                     or else
+                       (Comp.Base_Name /= No_Name
+                        and then Match
+                          (Filter.Name_Re.all,
+                           Get_Name_String (Comp.Base_Name))))
            and then
              (Filter.Version_Re = null
               or else

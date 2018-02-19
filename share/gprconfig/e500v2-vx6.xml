@@ -12,33 +12,33 @@
 
 <!ENTITY if_these_c_compilers
     '<compilers>
-       <compiler name="GCC_Pro" />
+       <compiler name="^GCC_Pro$" />
        <!--  ??? Eventually GCC_Pro will be replaced by a e500v2-vx6-specific
        definition:
-       <compiler name="E500V2-VX6-GCC-ADACORE" />
+       <compiler name="^E500V2-VX6-GCC-ADACORE$" />
        -->
-       <compiler name="E500V2-VX6-GCC-WRS" />
+       <compiler name="^E500V2-VX6-GCC-WRS$" />
      </compilers>'>
 
 <!ENTITY if_these_cpp_compilers
     '<compilers>
-       <compiler name="E500V2-VX6-G++-WRS" />
+       <compiler name="^E500V2-VX6-G\+\+-WRS$" />
      </compilers>'>
 
 <!ENTITY if_these_wrs_compilers
     '<compilers>
-       <compiler name="E500V2-VX6-G++-WRS" />
-       <compiler name="E500V2-VX6-GCC-WRS" />
-       <compiler name="GCC-WRS6CERTE500V2" />
-       <compiler name="G++-WRS6CERTE500V2" />
+       <compiler name="^E500V2-VX6-G\+\+-WRS$" />
+       <compiler name="^E500V2-VX6-GCC-WRS$" />
+       <compiler name="^GCC-WRS6CERTE500V2$" />
+       <compiler name="^G\+\+-WRS6CERTE500V2$" />
      </compilers>'>
 
 <!ENTITY if_these_gnu_wrs_compilers
     '<compilers>
-       <compiler name="E500V2-VX6-G++-WRS" />
-       <compiler name="E500V2-VX6-GCC-WRS" />
-       <compiler name="GCC-WRS6CERTE500V2" />
-       <compiler name="G++-WRS6CERTE500V2" />
+       <compiler name="^E500V2-VX6-G\+\+-WRS$" />
+       <compiler name="^E500V2-VX6-GCC-WRS$" />
+       <compiler name="^GCC-WRS6CERTE500V2$" />
+       <compiler name="^G\+\+-WRS6CERTE500V2$" />
      </compilers>'>
 
 <!ENTITY this_wrs_rtp_base '0x40000000'>

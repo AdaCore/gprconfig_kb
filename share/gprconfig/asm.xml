@@ -5,7 +5,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-ASM" language="Asm_Cpp" />
+       <compiler name="^GCC-ASM$" language="Asm_Cpp" />
      </compilers>
      <config>
    package Compiler is
@@ -23,7 +23,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-ASM" language="Asm" />
+       <compiler name="^GCC-ASM$" language="Asm" />
      </compilers>
      <config>
    package Compiler is
@@ -41,7 +41,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-ASM" language="Asm2" />
+       <compiler name="^GCC-ASM$" language="Asm2" />
      </compilers>
      <config>
    package Compiler is
