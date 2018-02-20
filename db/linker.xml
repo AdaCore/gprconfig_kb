@@ -185,6 +185,29 @@
     <targets>
       <target name="^powerpc-.*linux.*$" />
     </targets>
+    <hosts negate="true">
+      <!-- Cross compiler case -->
+      <host name="^(ppc|powerpc)-.*linux.*$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("powerpc-generic-linux-gnu-nm", "-g");
+   for Object_Lister_Matcher use " [TDRBSG] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^powerpc-.*linux.*$" />
+    </targets>
+    <hosts>
+      <!-- Native compiler case -->
+      <host name="^(ppc|powerpc)-.*linux.*$" />
+    </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
    for Object_Lister_Matcher use " [TDRBSG] (.*)";
