@@ -8081,6 +8081,7 @@ package body GPR.Nmsc is
                Error_Or_Warning
                  (Data.Flags, Data.Flags.Missing_Source_Files,
                   "Missing file name or pattern in {", Location, Project);
+               Debug_Decrease_Indent;
                return;
             end if;
 
