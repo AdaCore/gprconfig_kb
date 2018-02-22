@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -92,5 +92,17 @@ package GPR.Proc is
    procedure Set_Default_Runtime_For (Language : Name_Id; Value : String);
    --  Set the default value for the runtime of Language. To be used for the
    --  value of 'Runtime(<Language>) when Runtime (<language>) is not declared.
+
+   function Expression
+     (Project                : Project_Id;
+      Shared                 : Shared_Project_Tree_Data_Access;
+      From_Project_Node      : Project_Node_Id;
+      From_Project_Node_Tree : Project_Node_Tree_Ref;
+      Env                    : GPR.Tree.Environment;
+      Pkg                    : Package_Id;
+      First_Term             : Project_Node_Id;
+      Kind                   : Variable_Kind) return Variable_Value;
+   --  From N_Expression project node From_Project_Node, compute the value
+   --  of an expression and return it as a Variable_Value.
 
 end GPR.Proc;

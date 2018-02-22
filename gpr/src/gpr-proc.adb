@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -112,18 +112,6 @@ package body GPR.Proc is
    --  locations of all the attributes to New_Loc. When Restricted is
    --  True, do not copy attributes Body, Spec, Implementation, Specification
    --  and Linker_Options.
-
-   function Expression
-     (Project                : Project_Id;
-      Shared                 : Shared_Project_Tree_Data_Access;
-      From_Project_Node      : Project_Node_Id;
-      From_Project_Node_Tree : Project_Node_Tree_Ref;
-      Env                    : GPR.Tree.Environment;
-      Pkg                    : Package_Id;
-      First_Term             : Project_Node_Id;
-      Kind                   : Variable_Kind) return Variable_Value;
-   --  From N_Expression project node From_Project_Node, compute the value
-   --  of an expression and return it as a Variable_Value.
 
    function Imported_Or_Extended_Project_From
      (Project      : Project_Id;
