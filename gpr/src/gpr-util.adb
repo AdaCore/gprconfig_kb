@@ -515,8 +515,7 @@ package body GPR.Util is
 
       procedure Get_Suffixes
         (B_Suffix : File_Name_Type;
-         S_Suffix : File_Name_Type)
-      is
+         S_Suffix : File_Name_Type) is
       begin
          if B_Suffix /= No_File then
             Body_Suffix := Name_Id (B_Suffix);
@@ -757,8 +756,7 @@ package body GPR.Util is
      (Project_Tree   : Project_Tree_Ref;
       S              : String;
       Flush_Messages : Boolean := True;
-      No_Message     : Boolean := False)
-   is
+      No_Message     : Boolean := False) is
    begin
       if Flush_Messages and not No_Message then
          if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
@@ -777,8 +775,7 @@ package body GPR.Util is
      (Project_Tree : Project_Tree_Ref;
       Exit_Code    : Exit_Code_Type := E_Success;
       S            : String := "";
-      No_Message   : Boolean := False)
-   is
+      No_Message   : Boolean := False) is
    begin
       if not Debug.Debug_Flag_N then
          if Project_Tree = null then
@@ -1120,7 +1117,6 @@ package body GPR.Util is
 
                when Aggregate =>
                   Get_Aggregated (Prj);
-
             end case;
 
             List := List.Next;
@@ -1132,10 +1128,10 @@ package body GPR.Util is
       ------------------------
 
       procedure Initialize_Sources is
+         Last     : constant Projects_And_Trees_Sets.Cursor :=
+                      Projects_And_Trees_Sets.Last (Projects_And_Trees);
          Position : Projects_And_Trees_Sets.Cursor :=
-           Projects_And_Trees_Sets.First (Projects_And_Trees);
-         Last : constant Projects_And_Trees_Sets.Cursor :=
-           Projects_And_Trees_Sets.Last (Projects_And_Trees);
+                      Projects_And_Trees_Sets.First (Projects_And_Trees);
          Iter   : Source_Iterator;
          Src    : Source_Id;
          The_Project_And_Tree : Project_And_Tree;
@@ -1529,6 +1525,7 @@ package body GPR.Util is
       end;
 
       Result := new String_List (1 .. Integer (Closures.Length));
+
       declare
          Cursor : Path_Sets.Cursor := Closures.First;
       begin
@@ -1636,8 +1633,7 @@ package body GPR.Util is
       Pkg_Name     : Name_Id;
       Project_Tree : Project_Tree_Ref;
       Value        : out Variable_Value;
-      Is_Default   : out Boolean)
-   is
+      Is_Default   : out Boolean) is
    begin
       Get_Switches
         (Source_File  => Source.File,
@@ -2734,8 +2730,7 @@ package body GPR.Util is
 
    function Value_Of
      (Variable : Variable_Value;
-      Default  : String) return String
-   is
+      Default  : String) return String is
    begin
       if Variable.Kind /= Single
         or else Variable.Default
@@ -2752,7 +2747,6 @@ package body GPR.Util is
       In_Array : Array_Element_Id;
       Shared   : Shared_Project_Tree_Data_Access) return Name_Id
    is
-
       Current    : Array_Element_Id;
       Element    : Array_Element;
       Real_Index : Name_Id := Index;
@@ -3347,8 +3341,7 @@ package body GPR.Util is
    procedure Display_Version
      (Tool_Name      : String;
       Initial_Year   : String;
-      Version_String : String)
-   is
+      Version_String : String) is
    begin
       Put_Line (Tool_Name & " " & Version_String);
 
@@ -3446,8 +3439,7 @@ package body GPR.Util is
    -- Relative_RPath --
    --------------------
 
-   function Relative_RPath (Dest, Src, Origin : String) return String
-   is
+   function Relative_RPath (Dest, Src, Origin : String) return String is
 
       Dir_Sep_Map : constant Character_Mapping :=
                       To_Mapping ("\", "/");
@@ -4025,10 +4017,10 @@ package body GPR.Util is
       Object_Check   : Boolean;
       Always_Compile : Boolean)
    is
-      Source_Path        : constant String :=
-                             Get_Name_String (Source.Path.Display_Name);
-      C_Source_Path      : constant String :=
-                             Get_Name_String (Source.Path.Name);
+      Source_Path         : constant String :=
+                              Get_Name_String (Source.Path.Display_Name);
+      C_Source_Path       : constant String :=
+                              Get_Name_String (Source.Path.Name);
       Runtime_Source_Dirs : constant Name_List_Index :=
                              Source.Language.Config.Runtime_Source_Dirs;
 
@@ -5822,6 +5814,7 @@ package body GPR.Util is
    -----------------------------------
    -- Delete_Command_Line_Arguments --
    -----------------------------------
+
    procedure Delete_Command_Line_Arguments is
    begin
       Command_Line_Arguments.Set_Last (0);

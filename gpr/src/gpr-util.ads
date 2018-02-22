@@ -753,8 +753,7 @@ package GPR.Util is
    --  Returns the file MD5 signature. Raises Name_Error if Pathname does not
    --  exists.
 
-   function Relative_RPath
-     (Dest, Src, Origin : String) return String;
+   function Relative_RPath (Dest, Src, Origin : String) return String;
    --  returns Dest as a path relative to the Src directory using Origin
    --  to indicate the relative path: with dest = /foo/bar, Src = /foo/baz and
    --  Origin = $ORIGIN, the function will return $ORIGIN/../bar.
