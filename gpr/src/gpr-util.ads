@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -752,6 +752,12 @@ package GPR.Util is
    function File_MD5 (Pathname : String) return Message_Digest;
    --  Returns the file MD5 signature. Raises Name_Error if Pathname does not
    --  exists.
+
+   function Relative_RPath
+     (Dest, Src, Origin : String) return String;
+   --  returns Dest as a path relative to the Src directory using Origin
+   --  to indicate the relative path: with dest = /foo/bar, Src = /foo/baz and
+   --  Origin = $ORIGIN, the function will return $ORIGIN/../bar.
 
    --  Architecture
 

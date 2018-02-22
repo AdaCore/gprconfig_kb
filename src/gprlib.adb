@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2017, AdaCore                     --
+--                     Copyright (C) 2006-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -413,6 +413,8 @@ procedure Gprlib is
 
    Separate_Run_Path_Options : Boolean := False;
 
+   Rpath_Origin : String_Access := null;
+
    Rpath : String_List_Access := null;
    --  Allocated only if Path Option is supported
 
@@ -448,7 +450,6 @@ procedure Gprlib is
    --  if necessary.
 
    procedure Add_Rpath (Path : String);
-   procedure Add_Rpath (Path : String_Access);
    --  Add a path name to Rpath
 
    procedure Copy_ALI_Files;
@@ -511,14 +512,6 @@ procedure Gprlib is
    ---------------
 
    procedure Add_Rpath (Path : String) is
-   begin
-      if Path'Length /= 0 then
-         Add_Rpath (new String'(Path));
-      end if;
-   end Add_Rpath;
-
-   procedure Add_Rpath (Path : String_Access) is
-
       procedure Double;
       --  Double Rpath size
 
@@ -540,21 +533,26 @@ procedure Gprlib is
          Rpath := New_Rpath;
       end Double;
 
-   --  Start of processing for Add_Rpath
+      Normalized  : constant String :=
+                      Relative_RPath (Path,
+                                      Library_Directory.all,
+                                      Rpath_Origin.all);
 
    begin
-      --  If first path, allocate initial Rpath
+      if Path'Length = 0 then
+         return;
+      end if;
 
       if Rpath = null then
+         --  If first path, allocate initial Rpath
          Rpath := new String_List (1 .. Initial_Rpath_Length);
          Rpath_Last := 1;
          Rpath_Length := 0;
 
       else
          --  Check if the directory is already there
-
          for J in 1 .. Rpath_Last loop
-            if Rpath (J).all = Path.all then
+            if Rpath (J).all = Normalized then
                --  Nothing to do if the directory is already in Rpath
                return;
             end if;
@@ -571,9 +569,8 @@ procedure Gprlib is
       end if;
 
       --  Add the path name
-
-      Rpath (Rpath_Last) := Path;
-      Rpath_Length := Rpath_Length + Path'Length;
+      Rpath (Rpath_Last) := new String'(Normalized);
+      Rpath_Length := Rpath_Length + Normalized'Length;
    end Add_Rpath;
 
    --------------------
@@ -907,13 +904,12 @@ procedure Gprlib is
       for J in 1 .. Imported_Library_Directories.Last loop
          Library_Switches_Table.Append
            (new String'("-L" & Imported_Library_Directories.Table (J).all));
-
-         if Path_Option /= null then
-            Add_Rpath (Imported_Library_Directories.Table (J));
-         end if;
-
          Library_Switches_Table.Append
            (new String'("-l" & Imported_Library_Names.Table (J).all));
+
+         if Path_Option /= null then
+            Add_Rpath (Imported_Library_Directories.Table (J).all);
+         end if;
       end loop;
 
       --  If Ada is used and we don't already know yet that libgnarl is needed,
@@ -1089,14 +1085,13 @@ procedure Gprlib is
                   Options_Table.Append (new String'("-L" & Lib_Dirs.Path.all));
 
                   if Path_Option /= null then
-                     Add_Rpath (Lib_Dirs.Path);
+                     Add_Rpath (Lib_Dirs.Path.all);
 
                      --  Add to the Path Option the directory of the shared
                      --  version of libgcc.
 
                      Add_Rpath (Shared_Libgcc_Dir (Lib_Dirs.Path.all));
                   end if;
-
                   Lib_Dirs := Lib_Dirs.Next;
                end loop;
             end;
@@ -1121,7 +1116,7 @@ procedure Gprlib is
 
       if Path_Option /= null then
          for Index in 1 .. Library_Rpath_Options_Table.Last loop
-            Add_Rpath (Library_Rpath_Options_Table.Table (Index));
+            Add_Rpath (Library_Rpath_Options_Table.Table (Index).all);
          end loop;
       end if;
 
@@ -1146,7 +1141,7 @@ procedure Gprlib is
 
                for J in 2 .. Rpath_Last loop
                   Cur := Cur + 1;
-                  Option (Cur) := Path_Separator;
+                  Option (Cur) := ':';
                   Option (Cur + 1 .. Cur + Rpath (J)'Length) := Rpath (J).all;
                   Cur := Cur + Rpath (J)'Length;
                end loop;
@@ -2376,6 +2371,13 @@ procedure Gprlib is
                end if;
 
                Path_Option := new String'(Line (1 .. Last));
+
+            when Gprexch.Run_Path_Origin =>
+               if Rpath_Origin /= null then
+                  Fail_Program (null, "multiple run path origin");
+               end if;
+
+               Rpath_Origin := new String'(Line (1 .. Last));
 
             when Gprexch.Install_Name =>
                if Install_Name /= null then

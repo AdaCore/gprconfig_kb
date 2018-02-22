@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2016, AdaCore                     --
+--                     Copyright (C) 2006-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -99,6 +99,7 @@ package Gprexch is
       Partial_Linker,
       Archive_Suffix,
       Run_Path_Option,
+      Run_Path_Origin,
       Separate_Run_Path_Options,
       Install_Name,
       Auto_Init,

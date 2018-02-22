@@ -1364,136 +1364,20 @@ package body Gprbuild.Link is
      (Exec_Dir : Path_Name_Type;
       Origin   : Name_Id)
    is
-      Exec : String :=
-               Normalize_Pathname
-                 (Get_Name_String (Exec_Dir),
-                  Resolve_Links  => Opt.Follow_Links_For_Dirs,
-                  Case_Sensitive => False);
-
-      Last_Exec : Positive;
-      Curr_Exec : Positive;
-      Last_Path : Positive;
-      Curr_Path : Positive;
-      Nmb       : Natural;
-
       Origin_Name : constant String := Get_Name_String (Origin);
+      Exec        : constant String := Get_Name_String (Exec_Dir);
 
    begin
-      --  Replace all directory separators with '/' to ease search
-
-      if Directory_Separator /= '/' then
-         for J in Exec'Range loop
-            if Exec (J) = Directory_Separator then
-               Exec (J) := '/';
-            end if;
-         end loop;
-      end if;
-
       for Npath in 1 .. Rpaths.Last loop
          declare
-            Insensitive_Path : String :=
-                                 Normalize_Pathname
-                                   (Rpaths.Table (Npath).all,
-                                    Case_Sensitive => False);
-
-            --  No need to normalize: it's done already in Add_Rpath
-            Path : String := Rpaths.Table (Npath).all;
-
+            Rel : String :=
+                    Relative_RPath
+                      (Rpaths.Table (Npath).all,
+                       Exec,
+                       Origin_Name);
          begin
-            --  Replace all directory separators with '/' to ease search
-
-            if Directory_Separator /= '/' then
-               for J in Insensitive_Path'Range loop
-                  if Insensitive_Path (J) = Directory_Separator then
-                     Insensitive_Path (J) := '/';
-                  end if;
-               end loop;
-               for J in Path'Range loop
-                  if Path (J) = Directory_Separator then
-                     Path (J) := '/';
-                  end if;
-               end loop;
-            end if;
-
-            --  Find the number of common directories between the path and the
-            --  exec directory.
-
-            Nmb := 0;
-            Curr_Path := Insensitive_Path'First;
-            Curr_Exec := Exec'First;
-            loop
-               exit when
-                 Curr_Path > Insensitive_Path'Last
-                 or else Curr_Exec > Exec'Last
-                 or else Insensitive_Path (Curr_Path) /= Exec (Curr_Exec);
-
-               if Insensitive_Path (Curr_Path) = '/' then
-                  Nmb := Nmb + 1;
-                  Last_Path := Curr_Path;
-                  Last_Exec := Curr_Exec;
-
-               elsif Curr_Exec = Exec'Last
-                 and then Curr_Path > Insensitive_Path'Last
-               then
-                  Nmb := Nmb + 1;
-                  Last_Path := Curr_Path + 1;
-                  Last_Exec := Curr_Exec + 1;
-                  exit;
-               end if;
-
-               Curr_Path := Curr_Path + 1;
-               Curr_Exec := Curr_Exec + 1;
-            end loop;
-
-            --  If there is more than one common directories (the root
-            --  directory does not count), then change the absolute path to a
-            --  relative path.
-
-            if Nmb > 1 then
-               Nmb := 0;
-
-               for J in Last_Exec .. Exec'Last - 1 loop
-                  if Exec (J) = '/' then
-                     Nmb := Nmb + 1;
-                  end if;
-               end loop;
-
-               if Nmb = 0 then
-                  if Last_Path >= Path'Last then
-                     --  Case of the path being the exec dir
-
-                     Rpaths.Table (Npath) :=
-                       new String'(Origin_Name & "/.");
-
-                  else
-                     --  Case of the path being a subdir of the exec dir
-
-                     Rpaths.Table (Npath) :=
-                       new String'
-                         (Origin_Name & "/" &
-                          Path (Last_Path + 1 .. Path'Last));
-                  end if;
-
-               else
-                  if Last_Path >= Path'Last then
-                     --  Case of the exec dir being a subdir of the path
-
-                     Rpaths.Table (Npath) :=
-                       new String'
-                         (Origin_Name & "/" &
-                          (Nmb - 1) * ("../") & "..");
-
-                  else
-                     --  General case of path and exec dir having a common root
-
-                     Rpaths.Table (Npath) :=
-                       new String'
-                         (Origin_Name & "/" &
-                          Nmb * ("../") &
-                          Path (Last_Path + 1 .. Path'Last));
-                  end if;
-               end if;
-            end if;
+            --  Replace Rpath with a relative path
+            Rpaths.Table (Npath) := new String'(Rel);
          end;
       end loop;
    end Rpaths_Relative_To;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -3441,6 +3441,83 @@ package body GPR.Util is
 
       return Digest (C);
    end File_MD5;
+
+   --------------------
+   -- Relative_RPath --
+   --------------------
+
+   function Relative_RPath (Dest, Src, Origin : String) return String
+   is
+
+      Dir_Sep_Map : constant Character_Mapping :=
+                      To_Mapping ("\", "/");
+      --  Rpaths are always considered case sensitive, as it's a runtime
+      --  property of dynamic objects, so in case of cross compilation is
+      --  independent of the host's way of handling case sensitivity
+      Exec        : constant String :=
+                      Translate
+                        (Normalize_Pathname
+                           (Src,
+                            Resolve_Links  => Opt.Follow_Links_For_Dirs,
+                            Case_Sensitive => False),
+                         Mapping => Dir_Sep_Map);
+      Full        : String :=
+                      Translate
+                        (Normalize_Pathname
+                           (Dest,
+                            Resolve_Links  => Opt.Follow_Links_For_Dirs,
+                            Case_Sensitive => True),
+                         Mapping => Dir_Sep_Map);
+      Insensitive : String :=
+                      Translate
+                        (Normalize_Pathname
+                           (Dest,
+                            Resolve_Links  => Opt.Follow_Links_For_Dirs,
+                            Case_Sensitive => False),
+                         Mapping => Dir_Sep_Map);
+      Idx         : Natural := Insensitive'First;
+      N           : Natural;
+
+   begin
+      --  Trim common prefix
+      for J in Insensitive'Range loop
+         if J not in Exec'Range then
+            if Full (J) = '/' then
+               return Origin & Full (J .. Full'Last);
+            else
+               return Origin & "/" & Full (J .. Full'Last);
+            end if;
+
+         elsif Exec (J) /= Insensitive (J) then
+            Idx := J;
+            exit;
+         end if;
+      end loop;
+
+      if Idx = Insensitive'First then
+         return Full;
+      end if;
+
+      --  Go back to previous directory delimiter
+      for J in reverse Insensitive'First .. Idx loop
+         if Insensitive (J) = '/' then
+            Idx := J + 1;
+            exit;
+         end if;
+      end loop;
+
+      --  Count the number of subdirs remaining in Exec
+      N := 0;
+      for J in Idx .. Exec'Last loop
+         if Exec (J) = '/' then
+            N := N + 1;
+         elsif J = Exec'Last then
+            N := N + 1;
+         end if;
+      end loop;
+
+      return Origin & "/" & N * "../" & Full (Idx .. Full'Last);
+   end Relative_RPath;
 
    ------------------------------
    -- Get_Compiler_Driver_Path --

@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2017, AdaCore                     --
+--                     Copyright (C) 2011-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1768,6 +1768,10 @@ package body Gprbuild.Post_Compile is
       begin
          if Opt.Run_Path_Option and then List /= No_Name_List then
             Write_Name_List (Exchange_File, Run_Path_Option, List);
+            Put_Line (Exchange_File,
+                      Library_Label (Gprexch.Run_Path_Origin));
+            Put_Line (Exchange_File,
+                      Get_Name_String (For_Project.Config.Run_Path_Origin));
 
             if For_Project.Config.Separate_Run_Path_Options then
                Put_Line
