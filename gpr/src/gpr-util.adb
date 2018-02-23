@@ -3453,14 +3453,14 @@ package body GPR.Util is
                             Resolve_Links  => Opt.Follow_Links_For_Dirs,
                             Case_Sensitive => False),
                          Mapping => Dir_Sep_Map);
-      Full        : String :=
+      Full        : constant String :=
                       Translate
                         (Normalize_Pathname
                            (Dest,
                             Resolve_Links  => Opt.Follow_Links_For_Dirs,
                             Case_Sensitive => True),
                          Mapping => Dir_Sep_Map);
-      Insensitive : String :=
+      Insensitive : constant String :=
                       Translate
                         (Normalize_Pathname
                            (Dest,

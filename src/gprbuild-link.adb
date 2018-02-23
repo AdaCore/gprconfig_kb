@@ -1369,16 +1369,12 @@ package body Gprbuild.Link is
 
    begin
       for Npath in 1 .. Rpaths.Last loop
-         declare
-            Rel : String :=
-                    Relative_RPath
-                      (Rpaths.Table (Npath).all,
-                       Exec,
-                       Origin_Name);
-         begin
-            --  Replace Rpath with a relative path
-            Rpaths.Table (Npath) := new String'(Rel);
-         end;
+         --  Replace Rpath with a relative path
+         Rpaths.Table (Npath) :=
+           new String'(Relative_RPath
+                         (Rpaths.Table (Npath).all,
+                          Exec,
+                          Origin_Name));
       end loop;
    end Rpaths_Relative_To;
 
