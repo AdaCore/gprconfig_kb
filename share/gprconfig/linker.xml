@@ -183,6 +183,21 @@
 
   <configuration>
     <targets>
+      <target name="^arm-linux-gnueabihf$" />
+    </targets>
+    <config>
+   for Object_Lister use ("arm-linux-gnueabihf-nm", "-g");
+   for Object_Lister_Matcher use " [TDSR] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^powerpc-.*linux.*$" />
     </targets>
     <hosts negate="true">
@@ -210,6 +225,36 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
+   for Object_Lister_Matcher use " [TDRBSG] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^powerpc64-generic-linux-gnu$" />
+    </targets>
+    <config>
+   for Object_Lister use ("powerpc64-generic-linux-gnu-nm", "-g");
+   for Object_Lister_Matcher use " [TDRBSG] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^e500v2-gnu-linux$" />
+    </targets>
+    <config>
+   for Object_Lister use ("e500v2-gnu-linux-nm", "-g");
    for Object_Lister_Matcher use " [TDRBSG] (.*)";
 
    package Linker is
