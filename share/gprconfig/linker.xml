@@ -419,10 +419,30 @@
     <targets>
       <target name="^powerpc-generic-linux-gnu$" />
     </targets>
+    <hosts negate="true">
+      <!-- Cross compiler case -->
+      <host name="^(ppc|powerpc)-.*linux.*$" />
+    </hosts>
     <config>
    for Archive_Builder  use ("powerpc-generic-linux-gnu-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("powerpc-generic-linux-gnu-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^powerpc-generic-linux-gnu$" />
+    </targets>
+    <hosts>
+      <!-- Native compiler case -->
+      <host name="^(ppc|powerpc)-.*linux.*$" />
+    </hosts>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
