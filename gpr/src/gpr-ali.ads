@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 1992-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -81,6 +81,9 @@ package GPR.ALI is
    First_ALI_Entry : constant ALI_Id := No_ALI_Id + 1;
    --  Id of first actual entry in table
 
+   GNAT_Version_Max_Len : constant Natural := 32;
+   --  "Safe" length for GNAT Version
+
    type Main_Program_Type is (None, Proc, Func);
    --  Indicator of whether unit can be used as main program
 
@@ -111,6 +114,9 @@ package GPR.ALI is
 
       Last_Sdep : Sdep_Id;
       --  Id of last Sdep table entry for this file
+
+      GNAT_Version : Name_Id;
+      --  GNAT version used to generate this file (first line in ALI)
 
       Main_Program : Main_Program_Type;
       --  Indicator of whether first unit can be used as main program. Not set

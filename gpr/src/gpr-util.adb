@@ -4576,6 +4576,22 @@ package body GPR.Util is
             return True;
          end if;
 
+         --  Check if the ALI's GNAT version matches
+         --  Tree.Shared.Ada_Runtime_Library_Version
+
+         declare
+            GNAT_Version : constant Name_Id :=
+              ALI.ALIs.Table (The_ALI).GNAT_Version;
+         begin
+            if GNAT_Version /= Tree.Shared.Ada_Runtime_Library_Version then
+               if Opt.Verbosity_Level > Opt.Low then
+                  Put_Line ("    -> GNAT version changed");
+               end if;
+
+               return True;
+            end if;
+         end;
+
          if ALI.ALIs.Table (The_ALI).Compile_Errors then
             if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("    -> last compilation had errors");

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 1992-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -21,6 +21,8 @@
 -- <http://www.gnu.org/licenses/>.                                          --
 --                                                                          --
 ------------------------------------------------------------------------------
+
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 
 with GPR.Names;  use GPR.Names;
 with GPR.Output; use GPR.Output;
@@ -671,32 +673,33 @@ package body GPR.ALI is
       Id := ALIs.Last;
       Set_Name_Table_Int (F, Int (Id));
 
-      ALIs.Table (Id) := (
-        Afile                        => F,
-        Compile_Errors               => False,
-        First_Sdep                   => No_Sdep_Id,
-        First_Unit                   => No_Unit_Id,
-        GNATprove_Mode               => False,
-        Last_Sdep                    => No_Sdep_Id,
-        Last_Unit                    => No_Unit_Id,
-        Locking_Policy               => ' ',
-        Main_Priority                => -1,
-        Main_CPU                     => -1,
-        Main_Program                 => None,
-        No_Object                    => False,
-        Normalize_Scalars            => False,
-        Ofile_Full_Name              => Object_Path,
-        Partition_Elaboration_Policy => ' ',
-        Queuing_Policy               => ' ',
-        SAL_Interface                => False,
-        Sfile                        => No_File,
-        SSO_Default                  => ' ',
-        Task_Dispatching_Policy      => ' ',
-        Time_Slice_Value             => -1,
-        WC_Encoding                  => 'b',
-        Unit_Exception_Table         => False,
-        Zero_Cost_Exceptions         => False,
-        Restrictions                 => No_Restrictions);
+      ALIs.Table (Id) :=
+        (Afile                        => F,
+         Compile_Errors               => False,
+         First_Sdep                   => No_Sdep_Id,
+         First_Unit                   => No_Unit_Id,
+         GNATprove_Mode               => False,
+         Last_Sdep                    => No_Sdep_Id,
+         Last_Unit                    => No_Unit_Id,
+         Locking_Policy               => ' ',
+         Main_Priority                => -1,
+         Main_CPU                     => -1,
+         GNAT_Version                 => No_Name,
+         Main_Program                 => None,
+         No_Object                    => False,
+         Normalize_Scalars            => False,
+         Ofile_Full_Name              => Object_Path,
+         Partition_Elaboration_Policy => ' ',
+         Queuing_Policy               => ' ',
+         SAL_Interface                => False,
+         Sfile                        => No_File,
+         SSO_Default                  => ' ',
+         Task_Dispatching_Policy      => ' ',
+         Time_Slice_Value             => -1,
+         WC_Encoding                  => 'b',
+         Unit_Exception_Table         => False,
+         Zero_Cost_Exceptions         => False,
+         Restrictions                 => No_Restrictions);
 
       --  Now we acquire the input lines from the ALI file. Note that the
       --  convention in the following code is that as we enter each section,
@@ -717,7 +720,45 @@ package body GPR.ALI is
          return No_ALI_Id;
 
       else
-         Skip_Next_Line;
+         Checkc (' ');
+         Checkc ('"');
+         Name_Len := 0;
+         while not At_Eol and not (Nextc = '"') loop
+            Add_Char_To_Name_Buffer (Getc);
+         end loop;
+
+         --  Check that we exited on a closing double quote
+         if Nextc /= '"' then
+            return No_ALI_Id;
+         end if;
+
+         --  Check length compatibility
+         if Name_Len > GNAT_Version_Max_Len then
+            return No_ALI_Id;
+         end if;
+
+         --  ??? Duplicate code from:
+         --    GPR.Nmsc.Check_Configuration.
+         --    Process_Project_Level_Array_Attributes
+
+         declare
+            Raw : String (1 .. GNAT_Version_Max_Len);
+            Last : constant Natural := Name_Len;
+            Start : Natural;
+         begin
+            Raw (1 .. Last) := Name_Buffer (1 .. Last);
+            Start := Index (Name_Buffer (1 .. Last), " v");
+
+            if Start /= 0 then
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer ("GNAT ");
+               Add_Str_To_Name_Buffer
+                 (Raw (Start + 2 .. Last));
+               ALIs.Table (Id).GNAT_Version := Name_Find;
+            end if;
+         end;
+
+         Skip_Eol;
       end if;
 
       C := Getc;
