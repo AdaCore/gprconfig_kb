@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+
+<gprconfig>
+  <compiler_description>
+    <name>TRICOREGCC</name>
+    <executable>tricore-gcc</executable>
+    <version>4.9.2</version>
+    <languages>C</languages>
+    <target>tricore</target>
+  </compiler_description>
+</gprconfig>
