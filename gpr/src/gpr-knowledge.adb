@@ -3183,11 +3183,7 @@ package body GPR.Knowledge is
                        (Comp.Name /= No_Name
                         and then Match
                           (Filter.Name_Re.all, Get_Name_String (Comp.Name)))
-                     or else
-                       (Comp.Base_Name /= No_Name
-                        and then Match
-                          (Filter.Name_Re.all,
-                           Get_Name_String (Comp.Base_Name))))
+                     or else Comp.Base_Name = Filter.Name)
            and then
              (Filter.Version_Re = null
               or else
