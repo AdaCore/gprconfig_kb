@@ -940,8 +940,8 @@ be any of:
      <compiler name="name" version="..."
      runtime="..." language="..." />
 
-  The name and language attributes, when specified, match
-  the corresponding attributes used in the `<compiler_description>`
+  The language attribute, when specified, matches
+  the corresponding attribute used in the `<compiler_description>`
   children. All other attributes are regular expressions, which are matched
   against the corresponding selected compilers. When an attribute is not
   specified, it will always match. Matching is done in a case-insensitive
