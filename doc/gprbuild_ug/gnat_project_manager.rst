@@ -3401,9 +3401,9 @@ The following packages are currently supported in project files
 .. index:: gnatcheck tool
 
 *Check*
-  This package specifies the options used when calling the checking tool
-  *gnatcheck* via the *gnat* driver. Its attribute
-  ``Default_Switches`` has the same semantics as for the package
+  This package specifies the options used when calling the coding standard
+  verification tool *gnatcheck*. Its attributes
+  ``Default_Switches`` and ``Switches`` have the same semantics as for the package
   ``Builder``. The first string should always be :option:`-rules` to specify
   that all the other options belong to the ``-rules`` section of the
   parameters to *gnatcheck*.
@@ -3419,7 +3419,7 @@ The following packages are currently supported in project files
 
 *Compiler*
   This package specifies the compilation options used by the compiler for
-  each languages. See :ref:`Tools_Options_in_Project_Files`.
+  each language. See :ref:`Tools_Options_in_Project_Files`.
 
 .. index:: Cross_Reference package
 .. index:: gnatxref tool
@@ -3435,7 +3435,7 @@ The following packages are currently supported in project files
 
 *Eliminate*
   This package specifies the options used when calling the tool
-  *gnatelim* via the *gnat* driver. Its attributes
+  *gnatelim*. Its attributes
   ``Default_Switches`` and ``Switches`` have the same semantics as for the
   package ``Builder``.
 
@@ -3460,7 +3460,7 @@ The following packages are currently supported in project files
 
 *Gnatstub*
   This package specifies the options used when calling the tool
-  *gnatstub* via the *gnat* driver. Its attributes
+  *gnatstub*. Its attributes
   ``Default_Switches`` and ``Switches`` have the same semantics as for the
   package ``Builder``.
 
@@ -3488,7 +3488,7 @@ The following packages are currently supported in project files
 
 *Metrics*
   This package specifies the options used when calling the tool
-  *gnatmetric* via the *gnat* driver. Its attributes
+  *gnatmetric*. Its attributes
   ``Default_Switches`` and ``Switches`` have the same semantics as for the
   package ``Builder``.
 
@@ -3506,7 +3506,7 @@ The following packages are currently supported in project files
 
 *Pretty_Printer*
   This package specifies the options used when calling the formatting tool
-  *gnatpp* via the *gnat* driver. Its attributes
+  *gnatpp*. Its attributes
   ``Default_Switches`` and ``Switches`` have the same semantics as for the
   package ``Builder``.
 
@@ -3522,7 +3522,7 @@ The following packages are currently supported in project files
 
 *Stack*
   This package specifies the options used when calling the tool
-  *gnatstack* via the *gnat* driver. Its attributes
+  *gnatstack*. Its attributes
   **Default_Switches** and **Switches** have the same semantics as for the
   package `Builder`.
 
@@ -5048,68 +5048,7 @@ Package gnatstub Attributes
 Package IDE Attributes
 ^^^^^^^^^^^^^^^^^^^^^^
 
-* **Default_Switches**: list, indexed, configuration concatenable
-
-  Index is the name of an external tool that the GNAT Programming System (GPS)
-  is supporting. Value is a list of switches to use when invoking that tool.
-
-* **Remote_Host**: single
-
-  Value is a string that designates the remote host in a cross-compilation
-  environment, to be used for remote compilation and debugging. This attribute
-  should not be specified when running on the local machine.
-
-* **Program_Host**: single
-
-  Value is a string that specifies the name of IP address of the embedded target
-  in a cross-compilation environment, on which the program should execute.
-
-* **Communication_Protocol**: single
-
-  Value is the name of the protocol to use to communicate with the target
-  in a cross-compilation environment, for example `"wtx"` or
-  `"vxworks"`.
-
-* **Compiler_Command**: single, indexed, case-insensitive index
-
-  Index is a language Name. Value is a string that denotes the command to be
-  used to invoke the compiler. For historical reasons, the value of
-  `Compiler_Command ("Ada")` is expected to be a reference to *gnatmake* or
-  *cross-gnatmake*.
-
-* **Debugger_Command**: single
-
-  Value is a string that specifies the name of the debugger to be used, such as
-  gdb, powerpc-wrs-vxworks-gdb or gdb-4.
-
-* **gnatlist**: single
-
-  Value is a string that specifies the name of the *gnatls* utility
-  to be used to retrieve information about the predefined path; for example,
-  `"gnatls"`, `"powerpc-wrs-vxworks-gnatls"`.
-
-* **VCS_Kind**: single
-
-  Value is a string used to specify the Version Control System (VCS) to be used
-  for this project, for example "Subversion", "ClearCase". If the
-  value is set to "Auto", the IDE will try to detect the actual VCS used
-  on the list of supported ones.
-
-* **VCS_File_Check**: single
-
-  Value is a string that specifies the command used by the VCS to check
-  the validity of a file, either when the user explicitly asks for a check,
-  or as a sanity check before doing the check-in.
-
-* **VCS_Log_Check**: single
-
-  Value is a string that specifies the command used by the VCS to check
-  the validity of a log file.
-
-* **Documentation_Dir**: single
-
-  Value is the directory used to generate the documentation of source code.
-
+Please refer to your IDE documentation for the list of supported attributes and their meaning.
 
 .. _Package_Install_Attributes:
 
