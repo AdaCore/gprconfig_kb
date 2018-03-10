@@ -54,8 +54,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="^DIABC-PPC$" language="C" />
-       <compiler name="^DIABC-PPC64$" language="C" />
+       <compiler name="DIABC" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -66,7 +65,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="^LLVM$" language="C" />
+       <compiler name="LLVM" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -75,34 +74,45 @@
      </config>
    </configuration>
 
+  <!--     GCC -I parameter passing
+   Starting with 4.1, we use spec file to avoid line length limitations
+   -->
    <configuration>
      <compilers>
-       <compiler name="^GCC$" language="C" />
-       <compiler name="^GCC_Pro$" language="C" />
-       <compiler name="^GCC-28$" language="C" />
-       <compiler name="^GCC-CYGMING$" language="C" />
-       <compiler name="^GCC-MINGW32$" language="C" />
-       <compiler name="^GCC-SYSGO-X86$" language="C" />
-       <compiler name="^GCC-SYSGO-PPC$" language="C" />
-       <compiler name="^GCC-WRS5$" language="C" />
-       <compiler name="^GCC-WRS6$" language="C" />
-       <compiler name="^GCC-WRS6E500V2$" language="C" />
-       <compiler name="^GCC-WRS6CERT$" language="C" />
-       <compiler name="^GCC-WRS6CERTE500V2$" language="C" />
-       <compiler name="^GCC-WRS653-PPC$" language="C" />
-       <compiler name="^GCC-WRS653-E500V2$" language="C" />
-       <compiler name="^GCC-WRS7ARM$" language="C" />
-       <compiler name="^GCC-WRS7E500V2$" language="C" />
-       <compiler name="^GCC-WRS7PPC$" language="C" />
-       <compiler name="^GCC-WRS7X86$" language="C" />
-       <compiler name="^GCC-WRS7X86_64$" language="C" />
-       <compiler name="^LLVM$" language="C" />
+       <compiler name="GCC" language="C" />
+       <compiler name="LLVM" language="C" />
      </compilers>
+   <compilers negate="true">
+     <compiler version="^2\.\d+" />
+     <compiler version="^3\.\d+" />
+     <compiler version="^4\.0" />
+   </compilers>
      <config>
    package Compiler is
       for Leading_Required_Switches   ("C") use
          ("-c", "-x", "c") &amp; Compiler'Leading_Required_Switches ("C");
       for Include_Switches_Via_Spec   ("C") use ("cc1", "-I");
+      for Max_Command_Line_Length use "8192";
+      for Response_File_Format    ("C") use "GCC_GNU";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC" language="C" />
+       <compiler name="LLVM" language="C" />
+     </compilers>
+   <compilers>
+     <compiler version="^2\.\d+" />
+     <compiler version="^3\.\d+" />
+     <compiler version="^4\.0" />
+   </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C") use
+         ("-c", "-x", "c") &amp; Compiler'Leading_Required_Switches ("C");
+      for Include_Switches   ("C") use ("-I");
       for Max_Command_Line_Length use "8192";
       for Response_File_Format    ("C") use "GCC_GNU";
    end Compiler;
