@@ -3430,6 +3430,13 @@ The following packages are currently supported in project files
   ``Default_Switches`` and ``Switches`` have the same semantics as for the
   package ``Builder``.
 
+.. index:: Documentation package
+.. index:: gnatdoc tool
+
+*Documentation*
+  This package specifies the options used when calling the tool
+  *gnatdoc*.
+
 .. index:: Eliminate package
 .. index:: gnatelim tool
 
@@ -4978,6 +4985,15 @@ Package Cross_Reference Attributes
   invoking `gnatxref` for the source.
 
 
+.. _Package_Documentation_Attributes:
+
+Package Documentation Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Please refer to GNATdoc documentation for the list of supported attributes and
+their meaning.
+
+
 .. _Package_Eliminate_Attributes:
 
 Package Eliminate Attributes
@@ -5049,6 +5065,7 @@ Package IDE Attributes
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Please refer to your IDE documentation for the list of supported attributes and their meaning.
+
 
 .. _Package_Install_Attributes:
 
