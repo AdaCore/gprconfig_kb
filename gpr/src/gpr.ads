@@ -308,7 +308,12 @@ package GPR is
    --  A cache for various attributes for a file (length, accessibility,...)
    --  This must be initialized to Unknown_Attributes prior to the first call.
 
-   Unknown_Attributes : constant File_Attributes := (others => 0);
+   Unknown_Attributes : File_Attributes := (others => 0);
+   --  A cache for various attributes for a file (length, accessibility,...)
+   --  Will be initialized properly at elaboration (for efficiency later on,
+   --  avoid function calls every time we want to reset the attributes) prior
+   --  to the first usage. We cannot make it constant since the compiler may
+   --  put it in a read-only section.
 
    Ada_Include_Path          : constant String := "ADA_INCLUDE_PATH";
    Ada_Objects_Path          : constant String := "ADA_OBJECTS_PATH";
