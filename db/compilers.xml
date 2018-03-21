@@ -206,9 +206,10 @@
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
-    <runtimes default="default">
+    <runtimes default="default,native">
        <directory group="default" >\.\./lib/gcc/.*/$gcc_version/adalib/</directory>
        <directory group="1" >\.\./lib/gnat/(.*)/adalib/</directory>
+       <directory group="1" >\.\./lib/gcc/.*/$gcc_version/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>codepeer</target>
   </compiler_description>
