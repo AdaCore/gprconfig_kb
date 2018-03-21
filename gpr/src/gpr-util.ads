@@ -753,10 +753,19 @@ package GPR.Util is
    --  Returns the file MD5 signature. Raises Name_Error if Pathname does not
    --  exists.
 
+   function As_RPath
+     (Path           : String;
+      Case_Sensitive : Boolean) return String;
+   --  Returns Path in a representation compatible with the use with --rpath or
+   --  --rpath-link.
+   --  This normalizes the path, and ensure the use of unix-style directory
+   --  separator.
+
    function Relative_RPath (Dest, Src, Origin : String) return String;
    --  returns Dest as a path relative to the Src directory using Origin
    --  to indicate the relative path: with dest = /foo/bar, Src = /foo/baz and
    --  Origin = $ORIGIN, the function will return $ORIGIN/../bar.
+   --  If Absolute is set, then the rpath will be absolute.
 
    --  Architecture
 

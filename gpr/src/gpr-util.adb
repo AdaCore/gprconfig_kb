@@ -3435,38 +3435,37 @@ package body GPR.Util is
       return Digest (C);
    end File_MD5;
 
+   --------------
+   -- As_RPath --
+   --------------
+
+   function As_RPath
+     (Path           : String;
+      Case_Sensitive : Boolean) return String
+   is
+      Dir_Sep_Map : constant Character_Mapping :=
+                      To_Mapping ("\", "/");
+   begin
+      return Translate
+        (Normalize_Pathname
+           (Path,
+            Resolve_Links  => Opt.Follow_Links_For_Dirs,
+            Case_Sensitive => Case_Sensitive),
+         Mapping => Dir_Sep_Map);
+   end As_RPath;
+
    --------------------
    -- Relative_RPath --
    --------------------
 
    function Relative_RPath (Dest, Src, Origin : String) return String is
 
-      Dir_Sep_Map : constant Character_Mapping :=
-                      To_Mapping ("\", "/");
       --  Rpaths are always considered case sensitive, as it's a runtime
       --  property of dynamic objects, so in case of cross compilation is
       --  independent of the host's way of handling case sensitivity
-      Exec        : constant String :=
-                      Translate
-                        (Normalize_Pathname
-                           (Src,
-                            Resolve_Links  => Opt.Follow_Links_For_Dirs,
-                            Case_Sensitive => False),
-                         Mapping => Dir_Sep_Map);
-      Full        : constant String :=
-                      Translate
-                        (Normalize_Pathname
-                           (Dest,
-                            Resolve_Links  => Opt.Follow_Links_For_Dirs,
-                            Case_Sensitive => True),
-                         Mapping => Dir_Sep_Map);
-      Insensitive : constant String :=
-                      Translate
-                        (Normalize_Pathname
-                           (Dest,
-                            Resolve_Links  => Opt.Follow_Links_For_Dirs,
-                            Case_Sensitive => False),
-                         Mapping => Dir_Sep_Map);
+      Exec        : constant String := As_RPath (Src, False);
+      Full        : constant String := As_RPath (Dest, True);
+      Insensitive : constant String := As_RPath (Dest, False);
       Idx         : Natural := Insensitive'First;
       N           : Natural;
 

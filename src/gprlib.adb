@@ -449,7 +449,9 @@ procedure Gprlib is
    --  Add one argument to the Arguments list. Increase the size of the list
    --  if necessary.
 
-   procedure Add_Rpath (Path : String);
+   procedure Add_Rpath
+     (Path     : String;
+      Absolute : Boolean := False);
    --  Add a path name to Rpath
 
    procedure Copy_ALI_Files;
@@ -511,7 +513,10 @@ procedure Gprlib is
    -- Add_Rpath --
    ---------------
 
-   procedure Add_Rpath (Path : String) is
+   procedure Add_Rpath
+     (Path     : String;
+      Absolute : Boolean := False)
+   is
       procedure Double;
       --  Double Rpath size
 
@@ -533,15 +538,38 @@ procedure Gprlib is
          Rpath := New_Rpath;
       end Double;
 
-      Normalized  : constant String :=
-                      Relative_RPath (Path,
-                                      Library_Directory.all,
-                                      Rpath_Origin.all);
+      Full     : constant String := As_RPath (Path, True);
+      Relative : constant String :=
+                   Relative_RPath (Path,
+                                   Library_Directory.all,
+                                   Rpath_Origin.all);
 
    begin
       if Path'Length = 0 then
          return;
       end if;
+
+      --  Check if the directory is already there
+      for J in 1 .. Rpath_Last loop
+         if Rpath (J).all = Full then
+            --  Full path in Rpath list: do nothing
+            return;
+         end if;
+
+         if Rpath (J).all = Relative then
+            if Absolute then
+               --  The path is already present as relative path, but we want
+               --  it absolute, so replace it.
+               Rpath (J) := new String'(Full);
+               Rpath_Length :=
+                 Rpath_Length - Relative'Length + Full'Length;
+            end if;
+
+            return;
+         end if;
+      end loop;
+
+      --  Insert the new path in the Rpath list.
 
       if Rpath = null then
          --  If first path, allocate initial Rpath
@@ -550,15 +578,7 @@ procedure Gprlib is
          Rpath_Length := 0;
 
       else
-         --  Check if the directory is already there
-         for J in 1 .. Rpath_Last loop
-            if Rpath (J).all = Normalized then
-               --  Nothing to do if the directory is already in Rpath
-               return;
-            end if;
-         end loop;
-
-         --  Otherwise, double Rpath if it is full
+         --  Otherwise, double Rpath list if it is full
 
          if Rpath_Last = Rpath'Last then
             Double;
@@ -569,8 +589,13 @@ procedure Gprlib is
       end if;
 
       --  Add the path name
-      Rpath (Rpath_Last) := new String'(Normalized);
-      Rpath_Length := Rpath_Length + Normalized'Length;
+      if Absolute then
+         Rpath (Rpath_Last) := new String'(Full);
+         Rpath_Length := Rpath_Length + Full'Length;
+      else
+         Rpath (Rpath_Last) := new String'(Relative);
+         Rpath_Length := Rpath_Length + Relative'Length;
+      end if;
    end Add_Rpath;
 
    --------------------
@@ -1085,12 +1110,15 @@ procedure Gprlib is
                   Options_Table.Append (new String'("-L" & Lib_Dirs.Path.all));
 
                   if Path_Option /= null then
-                     Add_Rpath (Lib_Dirs.Path.all);
+                     Add_Rpath
+                       (Lib_Dirs.Path.all, Absolute => True);
 
                      --  Add to the Path Option the directory of the shared
                      --  version of libgcc.
 
-                     Add_Rpath (Shared_Libgcc_Dir (Lib_Dirs.Path.all));
+                     Add_Rpath
+                       (Shared_Libgcc_Dir (Lib_Dirs.Path.all),
+                        Absolute => True);
                   end if;
                   Lib_Dirs := Lib_Dirs.Next;
                end loop;
