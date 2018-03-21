@@ -3486,7 +3486,12 @@ package body GPR.Util is
          end if;
       end loop;
 
-      if Idx = Insensitive'First then
+      if Idx = Insensitive'First
+        or else
+          (Idx = Insensitive'First + 1
+           and then Insensitive (Insensitive'First) = '/')
+      then
+         --  No common prefix: return an absolute path.
          return Full;
       end if;
 
