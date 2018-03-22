@@ -157,7 +157,7 @@
     </targets>
     <config>
    for Object_Lister use ("aarch64-linux-gnu-nm", "-g");
-   for Object_Lister_Matcher use " [TDSR] (.*)";
+   for Object_Lister_Matcher use " [TDRBSG] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
@@ -187,7 +187,7 @@
     </targets>
     <config>
    for Object_Lister use ("arm-linux-gnueabihf-nm", "-g");
-   for Object_Lister_Matcher use " [TDSR] (.*)";
+   for Object_Lister_Matcher use " [TDRBSG] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
