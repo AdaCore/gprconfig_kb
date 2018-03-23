@@ -688,8 +688,13 @@ Example:
 If GPRbuild cannot find the main configuration project on the configuration
 project path, then it will look for all the languages specified in the user
 project tree and invoke GPRconfig to create a temporary configuration project
-file that is located in the directory specified by environment variable TMPDIR,
-or if TMPDIR is not defined in the object directory of the main project file.
+file. This file is located in the directory computed by the following sequence:
+* Look for a valid absolute path in the environment variables TMPDIR, TEMP, and
+TMP.
+* If this fails, check some predefined platform-specific temp dirs (e.g. /tmp
+for linux).
+* Finally if none is accessible we fall back onto the current working
+directory.
 
 The invocation of GPRconfig will take into account the target, if specified
 either by switch --target= on the command line or by attribute Target in the
