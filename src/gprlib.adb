@@ -415,17 +415,11 @@ procedure Gprlib is
 
    Rpath_Origin : String_Access := null;
 
-   Rpath : String_List_Access := null;
+   Rpath : String_Vectors.Vector;
    --  Allocated only if Path Option is supported
 
    Initial_Rpath_Length : constant := 4;
    --  Initial size of Rpath, when first allocated
-
-   Rpath_Last : Natural := 0;
-   --  Index of last directory in Rpath
-
-   Rpath_Length : Natural := 0;
-   --  Length of the full run path option
 
    Install_Name : String_Access := null;
 
@@ -517,27 +511,6 @@ procedure Gprlib is
      (Path     : String;
       Absolute : Boolean := False)
    is
-      procedure Double;
-      --  Double Rpath size
-
-      ------------
-      -- Double --
-      ------------
-
-      procedure Double is
-         New_Rpath : constant String_List_Access :=
-                       new String_List (1 .. 2 * Rpath'Length);
-      begin
-         New_Rpath (1 .. Rpath_Last) := Rpath (1 .. Rpath_Last);
-
-         for J in 1 .. Rpath_Last loop
-            Rpath (J) := null;
-         end loop;
-
-         Free (Rpath);
-         Rpath := New_Rpath;
-      end Double;
-
       Full     : constant String := As_RPath (Path, True);
       Relative : constant String :=
                    Relative_RPath (Path,
@@ -550,19 +523,22 @@ procedure Gprlib is
       end if;
 
       --  Check if the directory is already there
-      for J in 1 .. Rpath_Last loop
-         if Rpath (J).all = Full then
+      for J in 1 .. Rpath.Last_Index loop
+         if Rpath (J) = Full then
             --  Full path in Rpath list: do nothing
             return;
          end if;
 
-         if Rpath (J).all = Relative then
+         if Rpath (J) = Relative then
             if Absolute then
                --  The path is already present as relative path, but we want
-               --  it absolute, so replace it.
-               Rpath (J) := new String'(Full);
-               Rpath_Length :=
-                 Rpath_Length - Relative'Length + Full'Length;
+               --  it absolute, let's remove it.
+               Rpath.Delete (J);
+
+               exit;
+            else
+               --  Dpulicated relative path. Skip
+               return;
             end if;
 
             return;
@@ -571,30 +547,22 @@ procedure Gprlib is
 
       --  Insert the new path in the Rpath list.
 
-      if Rpath = null then
-         --  If first path, allocate initial Rpath
-         Rpath := new String_List (1 .. Initial_Rpath_Length);
-         Rpath_Last := 1;
-         Rpath_Length := 0;
-
-      else
-         --  Otherwise, double Rpath list if it is full
-
-         if Rpath_Last = Rpath'Last then
-            Double;
-         end if;
-
-         Rpath_Last := Rpath_Last + 1;
-         Rpath_Length := Rpath_Length + 1;
-      end if;
-
-      --  Add the path name
       if Absolute then
-         Rpath (Rpath_Last) := new String'(Full);
-         Rpath_Length := Rpath_Length + Full'Length;
+         --  In order to accomodate both old native ld versions that
+         --  do not cope well with paths relative to $ORIGIN in shared
+         --  libraries, and cross ld that just ignore the full paths,
+         --  we need to add both an absolute and a relative path here.
+         --
+         --  We need to ensure that the full path is always first in the
+         --  rpath list, so that the path duplication detection above
+         --  works.
+         Rpath.Append (Full);
+
+         if Relative /= Full then
+            Rpath.Append (Relative);
+         end if;
       else
-         Rpath (Rpath_Last) := new String'(Relative);
-         Rpath_Length := Rpath_Length + Relative'Length;
+         Rpath.Append (Relative);
       end if;
    end Add_Rpath;
 
@@ -1148,30 +1116,36 @@ procedure Gprlib is
          end loop;
       end if;
 
-      if Path_Option /= null and then Rpath /= null then
+      if Path_Option /= null and then not Rpath.Is_Empty then
          if Separate_Run_Path_Options then
-            for J in 1 .. Rpath_Last loop
+            for Path of Rpath loop
                Options_Table.Append
-                 (new String'(Path_Option.all & Rpath (J).all));
+                 (new String'(Path_Option.all & Path));
             end loop;
 
          else
             declare
-               Option : constant String_Access :=
-                          new String (1 .. Path_Option'Length + Rpath_Length);
-               Cur    : Natural := 0;
+               Option   : String_Access;
+               Opt_Size : Natural := Path_Option'Length;
+               Cur      : Natural := 0;
 
             begin
-               Option (Cur + 1 .. Cur + Path_Option'Length) := Path_Option.all;
-               Cur := Cur + Path_Option'Length;
-               Option (Cur + 1 .. Cur + Rpath (1)'Length) := Rpath (1).all;
-               Cur := Cur + Rpath (1)'Length;
+               for Path of Rpath loop
+                  Opt_Size := Opt_Size + Path'Length + 1;
+               end loop;
 
-               for J in 2 .. Rpath_Last loop
-                  Cur := Cur + 1;
-                  Option (Cur) := ':';
-                  Option (Cur + 1 .. Cur + Rpath (J)'Length) := Rpath (J).all;
-                  Cur := Cur + Rpath (J)'Length;
+               Opt_Size := Opt_Size - 1;
+               Option := new String (1 .. Opt_Size);
+
+               Option (1 .. Path_Option'Length) := Path_Option.all;
+               Cur := Path_Option'Length + 1;
+               for Path of Rpath loop
+                  Option (Cur .. Cur + Path'Length - 1) := Path;
+                  Cur := Cur + Path'Length;
+                  if Cur in Option'Range then
+                     Option (Cur) := ':';
+                     Cur := Cur + 1;
+                  end if;
                end loop;
 
                Options_Table.Append (Option);

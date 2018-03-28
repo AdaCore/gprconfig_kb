@@ -25,6 +25,7 @@
 --  Utilities for use in processing project files
 
 with Ada.Calendar; use Ada;
+with Ada.Containers.Indefinite_Vectors;
 
 with GNAT.HTable;
 with GNAT.MD5;     use GNAT.MD5;
@@ -34,6 +35,10 @@ with GPR.Osint; use GPR.Osint;
 with GPR.Scans; use GPR.Scans;
 
 package GPR.Util is
+
+   package String_Vectors is new Ada.Containers.Indefinite_Vectors
+     (Positive, String);
+   --  General-purpose vector of strings
 
    type Config_Paths is array (Positive range <>) of Path_Name_Type;
    --  type used in Need_To_Compile
