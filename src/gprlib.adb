@@ -418,9 +418,6 @@ procedure Gprlib is
    Rpath : String_Vectors.Vector;
    --  Allocated only if Path Option is supported
 
-   Initial_Rpath_Length : constant := 4;
-   --  Initial size of Rpath, when first allocated
-
    Install_Name : String_Access := null;
 
    Arguments : String_List_Access := new String_List (1 .. 20);
@@ -540,8 +537,6 @@ procedure Gprlib is
                --  Dpulicated relative path. Skip
                return;
             end if;
-
-            return;
          end if;
       end loop;
 
