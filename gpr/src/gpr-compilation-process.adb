@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -30,7 +30,6 @@ with GPR.Compilation.Slave;
 with GPR.Names;                   use GPR.Names;
 with GPR.Opt;                     use GPR.Opt;
 with GPR.Script;                  use GPR.Script;
-with GPR.Util;                    use GPR.Util;
 
 package body GPR.Compilation.Process is
 
@@ -259,7 +258,7 @@ package body GPR.Compilation.Process is
 
    function Run
      (Executable    : String;
-      Options       : GNAT.OS_Lib.Argument_List;
+      Options       : String_Vectors.Vector;
       Project       : Project_Id;
       Obj_Name      : String;
       Source        : String := "";
@@ -285,7 +284,9 @@ package body GPR.Compilation.Process is
         or else Language = ""
       then
          Run_Local : declare
-            P : Id (Local);
+            P    : Id (Local);
+            Args : String_List_Access :=
+                     new String_List'(To_Argument_List (Options));
          begin
             Set_Env (Env, Fail => True);
 
@@ -299,11 +300,11 @@ package body GPR.Compilation.Process is
 
             elsif Output_File /= "" then
                P.Pid := Non_Blocking_Spawn
-                 (Executable, Options, Output_File, Err_To_Out);
+                 (Executable, Args.all, Output_File, Err_To_Out);
 
             elsif Source /= "" and then not No_Complete_Output then
                P.Pid := Non_Blocking_Spawn
-                 (Executable, Options,
+                 (Executable, Args.all,
                   Stdout_File => Source & ".stdout",
                   Stderr_File => Source & ".stderr");
 
@@ -313,10 +314,11 @@ package body GPR.Compilation.Process is
                   Delete_File (Source & ".stderr", Success);
                end if;
 
-               P.Pid := Non_Blocking_Spawn (Executable, Options);
+               P.Pid := Non_Blocking_Spawn (Executable, Args.all);
             end if;
 
             Script_Write (Executable, Options);
+            Free (Args);
 
             Local_Process.Increment;
 

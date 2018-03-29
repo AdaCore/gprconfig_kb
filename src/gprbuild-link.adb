@@ -16,6 +16,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Containers.Vectors;
 with Ada.Directories;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Text_IO;                use Ada.Text_IO;
@@ -58,6 +59,14 @@ package body Gprbuild.Link is
    --  A list of the Source_Ids, with an indication that they have been found
    --  in the archive dependency file.
 
+   type Linker_Options_Data is record
+      Project : Project_Id;
+      Options : String_List_Id;
+   end record;
+
+   package Linker_Options_Vector is new Ada.Containers.Vectors
+     (Positive, Linker_Options_Data);
+
    procedure Build_Global_Archive
      (For_Project    : Project_Id;
       Project_Tree   : Project_Tree_Ref;
@@ -72,17 +81,26 @@ package body Gprbuild.Link is
    procedure Link_Main (Main_File : Main_Info);
    --  Link a specific main unit
 
-   procedure Get_Linker_Options (For_Project : Project_Id);
+   procedure Add_Linker_Options
+     (Arguments   : in out Options_Data;
+      For_Project : Project_Id);
    --  Get the Linker_Options from a project
 
-   procedure Add_Rpath (Path : String);
+   procedure Add_Rpath
+     (Rpath : in out String_Vectors.Vector;
+      Path  : String);
    --  Add a path name to Rpath
 
-   procedure Add_Rpath_From_Arguments (Project : Project_Id);
+   procedure Add_Rpath_From_Arguments
+     (Rpath     : in out String_Vectors.Vector;
+      Arguments : Options_Data;
+      Project   : Project_Id);
    --  Add all explicit -L directives as an rpath
 
    procedure Rpaths_Relative_To
-     (Exec_Dir : Path_Name_Type; Origin : Name_Id);
+     (Rpaths   : in out String_Vectors.Vector;
+      Exec_Dir : Path_Name_Type;
+      Origin   : Name_Id);
    --  Change all paths in table Rpaths to paths relative to Exec_Dir, if they
    --  have at least one non root directory in common.
 
@@ -91,24 +109,23 @@ package body Gprbuild.Link is
    --  project.
 
    procedure Display_Command
-     (Path    : String_Access;
-      Ellipse : Boolean := False);
+     (Arguments : Options_Data;
+      Path      : String_Access;
+      Ellipse   : Boolean := False);
    --  Display the command for a spawned process, if in Verbose_Mode or not in
    --  Quiet_Output. In non verbose mode, when Ellipse is True, display "..."
    --  in place of the first argument that has Display set to False.
 
    procedure Add_Argument
-     (Arg         : String_Access;
-      Display     : Boolean;
-      Simple_Name : Boolean := False);
-   procedure Add_Argument
-     (Arg         : String;
+     (Arguments   : in out Options_Data;
+      Arg         : String;
       Display     : Boolean;
       Simple_Name : Boolean := False);
    --  Add an argument to Arguments. Reallocate if necessary
 
    procedure Add_Arguments
-     (Args        : Argument_List;
+     (Arguments   : in out Options_Data;
+      Args        : String_Vectors.Vector;
       Display     : Boolean;
       Simple_Name : Boolean := False);
    --  Add a list of arguments to Arguments. Reallocate if necessary
@@ -127,30 +144,7 @@ package body Gprbuild.Link is
       Equal      => "=");
    --  A hash table to record what global archives have been already built
 
-   package Cache_Args is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 200,
-      Table_Increment      => 100);
-   --  A table to cache arguments, to avoid multiple allocation of the same
-   --  strings. It is not possible to use a hash table, because String is
-   --  an unconstrained type.
-
-   package Rpaths is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 200,
-      Table_Increment      => 50);
-   --  Directories to be put in the run path option
-
-   package Path_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 4,
-      Table_Increment      => 50);
+   Path_Options : String_Vectors.Vector;
    --  Directories coming from the binder exchange file
 
    package Library_Dirs is new GNAT.HTable.Simple_HTable
@@ -166,123 +160,27 @@ package body Gprbuild.Link is
    Last_Source : Natural := 0;
    --  The index of the last valid component of Source_Indexes
 
-   Initial_Argument_Count : constant Positive := 20;
-   Arguments : Argument_List_Access :=
-                 new Argument_List (1 .. Initial_Argument_Count);
-   --  Used to store lists of arguments to be used when spawning a process
-
-   Arguments_Displayed : Booleans :=
-                           new Boolean_Array (1 .. Initial_Argument_Count);
-   --  For each argument in Arguments, indicate if the argument should be
-   --  displayed when procedure Display_Command is called.
-
-   Arguments_Simple_Name : Booleans :=
-                             new Boolean_Array (1 .. Initial_Argument_Count);
-   --  For each argument that should be displayed, indicate that the argument
-   --  is a path name and that only the simple name should be displayed.
-
-   Last_Argument : Natural := 0;
-   --  Index of the last valid argument in Arguments
-
    ------------------
    -- Add_Argument --
    ------------------
 
    procedure Add_Argument
-     (Arg         : String_Access;
+     (Arguments   : in out Options_Data;
+      Arg         : String;
       Display     : Boolean;
       Simple_Name : Boolean := False)
    is
    begin
       --  Nothing to do if no argument is specified or if argument is empty
 
-      if Arg /= null and then Arg'Length /= 0 then
-
-         --  Reallocate arrays if necessary
-
-         if Last_Argument = Arguments'Last then
-            declare
-               New_Arguments : constant Argument_List_Access :=
-                                 new Argument_List
-                                   (1 .. Last_Argument +
-                                           Initial_Argument_Count);
-
-               New_Arguments_Displayed : constant Booleans :=
-                                           new Boolean_Array
-                                             (1 .. Last_Argument +
-                                                     Initial_Argument_Count);
-
-               New_Arguments_Simple_Name : constant Booleans :=
-                                             new Boolean_Array
-                                               (1 .. Last_Argument +
-                                                       Initial_Argument_Count);
-
-            begin
-               New_Arguments (Arguments'Range) := Arguments.all;
-
-               --  To avoid deallocating the strings, nullify all components
-               --  of Arguments before calling Free.
-
-               Arguments.all := (others => null);
-
-               Free (Arguments);
-               Arguments := New_Arguments;
-
-               New_Arguments_Displayed (Arguments_Displayed'Range) :=
-                 Arguments_Displayed.all;
-               Free (Arguments_Displayed);
-               Arguments_Displayed := New_Arguments_Displayed;
-
-               New_Arguments_Simple_Name (Arguments_Simple_Name'Range) :=
-                 Arguments_Simple_Name.all;
-               Free (Arguments_Simple_Name);
-               Arguments_Simple_Name := New_Arguments_Simple_Name;
-            end;
-         end if;
-
+      if Arg'Length /= 0 then
          --  Add the argument and its display indication
-
-         Last_Argument := Last_Argument + 1;
-         Arguments (Last_Argument) := Arg;
-         Arguments_Displayed (Last_Argument) := Display;
-         Arguments_Simple_Name (Last_Argument) := Simple_Name;
-      end if;
-   end Add_Argument;
-
-   procedure Add_Argument
-     (Arg         : String;
-      Display     : Boolean;
-      Simple_Name : Boolean := False)
-   is
-      Argument : String_Access := null;
-
-   begin
-      --  Nothing to do if argument is empty
-
-      if Arg'Length > 0 then
-
-         --  Check if the argument is already in the Cache_Args table. If it is
-         --  already there, reuse the allocated value.
-
-         for Index in 1 .. Cache_Args.Last loop
-            if Cache_Args.Table (Index).all = Arg then
-               Argument := Cache_Args.Table (Index);
-               exit;
-            end if;
-         end loop;
-
-         --  If the argument is not in the cache, create a new entry in the
-         --  cache.
-
-         if Argument = null then
-            Argument := new String'(Arg);
-            Cache_Args.Increment_Last;
-            Cache_Args.Table (Cache_Args.Last) := Argument;
-         end if;
-
-         --  And add the argument
-
-         Add_Argument (Argument, Display, Simple_Name);
+         Arguments.Append
+           (Option_Type'
+              (Name_Len    => Arg'Length,
+               Name        => Arg,
+               Displayed   => Display,
+               Simple_Name => Simple_Name));
       end if;
    end Add_Argument;
 
@@ -291,59 +189,27 @@ package body Gprbuild.Link is
    -------------------
 
    procedure Add_Arguments
-     (Args        : Argument_List;
+     (Arguments   : in out Options_Data;
+      Args        : String_Vectors.Vector;
       Display     : Boolean;
       Simple_Name : Boolean := False)
    is
    begin
-      --  Reallocate the arrays, if necessary
-
-      if Last_Argument + Args'Length > Arguments'Last then
-         declare
-            New_Arguments : constant Argument_List_Access :=
-                              new Argument_List
-                                    (1 .. Last_Argument + Args'Length +
-                                          Initial_Argument_Count);
-
-            New_Arguments_Displayed : constant Booleans :=
-                                        new Boolean_Array
-                                              (1 .. Last_Argument +
-                                                    Args'Length +
-                                                    Initial_Argument_Count);
-
-         begin
-            New_Arguments (1 .. Last_Argument) :=
-              Arguments (1 .. Last_Argument);
-
-            --  To avoid deallocating the strings, nullify all components
-            --  of Arguments before calling Free.
-
-            Arguments.all := (others => null);
-            Free (Arguments);
-
-            Arguments := New_Arguments;
-            New_Arguments_Displayed (1 .. Last_Argument) :=
-              Arguments_Displayed (1 .. Last_Argument);
-            Free (Arguments_Displayed);
-            Arguments_Displayed := New_Arguments_Displayed;
-         end;
-      end if;
-
       --  Add the new arguments and the display indications
 
-      Arguments (Last_Argument + 1 .. Last_Argument + Args'Length) := Args;
-      Arguments_Displayed (Last_Argument + 1 .. Last_Argument + Args'Length) :=
-        (others => Display);
-      Arguments_Simple_Name (Last_Argument + 1 .. Last_Argument + Args'Length)
-        := (others => Simple_Name);
-      Last_Argument := Last_Argument + Args'Length;
+      for Arg of Args loop
+         Add_Argument (Arguments, Arg, Display, Simple_Name);
+      end loop;
    end Add_Arguments;
 
    ---------------
    -- Add_Rpath --
    ---------------
 
-   procedure Add_Rpath (Path : String) is
+   procedure Add_Rpath
+     (Rpath : in out String_Vectors.Vector;
+      Path  : String)
+   is
       --  Rpaths are always considered case sensitive, as it's a runtime
       --  property of dynamic objects, so in case of cross compilation is
       --  independent of the host's way of handling case sensitivity
@@ -360,38 +226,39 @@ package body Gprbuild.Link is
       end if;
 
       --  Nothing to do if the directory is already in the Rpaths table
-      for J in 1 .. Rpaths.Last loop
-         if Rpaths.Table (J).all = Normalized then
+      for Path of Rpath loop
+         if Path = Normalized then
             return;
          end if;
       end loop;
 
-      Rpaths.Append (new String'(Normalized));
+      Rpath.Append (Normalized);
    end Add_Rpath;
 
    ------------------------------
    -- Add_Rpath_From_Arguments --
    ------------------------------
 
-   procedure Add_Rpath_From_Arguments (Project : Project_Id) is
+   procedure Add_Rpath_From_Arguments
+     (Rpath     : in out String_Vectors.Vector;
+      Arguments : Options_Data;
+      Project   : Project_Id)
+   is
       LSwitch : constant String :=
                   (if Project.Config.Linker_Lib_Dir_Option = No_Name
                    then "-L"
                    else
                       Get_Name_String (Project.Config.Linker_Lib_Dir_Option));
    begin
-      for J in Arguments'First .. Last_Argument loop
-         declare
-            Arg : String renames Arguments (J).all;
-         begin
-            if Arg'Length > LSwitch'Length
-              and then Arg (Arg'First .. Arg'First + LSwitch'Length - 1)
-                = LSwitch
-            then
-               Path_Options.Append
-                 (new String'(Arg (Arg'First + LSwitch'Length .. Arg'Last)));
-            end if;
-         end;
+      for Arg of Arguments loop
+         if Arg.Name_Len > LSwitch'Length
+           and then Arg.Name (Arg.Name'First ..
+                                Arg.Name'First + LSwitch'Length - 1) = LSwitch
+         then
+            Add_Rpath
+              (Rpath,
+               Arg.Name (Arg.Name'First + LSwitch'Length .. Arg.Name'Last));
+         end if;
       end loop;
    end Add_Rpath_From_Arguments;
 
@@ -423,6 +290,7 @@ package body Gprbuild.Link is
       Time_Stamp   : Time_Stamp_Type;
 
       First_Object : Natural;
+      Current_Object : Positive;
 
       Discard : Boolean;
 
@@ -433,20 +301,27 @@ package body Gprbuild.Link is
 
       Success      : Boolean;
 
-      Real_Last_Argument : Positive;
-      Current_Object_Pos : Positive;
-
       Size : Natural;
 
       Global_Archive_Data : Archive_Data;
 
       Need_To_Build : Boolean;
 
+      Arguments     : Options_Data;
+
+      Objects       : String_Vectors.Vector;
+
       procedure Add_Sources (Proj : Project_Id);
       --  Add all the sources of project Proj to Sources_Index
 
-      procedure Add_Objects (Proj : Project_Id);
+      function Get_Objects (Proj : Project_Id) return String_Vectors.Vector;
       --  Add all the object paths of project Proj to Arguments
+
+      procedure Handle_Failure;
+
+      procedure Report_Status
+        (Archive_Built : Boolean;
+         Archive_Exists : Boolean);
 
       -----------------
       -- Add_Sources --
@@ -510,64 +385,14 @@ package body Gprbuild.Link is
       -- Add_Objects --
       -----------------
 
-      procedure Add_Objects (Proj : Project_Id) is
+      function Get_Objects (Proj : Project_Id) return String_Vectors.Vector
+      is
          Project : Project_Id := Proj;
          Id      : Source_Id;
          Iter    : Source_Iterator;
+         Ret     : String_Vectors.Vector;
 
-         type Arg_Record;
-         type Arg_Access is access Arg_Record;
-         type Arg_Record is record
-            Path    : Name_Id;
-            Display : Boolean;
-            Simple  : Boolean;
-            Next    : Arg_Access;
-         end record;
-
-         First_Arg : Arg_Access := null;
-         --  Head of the list of arguments in ascending order of paths
-
-         procedure Add
-           (Path    : String;
-            Display : Boolean;
-            Simple  : Boolean);
-         --  Ad an argument in the list in the correct order
-
-         ---------
-         -- Add --
-         ---------
-
-         procedure Add
-           (Path    : String;
-            Display : Boolean;
-            Simple  : Boolean)
-         is
-            Arg_Ptr : Arg_Access;
-            Current : Arg_Access;
-
-         begin
-            Name_Len := 0;
-            Add_Str_To_Name_Buffer (Path);
-            Arg_Ptr := new Arg_Record'(Name_Find, Display, Simple, null);
-
-            if First_Arg = null
-              or else Path < Get_Name_String (First_Arg.Path)
-            then
-               Arg_Ptr.Next := First_Arg;
-               First_Arg := Arg_Ptr;
-
-            else
-               Current := First_Arg;
-               while Current.Next /= null
-                 and then Path > Get_Name_String (Current.Next.Path)
-               loop
-                  Current := Current.Next;
-               end loop;
-
-               Arg_Ptr.Next := Current.Next;
-               Current.Next := Arg_Ptr;
-            end if;
-         end Add;
+         package Sort is new String_Vectors.Generic_Sorting;
 
       begin
          loop
@@ -599,11 +424,8 @@ package body Gprbuild.Link is
                                  (Name_Len - Object_Suffix'Length + 1
                                   .. Name_Len) = Object_Suffix
                            then
-                              Add
-                                (Obj_Dir & Directory_Separator &
-                                   Name_Buffer (1 .. Name_Len),
-                                 Opt.Verbose_Mode,
-                                 Simple => not Opt.Verbose_Mode);
+                              Ret.Append (Obj_Dir & Directory_Separator &
+                                   Name_Buffer (1 .. Name_Len));
                            end if;
                         end loop;
 
@@ -623,10 +445,7 @@ package body Gprbuild.Link is
 
                         Initialize_Source_Record (Id);
 
-                        Add
-                          (Get_Name_String (Id.Object_Path),
-                           Opt.Verbose_Mode,
-                           Simple => not Opt.Verbose_Mode);
+                        Ret.Append (Get_Name_String (Id.Object_Path));
                      end if;
 
                      Next (Iter);
@@ -639,498 +458,503 @@ package body Gprbuild.Link is
             exit when Project = No_Project;
          end loop;
 
-         --  Add the object files in the arguments in acending order of paths
-         --  so that the global archive is always built the same way.
+         --  Make sure the objects are sorted alphabetically
+         Sort.Sort (Ret);
 
-         while First_Arg /= null loop
-            Add_Argument
-              (Get_Name_String (First_Arg.Path),
-               First_Arg.Display,
-               First_Arg.Simple);
-            First_Arg := First_Arg.Next;
-         end loop;
+         return Ret;
+      end Get_Objects;
 
-      end Add_Objects;
+      --------------------
+      -- Handle_Failure --
+      --------------------
+
+      procedure Handle_Failure is
+      begin
+         --  Building the archive failed, delete dependency file if
+         --  one exists.
+
+         if Is_Regular_File (Archive_Dep_Name) then
+            Delete_File (Archive_Dep_Name, Success);
+         end if;
+
+         Put ("global archive for project ");
+         Put
+           (Get_Name_String (For_Project.Display_Name));
+         Put_Line (" could not be built");
+         OK := False;
+      end Handle_Failure;
+
+      -------------------
+      -- Report_Status --
+      -------------------
+
+      procedure Report_Status
+        (Archive_Built : Boolean;
+         Archive_Exists : Boolean)
+      is
+      begin
+         Has_Been_Built := Archive_Built;
+         Exists         := Archive_Exists;
+
+         Global_Archives_Built.Set
+           (Name_Id (For_Project.Path.Name),
+            (Checked        => True,
+             Has_Been_Built => Archive_Built,
+             Exists         => Archive_Exists));
+      end Report_Status;
 
    begin
       Exists := False;
       Has_Been_Built := False;
       OK := True;
 
+      if For_Project.Object_Directory = No_Path_Information then
+         return;
+      end if;
+
       --  No need to build the global archive, if it has already been done
 
-      if For_Project.Object_Directory /= No_Path_Information then
-         Global_Archive_Data :=
-           Global_Archives_Built.Get (Name_Id (For_Project.Path.Name));
+      Global_Archive_Data :=
+        Global_Archives_Built.Get (Name_Id (For_Project.Path.Name));
 
-         if Global_Archive_Data.Checked then
-            Exists         := Global_Archive_Data.Exists;
-            Has_Been_Built := Global_Archive_Data.Has_Been_Built;
+      if Global_Archive_Data.Checked then
+         Has_Been_Built := Global_Archive_Data.Has_Been_Built;
+         Exists         := Global_Archive_Data.Exists;
 
-         else
-            Change_To_Object_Directory (For_Project);
+         --  No processing needed: already processed. Let's return
+         return;
+      end if;
 
-            --  Put all non Ada sources in the project tree in Source_Indexes
+      Change_To_Object_Directory (For_Project);
 
-            Last_Source := 0;
+      --  Put all non Ada sources in the project tree in Source_Indexes
 
-            Add_Sources (For_Project);
+      Last_Source := 0;
 
-            Proj_List := For_Project.All_Imported_Projects;
+      Add_Sources (For_Project);
 
-            while Proj_List /= null loop
-               if not Proj_List.Project.Library then
-                  Add_Sources (Proj_List.Project);
-               end if;
+      Proj_List := For_Project.All_Imported_Projects;
 
-               Proj_List := Proj_List.Next;
-            end loop;
+      while Proj_List /= null loop
+         if not Proj_List.Project.Library then
+            Add_Sources (Proj_List.Project);
+         end if;
 
-            Need_To_Build := Opt.Force_Compilations;
+         Proj_List := Proj_List.Next;
+      end loop;
 
-            if not Need_To_Build then
-               if Opt.Verbosity_Level > Opt.Low then
-                  Put  ("   Checking ");
-                  Put  (Archive_Name);
-                  Put_Line (" ...");
-               end if;
+      Need_To_Build := Opt.Force_Compilations;
 
-               --  If the archive does not exist, of course it needs to be
-               --  built.
+      if not Need_To_Build then
+         if Opt.Verbosity_Level > Opt.Low then
+            Put  ("   Checking ");
+            Put  (Archive_Name);
+            Put_Line (" ...");
+         end if;
 
-               if not Is_Regular_File (Archive_Name) then
-                  Need_To_Build := True;
+         --  If the archive does not exist, of course it needs to be
+         --  built.
 
-                  if Opt.Verbosity_Level > Opt.Low then
-                     Put_Line ("      -> archive does not exist");
-                  end if;
+         if not Is_Regular_File (Archive_Name) then
+            Need_To_Build := True;
 
-               else
-                  --  Archive does exist
-
-                  --  Check the archive dependency file
-
-                  Open (File, Archive_Dep_Name);
-
-                  --  If the archive dependency file does not exist, we need to
-                  --  to rebuild the archive and to create its dependency file.
-
-                  if not Is_Valid (File) then
-                     Need_To_Build := True;
-
-                     if Opt.Verbosity_Level > Opt.Low then
-                        Put  ("      -> archive dependency file ");
-                        Put  (Archive_Dep_Name);
-                        Put_Line (" does not exist");
-                     end if;
-
-                  else
-                     --  Read the dependency file, line by line
-
-                     while not End_Of_File (File) loop
-                        Get_Line (File, Name_Buffer, Name_Len);
-
-                        --  First line is the path of the object file
-
-                        Object_Path := Name_Find;
-                        Src_Id := No_Source;
-
-                        --  Check if this object file is for a source of this
-                        --  project.
-
-                        for S in 1 .. Last_Source loop
-                           S_Id := Source_Indexes (S).Id;
-
-                           if not Source_Indexes (S).Found
-                             and then S_Id.Object_Path = Object_Path
-                           then
-                              --  We have found the object file: get the
-                              --  source data, and mark it as found.
-
-                              Src_Id := S_Id;
-                              Source_Indexes (S).Found := True;
-                              exit;
-                           end if;
-                        end loop;
-
-                        --  If it is not for a source of this project, then the
-                        --  archive needs to be rebuilt.
-
-                        if Src_Id = No_Source then
-                           Need_To_Build := True;
-                           if Opt.Verbosity_Level > Opt.Low then
-                              Put  ("      -> ");
-                              Put  (Get_Name_String (Object_Path));
-                              Put_Line (" is not an object of any project");
-                           end if;
-
-                           exit;
-                        end if;
-
-                        --  The second line is the time stamp of the object
-                        --  file. If there is no next line, then the dependency
-                        --  file is truncated, and the archive need to be
-                        --  rebuilt.
-
-                        if End_Of_File (File) then
-                           Need_To_Build := True;
-
-                           if Opt.Verbosity_Level > Opt.Low then
-                              Put  ("      -> archive dependency file ");
-                              Put_Line (" is truncated");
-                           end if;
-
-                           exit;
-                        end if;
-
-                        Get_Line (File, Name_Buffer, Name_Len);
-
-                        --  If the line has the wrong number of characters,
-                        --  then the dependency file is incorrectly formatted,
-                        --  and the archive needs to be rebuilt.
-
-                        if Name_Len /= Time_Stamp_Length then
-                           Need_To_Build := True;
-
-                           if Opt.Verbosity_Level > Opt.Low then
-                              Put  ("      -> archive dependency file ");
-                              Put_Line
-                                (" is incorrectly formatted (time stamp)");
-                           end if;
-
-                           exit;
-                        end if;
-
-                        Time_Stamp :=
-                          Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
-
-                        --  If the time stamp in the dependency file is
-                        --  different from the time stamp of the object file,
-                        --  then the archive needs to be rebuilt. The
-                        --  comparaison is done with String type values,
-                        --  because two values of type Time_Stamp_Type are
-                        --  equal if they differ by 2 seconds or less; here the
-                        --  check is for an exact match.
-
-                        if String (Time_Stamp) /=
-                          String (Src_Id.Object_TS)
-                        then
-                           Need_To_Build := True;
-
-                           if Opt.Verbosity_Level > Opt.Low  then
-                              Put  ("      -> time stamp of ");
-                              Put  (Get_Name_String (Object_Path));
-                              Put  (" is incorrect in the archive");
-                              Put_Line (" dependency file");
-                              Put  ("         recorded time stamp: ");
-                              Put_Line (String (Time_Stamp));
-                              Put  ("           actual time stamp: ");
-                              Put_Line (String (Src_Id.Object_TS));
-                           end if;
-
-                           exit;
-
-                        elsif Debug_Flag_T then
-                           Put  ("      -> time stamp of ");
-                           Put  (Get_Name_String (Object_Path));
-                           Put  (" is correct in the archive");
-                           Put_Line (" dependency file");
-                           Put  ("         recorded time stamp: ");
-                           Put_Line (String (Time_Stamp));
-                           Put  ("           actual time stamp: ");
-                           Put_Line (String (Src_Id.Object_TS));
-                        end if;
-                     end loop;
-
-                     Close (File);
-                  end if;
-               end if;
+            if Opt.Verbosity_Level > Opt.Low then
+               Put_Line ("      -> archive does not exist");
             end if;
 
-            if not Need_To_Build then
-               for S in 1 .. Last_Source loop
-                  if not Source_Indexes (S).Found
-                    and then Object_To_Global_Archive (Source_Indexes (S).Id)
-                  then
-                     Need_To_Build := True;
+         else
+            --  Archive does exist
 
+            --  Check the archive dependency file
+
+            Open (File, Archive_Dep_Name);
+
+            --  If the archive dependency file does not exist, we need to
+            --  to rebuild the archive and to create its dependency file.
+
+            if not Is_Valid (File) then
+               Need_To_Build := True;
+
+               if Opt.Verbosity_Level > Opt.Low then
+                  Put  ("      -> archive dependency file ");
+                  Put  (Archive_Dep_Name);
+                  Put_Line (" does not exist");
+               end if;
+
+            else
+               --  Read the dependency file, line by line
+
+               while not End_Of_File (File) loop
+                  Get_Line (File, Name_Buffer, Name_Len);
+
+                  --  First line is the path of the object file
+
+                  Object_Path := Name_Find;
+                  Src_Id := No_Source;
+
+                  --  Check if this object file is for a source of this
+                  --  project.
+
+                  for S in 1 .. Last_Source loop
+                     S_Id := Source_Indexes (S).Id;
+
+                     if not Source_Indexes (S).Found
+                       and then S_Id.Object_Path = Object_Path
+                     then
+                        --  We have found the object file: get the
+                        --  source data, and mark it as found.
+
+                        Src_Id := S_Id;
+                        Source_Indexes (S).Found := True;
+                        exit;
+                     end if;
+                  end loop;
+
+                  --  If it is not for a source of this project, then the
+                  --  archive needs to be rebuilt.
+
+                  if Src_Id = No_Source then
+                     Need_To_Build := True;
                      if Opt.Verbosity_Level > Opt.Low then
-                        Put ("      -> object file ");
-                        Put (Get_Name_String
-                                   (Source_Indexes (S).Id.Object_Path));
-                        Put_Line (" is not in the dependency file");
+                        Put  ("      -> ");
+                        Put  (Get_Name_String (Object_Path));
+                        Put_Line (" is not an object of any project");
                      end if;
 
                      exit;
                   end if;
-               end loop;
-            end if;
 
-            if not Need_To_Build then
-               if Opt.Verbosity_Level > Opt.Low then
-                  Put_Line  ("      -> up to date");
-               end if;
+                  --  The second line is the time stamp of the object
+                  --  file. If there is no next line, then the dependency
+                  --  file is truncated, and the archive need to be
+                  --  rebuilt.
 
-               Exists         := True;
-               Has_Been_Built := False;
+                  if End_Of_File (File) then
+                     Need_To_Build := True;
 
-               --  Archive needs to be rebuilt
+                     if Opt.Verbosity_Level > Opt.Low then
+                        Put  ("      -> archive dependency file ");
+                        Put_Line (" is truncated");
+                     end if;
 
-            else
-               Check_Archive_Builder;
-
-               --  If archive already exists, first delete it, but if this is
-               --  not possible, continue: if archive cannot be built, we will
-               --  fail later on.
-
-               if Is_Regular_File (Archive_Name) then
-                  Delete_File (Archive_Name, Discard);
-               end if;
-
-               Last_Argument := 0;
-
-               --  Start with the minimal options
-
-               Add_Arguments
-                 (Archive_Builder_Opts.Options
-                    (1 .. Archive_Builder_Opts.Last),
-                  True);
-
-               --  Followed by the archive name
-
-               Add_Argument
-                 (Archive_Name, True, Simple_Name => not Opt.Verbose_Mode);
-
-               First_Object := Last_Argument + 1;
-
-               --  Followed by all the object files of the non library projects
-
-               Add_Objects (For_Project);
-
-               Proj_List := For_Project.All_Imported_Projects;
-
-               while Proj_List /= null loop
-                  if not Proj_List.Project.Library then
-                     Add_Objects (Proj_List.Project);
+                     exit;
                   end if;
 
-                  Proj_List := Proj_List.Next;
-               end loop;
+                  Get_Line (File, Name_Buffer, Name_Len);
 
-               --  No global archive, if there is no object file to put into
+                  --  If the line has the wrong number of characters,
+                  --  then the dependency file is incorrectly formatted,
+                  --  and the archive needs to be rebuilt.
 
-               if Last_Argument < First_Object then
-                  Has_Been_Built := False;
-                  Exists         := False;
+                  if Name_Len /= Time_Stamp_Length then
+                     Need_To_Build := True;
 
-                  if Opt.Verbosity_Level > Opt.Low
+                     if Opt.Verbosity_Level > Opt.Low then
+                        Put  ("      -> archive dependency file ");
+                        Put_Line
+                          (" is incorrectly formatted (time stamp)");
+                     end if;
+
+                     exit;
+                  end if;
+
+                  Time_Stamp :=
+                    Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
+
+                  --  If the time stamp in the dependency file is
+                  --  different from the time stamp of the object file,
+                  --  then the archive needs to be rebuilt. The
+                  --  comparaison is done with String type values,
+                  --  because two values of type Time_Stamp_Type are
+                  --  equal if they differ by 2 seconds or less; here the
+                  --  check is for an exact match.
+
+                  if String (Time_Stamp) /=
+                    String (Src_Id.Object_TS)
                   then
-                     Put_Line ("      -> there is no global archive");
-                  end if;
+                     Need_To_Build := True;
 
-               else
-                  Real_Last_Argument := Last_Argument;
-
-                  --  If there is an Archive_Builder_Append_Option, we may have
-                  --  to build the archive in chuck.
-
-                  if Archive_Builder_Append_Opts.Last = 0 then
-                     Current_Object_Pos := Real_Last_Argument + 1;
-
-                  else
-                     Size := 0;
-                     for J in 1 .. First_Object - 1 loop
-                        Size := Size + Arguments (J)'Length + 1;
-                     end loop;
-
-                     Current_Object_Pos := First_Object;
-                     while Current_Object_Pos <= Real_Last_Argument loop
-                        Size :=
-                          Size + Arguments (Current_Object_Pos)'Length + 1;
-                        exit when Size > Maximum_Size;
-                        Current_Object_Pos := Current_Object_Pos + 1;
-                     end loop;
-
-                     Last_Argument := Current_Object_Pos - 1;
-                  end if;
-
-                  if not Opt.Quiet_Output then
-                     if Opt.Verbose_Mode then
-                        Display_Command
-                          (Archive_Builder_Path,
-                           Ellipse => True);
-
-                     else
-                        Display
-                          (Section  => GPR.Link,
-                           Command  => "archive",
-                           Argument => Archive_Name);
-                     end if;
-                  end if;
-
-                  Spawn_And_Script_Write
-                    (Archive_Builder_Path.all,
-                     Arguments (1 .. Last_Argument),
-                     Success);
-
-                  --  If the archive has not been built completely, add the
-                  --  remaining chunks.
-
-                  if Success
-                    and then Current_Object_Pos <= Real_Last_Argument
-                  then
-                     Last_Argument := 0;
-                     Add_Arguments
-                       (Archive_Builder_Append_Opts.Options
-                          (1 .. Archive_Builder_Append_Opts.Last),
-                        True);
-                     Add_Argument
-                       (Archive_Name, True,
-                        Simple_Name => not Opt.Verbose_Mode);
-                     First_Object := Last_Argument + 1;
-
-                     while Current_Object_Pos <= Real_Last_Argument loop
-                        Size := 0;
-                        for J in 1 .. First_Object - 1 loop
-                           Size := Size + Arguments (J)'Length + 1;
-                        end loop;
-
-                        Last_Argument := First_Object - 1;
-
-                        while Current_Object_Pos <= Real_Last_Argument loop
-                           Size :=
-                             Size + Arguments (Current_Object_Pos)'Length + 1;
-                           exit when Size > Maximum_Size;
-                           Last_Argument := Last_Argument + 1;
-                           Arguments (Last_Argument) :=
-                             Arguments (Current_Object_Pos);
-                           Current_Object_Pos := Current_Object_Pos + 1;
-                        end loop;
-
-                        if Opt.Verbose_Mode then
-                           Display_Command
-                             (Archive_Builder_Path,
-                              Ellipse => True);
-                        end if;
-
-                        Spawn_And_Script_Write
-                          (Archive_Builder_Path.all,
-                           Arguments (1 .. Last_Argument),
-                           Success);
-
-                        exit when not Success;
-                     end loop;
-                  end if;
-
-                  --  If the archive was built, run the archive indexer
-                  --  (ranlib) if there is one.
-
-                  if Success then
-
-                     --  If the archive was built, run the archive indexer
-                     --  (ranlib), if there is one.
-
-                     if Archive_Indexer_Path /= null then
-                        Last_Argument := 0;
-                        Add_Arguments
-                          (Archive_Indexer_Opts.Options
-                             (1 .. Archive_Indexer_Opts.Last),
-                           True);
-                        Add_Argument
-                          (Archive_Name,
-                           True,
-                           Simple_Name => not Opt.Verbose_Mode);
-
-                        if not Opt.Quiet_Output then
-                           if Opt.Verbose_Mode then
-                              Display_Command
-                                (Archive_Indexer_Path);
-
-                           else
-                              Display
-                                (Section  => GPR.Link,
-                                 Command  => "index",
-                                 Argument => Archive_Name);
-                           end if;
-                        end if;
-
-                        Spawn_And_Script_Write
-                          (Archive_Indexer_Path.all,
-                           Arguments (1 .. Last_Argument),
-                           Success);
-
-                        if not Success then
-
-                           --  Running the archive indexer failed, delete the
-                           --  dependency file, if it exists.
-
-                           if Is_Regular_File (Archive_Dep_Name) then
-                              Delete_File (Archive_Dep_Name, Success);
-                           end if;
-                        end if;
-                     end if;
-                  end if;
-
-                  if Success then
-                     --  The archive was correctly built, create its dependency
-                     --  file.
-
-                     declare
-                        Dep_File : Text_IO.File_Type;
-
-                     begin
-                        --  Create the file in Append mode, to avoid automatic
-                        --  insertion of an end of line if file is empty.
-
-                        Create (Dep_File, Append_File, Archive_Dep_Name);
-
-                        for S in 1 .. Last_Source loop
-                           Src_Id := Source_Indexes (S).Id;
-                           if Object_To_Global_Archive (Src_Id) then
-                              Put_Line
-                                (Dep_File,
-                                 Get_Name_String (Src_Id.Object_Path));
-                              Put_Line (Dep_File, String (Src_Id.Object_TS));
-                           end if;
-                        end loop;
-
-                        Close (Dep_File);
-
-                     exception
-                        when others =>
-                           if Is_Open (Dep_File) then
-                              Close (Dep_File);
-                           end if;
-                     end;
-
-                     Has_Been_Built := True;
-                     Exists         := True;
-
-                  else
-                     --  Building the archive failed, delete dependency file if
-                     --  one exists.
-
-                     if Is_Regular_File (Archive_Dep_Name) then
-                        Delete_File (Archive_Dep_Name, Success);
+                     if Opt.Verbosity_Level > Opt.Low  then
+                        Put  ("      -> time stamp of ");
+                        Put  (Get_Name_String (Object_Path));
+                        Put  (" is incorrect in the archive");
+                        Put_Line (" dependency file");
+                        Put  ("         recorded time stamp: ");
+                        Put_Line (String (Time_Stamp));
+                        Put  ("           actual time stamp: ");
+                        Put_Line (String (Src_Id.Object_TS));
                      end if;
 
-                     Put ("global archive for project ");
-                     Put
-                       (Get_Name_String (For_Project.Display_Name));
-                     Put_Line (" could not be built");
-                     OK := False;
-                     return;
+                     exit;
+
+                  elsif Debug_Flag_T then
+                     Put  ("      -> time stamp of ");
+                     Put  (Get_Name_String (Object_Path));
+                     Put  (" is correct in the archive");
+                     Put_Line (" dependency file");
+                     Put  ("         recorded time stamp: ");
+                     Put_Line (String (Time_Stamp));
+                     Put  ("           actual time stamp: ");
+                     Put_Line (String (Src_Id.Object_TS));
                   end if;
-               end if;
+               end loop;
+
+               Close (File);
             end if;
-
-            Global_Archives_Built.Set
-              (Name_Id (For_Project.Path.Name),
-               (Checked        => True,
-                Has_Been_Built => Has_Been_Built,
-                Exists         => Exists));
          end if;
       end if;
+
+      if not Need_To_Build then
+         for S in 1 .. Last_Source loop
+            if not Source_Indexes (S).Found
+              and then Object_To_Global_Archive (Source_Indexes (S).Id)
+            then
+               Need_To_Build := True;
+
+               if Opt.Verbosity_Level > Opt.Low then
+                  Put ("      -> object file ");
+                  Put (Get_Name_String
+                       (Source_Indexes (S).Id.Object_Path));
+                  Put_Line (" is not in the dependency file");
+               end if;
+
+               exit;
+            end if;
+         end loop;
+      end if;
+
+      if not Need_To_Build then
+         if Opt.Verbosity_Level > Opt.Low then
+            Put_Line  ("      -> up to date");
+         end if;
+
+         Report_Status
+           (Archive_Built  => False,
+            Archive_Exists => True);
+
+         --  No processing needed: up-to-date. Let's return
+         return;
+      end if;
+
+      --  Archive needs to be rebuilt
+      Check_Archive_Builder;
+
+      --  If archive already exists, first delete it, but if this is
+      --  not possible, continue: if archive cannot be built, we will
+      --  fail later on.
+
+      if Is_Regular_File (Archive_Name) then
+         Delete_File (Archive_Name, Discard);
+      end if;
+
+      --  Get all the object files of the non library projects
+
+      Objects := Get_Objects (For_Project);
+
+      Proj_List := For_Project.All_Imported_Projects;
+
+      while Proj_List /= null loop
+         if not Proj_List.Project.Library then
+            Objects.Append (Get_Objects (Proj_List.Project));
+         end if;
+
+         Proj_List := Proj_List.Next;
+      end loop;
+
+      --  No global archive, if there is no object file to put into
+
+      if Objects.Is_Empty then
+         if Opt.Verbosity_Level > Opt.Low
+         then
+            Put_Line ("      -> there is no global archive");
+         end if;
+
+         Report_Status
+           (Archive_Built  => False,
+            Archive_Exists => False);
+
+         return;
+      end if;
+
+      First_Object := Objects.First_Index;
+
+      --  If there is an Archive_Builder_Append_Option, we may have
+      --  to build the archive in chuck.
+
+      loop
+         Arguments.Clear;
+
+         --  Start with the minimal options
+
+         if First_Object = Objects.First_Index then
+            --  Creation of a new archive
+            Arguments.Append (Archive_Builder_Opts);
+         else
+            --  Append objects to an existing archive
+            Arguments.Append (Archive_Builder_Append_Opts);
+         end if;
+
+         --  Followed by the archive name
+
+         Add_Argument
+           (Arguments,
+            Archive_Name,
+            Display     => True,
+            Simple_Name => not Opt.Verbose_Mode);
+
+         if Archive_Builder_Append_Opts.Is_Empty then
+            Current_Object := Objects.Last_Index;
+
+         else
+            Size := 0;
+            for Arg of Arguments loop
+               Size := Size + Arg.Name_Len + 1;
+            end loop;
+
+            for J in First_Object .. Objects.Last_Index loop
+               Size :=
+                 Size + Objects.Element (J)'Length + 1;
+               exit when Size > Maximum_Size;
+               Current_Object := J;
+            end loop;
+         end if;
+
+         for J in First_Object .. Current_Object loop
+            Add_Argument
+              (Arguments,
+               Objects (J),
+               Display     => Opt.Verbose_Mode,
+               Simple_Name => not Opt.Verbose_Mode);
+         end loop;
+
+         First_Object := Current_Object + 1;
+
+         if not Opt.Quiet_Output then
+            if Opt.Verbose_Mode then
+               Display_Command
+                 (Arguments,
+                  Archive_Builder_Path,
+                  Ellipse => True);
+
+            else
+               Display
+                 (Section  => GPR.Link,
+                  Command  => "archive",
+                  Argument => Archive_Name);
+            end if;
+         end if;
+
+         declare
+            Options : String_Vectors.Vector;
+         begin
+            for Arg of Arguments loop
+               Options.Append (Arg.Name);
+            end loop;
+
+            Spawn_And_Script_Write
+              (Archive_Builder_Path.all,
+               Options,
+               Success);
+         end;
+
+         if not Success then
+            Handle_Failure;
+
+            return;
+         end if;
+
+         --  Continue until all objects are in the archive
+         exit when First_Object > Objects.Last_Index;
+      end loop;
+
+      --  The archive was built, run the archive indexer
+      --  (ranlib) if there is one.
+
+      if Archive_Indexer_Path /= null then
+         Arguments.Clear;
+
+         Arguments.Append (Archive_Indexer_Opts);
+         Add_Argument
+           (Arguments,
+            Archive_Name,
+            True,
+            Simple_Name => not Opt.Verbose_Mode);
+
+         if not Opt.Quiet_Output then
+            if Opt.Verbose_Mode then
+               Display_Command
+                 (Arguments,
+                  Archive_Indexer_Path);
+
+            else
+               Display
+                 (Section  => GPR.Link,
+                  Command  => "index",
+                  Argument => Archive_Name);
+            end if;
+         end if;
+
+         declare
+            Options : String_Vectors.Vector;
+         begin
+            for Arg of Arguments loop
+               Options.Append (Arg.Name);
+            end loop;
+
+            Spawn_And_Script_Write
+              (Archive_Indexer_Path.all,
+               Options,
+               Success);
+         end;
+
+         if not Success then
+            --  Running the archive indexer failed, delete the
+            --  dependency file, if it exists.
+
+            if Is_Regular_File (Archive_Dep_Name) then
+               Delete_File (Archive_Dep_Name, Success);
+            end if;
+
+            Handle_Failure;
+
+            return;
+         end if;
+      end if;
+
+      --  The archive was correctly built, create its dependency
+      --  file.
+
+      declare
+         Dep_File : Text_IO.File_Type;
+
+      begin
+         --  Create the file in Append mode, to avoid automatic
+         --  insertion of an end of line if file is empty.
+
+         Create (Dep_File, Append_File, Archive_Dep_Name);
+
+         for S in 1 .. Last_Source loop
+            Src_Id := Source_Indexes (S).Id;
+            if Object_To_Global_Archive (Src_Id) then
+               Put_Line
+                 (Dep_File,
+                  Get_Name_String (Src_Id.Object_Path));
+               Put_Line (Dep_File, String (Src_Id.Object_TS));
+            end if;
+         end loop;
+
+         Close (Dep_File);
+
+      exception
+         when others =>
+            if Is_Open (Dep_File) then
+               Close (Dep_File);
+            end if;
+      end;
+
+      Report_Status
+        (Archive_Built  => True,
+         Archive_Exists => True);
    end Build_Global_Archive;
 
    ---------------------
@@ -1138,8 +962,9 @@ package body Gprbuild.Link is
    ---------------------
 
    procedure Display_Command
-     (Path          : String_Access;
-      Ellipse       : Boolean := False)
+     (Arguments : Options_Data;
+      Path      : String_Access;
+      Ellipse   : Boolean := False)
    is
       Display_Ellipse : Boolean := Ellipse;
    begin
@@ -1157,15 +982,15 @@ package body Gprbuild.Link is
                Add_Str_To_Name_Buffer (Path.all);
             end if;
 
-            for Arg in 1 .. Last_Argument loop
-               if Arguments_Displayed (Arg) then
+            for Arg of Arguments loop
+               if Arg.Displayed then
                   Add_Str_To_Name_Buffer (" ");
 
-                  if Arguments_Simple_Name (Arg) then
-                     Add_Str_To_Name_Buffer (Base_Name (Arguments (Arg).all));
+                  if Arg.Simple_Name then
+                     Add_Str_To_Name_Buffer (Base_Name (Arg.Name));
 
                   else
-                     Add_Str_To_Name_Buffer (Arguments (Arg).all);
+                     Add_Str_To_Name_Buffer (Arg.Name);
                   end if;
 
                elsif Display_Ellipse then
@@ -1180,11 +1005,16 @@ package body Gprbuild.Link is
    end Display_Command;
 
    ------------------------
-   -- Get_Linker_Options --
+   -- Add_Linker_Options --
    ------------------------
 
-   procedure Get_Linker_Options (For_Project : Project_Id) is
+   procedure Add_Linker_Options
+     (Arguments   : in out Options_Data;
+      For_Project : Project_Id)
+   is
       Linker_Lib_Dir_Option  : String_Access;
+      Linker_Opts            : Linker_Options_Vector.Vector;
+      --  Table to store the Linker'Linker_Options in the project files
 
       procedure Recursive_Add
         (Proj  : Project_Id;
@@ -1224,9 +1054,9 @@ package body Gprbuild.Link is
             --  the attribute to table Linker_Opts.
 
             if Options /= Nil_Variable_Value then
-               Linker_Opts.Increment_Last;
-               Linker_Opts.Table (Linker_Opts.Last) :=
-                 (Project => Proj, Options => Options.Values);
+               Linker_Opts.Append
+                 (Linker_Options_Data'
+                    (Project => Proj, Options => Options.Values));
             end if;
          end if;
       end Recursive_Add;
@@ -1248,16 +1078,15 @@ package body Gprbuild.Link is
              (Get_Name_String (For_Project.Config.Linker_Lib_Dir_Option));
       end if;
 
-      Linker_Opts.Init;
+      Linker_Opts.Clear;
 
       For_All_Projects
         (For_Project, Project_Tree, Dummy, Imported_First => True);
 
-      for Index in reverse 1 .. Linker_Opts.Last loop
+      for Index in reverse 1 .. Linker_Opts.Last_Index loop
          declare
-            Options  : String_List_Id := Linker_Opts.Table (Index).Options;
-            Proj     : constant Project_Id :=
-                         Linker_Opts.Table (Index).Project;
+            Options  : String_List_Id := Linker_Opts (Index).Options;
+            Proj     : constant Project_Id := Linker_Opts (Index).Project;
             Option   : Name_Id;
             Dir_Path : constant String :=
                          Get_Name_String (Proj.Directory.Display_Name);
@@ -1283,7 +1112,8 @@ package body Gprbuild.Link is
                        (Name_Buffer
                           (Linker_Lib_Dir_Option'Length + 1 .. Name_Len))
                      then
-                        Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                        Add_Argument
+                          (Arguments, Name_Buffer (1 .. Name_Len), True);
 
                      else
                         declare
@@ -1295,10 +1125,16 @@ package body Gprbuild.Link is
                         begin
                            if Is_Directory (Dir) then
                               Add_Argument
-                                (Linker_Lib_Dir_Option.all & Dir, True);
+                                (Arguments,
+                                 Linker_Lib_Dir_Option.all & Dir,
+                                 True);
                            else
+                              --  ??? Really ignore the -L switch given by the
+                              --  project?
                               Add_Argument
-                                (Name_Buffer (1 .. Name_Len), True);
+                                (Arguments,
+                                 Name_Buffer (1 .. Name_Len),
+                                 True);
                            end if;
                         end;
                      end if;
@@ -1306,7 +1142,8 @@ package body Gprbuild.Link is
                   elsif Name_Buffer (1) = '-' or else
                       Is_Absolute_Path (Name_Buffer (1 .. Name_Len))
                   then
-                     Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                     Add_Argument
+                       (Arguments, Name_Buffer (1 .. Name_Len), True);
 
                   else
                      declare
@@ -1317,9 +1154,10 @@ package body Gprbuild.Link is
                      begin
                         if Is_Regular_File (File) then
                            Add_Argument
-                             (File, True, Simple_Name => True);
+                             (Arguments, File, True, Simple_Name => True);
                         else
-                           Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                           Add_Argument
+                             (Arguments, Name_Buffer (1 .. Name_Len), True);
                         end if;
                      end;
                   end if;
@@ -1330,7 +1168,7 @@ package body Gprbuild.Link is
             end loop;
          end;
       end loop;
-   end Get_Linker_Options;
+   end Add_Linker_Options;
 
    ---------------------------
    -- Is_In_Library_Project --
@@ -1361,21 +1199,20 @@ package body Gprbuild.Link is
    ------------------------
 
    procedure Rpaths_Relative_To
-     (Exec_Dir : Path_Name_Type;
+     (Rpaths   : in out String_Vectors.Vector;
+      Exec_Dir : Path_Name_Type;
       Origin   : Name_Id)
    is
       Origin_Name : constant String := Get_Name_String (Origin);
       Exec        : constant String := Get_Name_String (Exec_Dir);
+      Ret         : String_Vectors.Vector;
 
    begin
-      for Npath in 1 .. Rpaths.Last loop
-         --  Replace Rpath with a relative path
-         Rpaths.Table (Npath) :=
-           new String'(Relative_RPath
-                         (Rpaths.Table (Npath).all,
-                          Exec,
-                          Origin_Name));
+      for Path of Rpaths loop
+         Ret.Append (Relative_RPath (Path, Exec, Origin_Name));
       end loop;
+
+      Rpaths := Ret;
    end Rpaths_Relative_To;
 
    ---------------
@@ -1430,97 +1267,103 @@ package body Gprbuild.Link is
 
       Main_Base_Name_Index : File_Name_Type;
 
-      First_Object_Index : Natural := 0;
-      Last_Object_Index  : Natural := 0;
-
       Index_Separator : Character;
 
       Response_File_Name : Path_Name_Type := No_Path;
       Response_2         : Path_Name_Type := No_Path;
 
+      Rpaths             : String_Vectors.Vector;
+
+      Binding_Options    : String_Vectors.Vector;
+      --  Table to store the linking options coming from the binder
+
+      Arguments          : Options_Data;
+      Objects            : String_Vectors.Vector;
+      Other_Arguments    : Options_Data;
+
       --------------------------
       -- Add_Run_Path_Options --
       --------------------------
 
-      procedure Add_Run_Path_Options is
+      procedure Add_Run_Path_Options
+      is
+         Nam_Nod : Name_Node;
+         Length  : Natural := 0;
+         Arg     : String_Access := null;
       begin
-         for J in 1 .. Path_Options.Last loop
-            Add_Rpath (Path_Options.Table (J).all);
-            Add_Rpath (Shared_Libgcc_Dir (Path_Options.Table (J).all));
+         for Path of Path_Options loop
+            Add_Rpath (Rpaths, Path);
+            Add_Rpath (Rpaths, Shared_Libgcc_Dir (Path));
          end loop;
 
-         if Rpaths.Last > 0 then
-            declare
-               Nam_Nod : Name_Node :=
-                           Main_File.Tree.Shared.Name_Lists.Table
-                             (Main_Proj.Config.Run_Path_Option);
-               Length  : Natural := 0;
-               Arg     : String_Access := null;
-            begin
-               if Main_Proj.Config.Run_Path_Origin /= No_Name
-                 and then
-                   Get_Name_String (Main_Proj.Config.Run_Path_Origin) /= ""
-               then
-                  Rpaths_Relative_To
-                    (Main_Proj.Exec_Directory.Display_Name,
-                     Main_Proj.Config.Run_Path_Origin);
-               end if;
+         if Rpaths.Is_Empty then
+            return;
+         end if;
 
-               if Main_Proj.Config.Separate_Run_Path_Options then
-                  for J in 1 .. Rpaths.Last loop
-                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                       (Main_Proj.Config.Run_Path_Option);
-                     while Nam_Nod.Next /= No_Name_List loop
-                        Add_Argument
-                          (Get_Name_String (Nam_Nod.Name), True);
-                        Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                          (Nam_Nod.Next);
-                     end loop;
+         Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+           (Main_Proj.Config.Run_Path_Option);
 
-                     Get_Name_String (Nam_Nod.Name);
-                     Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
-                     Add_Argument
-                       (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
-                  end loop;
+         if Main_Proj.Config.Run_Path_Origin /= No_Name
+           and then Get_Name_String (Main_Proj.Config.Run_Path_Origin) /= ""
+         then
+            Rpaths_Relative_To
+              (Rpaths,
+               Main_Proj.Exec_Directory.Display_Name,
+               Main_Proj.Config.Run_Path_Origin);
+         end if;
 
-               else
-                  while Nam_Nod.Next /= No_Name_List loop
-                     Add_Argument (Get_Name_String (Nam_Nod.Name), True);
-                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
-                       (Nam_Nod.Next);
-                  end loop;
+         if Main_Proj.Config.Separate_Run_Path_Options then
+            for Path of Rpaths loop
+               Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                 (Main_Proj.Config.Run_Path_Option);
+               while Nam_Nod.Next /= No_Name_List loop
+                  Add_Argument
+                    (Other_Arguments,
+                     Get_Name_String (Nam_Nod.Name),
+                     True);
+                  Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                    (Nam_Nod.Next);
+               end loop;
 
-                  --  Compute the length of the argument
+               Get_Name_String (Nam_Nod.Name);
+               Add_Str_To_Name_Buffer (Path);
+               Add_Argument
+                 (Other_Arguments,
+                  Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
+            end loop;
 
-                  Get_Name_String (Nam_Nod.Name);
-                  Length := Name_Len;
+         else
+            while Nam_Nod.Next /= No_Name_List loop
+               Add_Argument
+                 (Other_Arguments, Get_Name_String (Nam_Nod.Name), True);
+               Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                 (Nam_Nod.Next);
+            end loop;
 
-                  for J in 1 .. Rpaths.Last loop
-                     Length := Length + Rpaths.Table (J)'Length + 1;
-                  end loop;
+            --  Compute the length of the argument
 
-                  Length := Length - 1;
+            Get_Name_String (Nam_Nod.Name);
+            Length := Name_Len;
 
-                  --  Create the argument
+            for Path of Rpaths loop
+               Length := Length + Path'Length + 1;
+            end loop;
 
-                  Arg := new String (1 .. Length);
-                  Length := Name_Len;
-                  Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
+            --  Create the argument
 
-                  for J in 1 .. Rpaths.Last loop
-                     if J /= 1 then
-                        Length := Length + 1;
-                        Arg (Length) := ':';
-                     end if;
+            Arg := new String (1 .. Length);
+            Length := Name_Len;
+            Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
 
-                     Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
-                       := Rpaths.Table (J).all;
-                     Length := Length + Rpaths.Table (J)'Length;
-                  end loop;
+            for Path of Rpaths loop
+               Arg (Length + 1 .. Length + Path'Length) := Path;
+               Length := Length + Path'Length + 1;
+               Arg (Length) := ':';
+            end loop;
 
-                  Add_Argument (Arg, Opt.Verbose_Mode);
-               end if;
-            end;
+            Add_Argument (Other_Arguments,
+                          Arg (1 .. Arg'Last - 1),
+                          Opt.Verbose_Mode);
          end if;
       end Add_Run_Path_Options;
 
@@ -1540,8 +1383,7 @@ package body Gprbuild.Link is
       --  Make sure that the table Rpaths is emptied after each main, so
       --  that the same rpaths are not duplicated.
 
-      Rpaths.Set_Last (0);
-      Path_Options.Set_Last (0);
+      Path_Options.Clear;
 
       Linker_Needs_To_Be_Called := Opt.Force_Compilations;
 
@@ -1669,8 +1511,6 @@ package body Gprbuild.Link is
               "no default linker in the configuration");
       end if;
 
-      Last_Argument := 0;
-
       Initialize_Source_Record (Main_Source);
 
       Main_Object_TS := File_Stamp (File_Name_Type (Main_Source.Object_Path));
@@ -1702,9 +1542,11 @@ package body Gprbuild.Link is
       end if;
 
       if Main_Proj = Main_Source.Object_Project then
-         Add_Argument (Get_Name_String (Main_Source.Object), True);
+         Add_Argument
+           (Arguments, Get_Name_String (Main_Source.Object), True);
       else
-         Add_Argument (Get_Name_String (Main_Source.Object_Path), True);
+         Add_Argument
+           (Arguments, Get_Name_String (Main_Source.Object_Path), True);
       end if;
 
       --  Add the Leading_Switches if there are any in package Linker
@@ -1732,7 +1574,6 @@ package body Gprbuild.Link is
                                        Main_File.Tree.Shared.Packages.Table
                                          (Linker_Package).Decl.Arrays,
                                      Shared    => Main_File.Tree.Shared);
-               Option         : String_Access;
 
             begin
                Switches :=
@@ -1777,9 +1618,8 @@ package body Gprbuild.Link is
                         Get_Name_String (Element.Value);
 
                         if Name_Len > 0 then
-                           Option :=
-                             new String'(Name_Buffer (1 .. Name_Len));
-                           Add_Argument (Option.all, True);
+                           Add_Argument
+                             (Arguments, Name_Buffer (1 .. Name_Len), True);
                         end if;
 
                         Switch_List := Element.Next;
@@ -1791,9 +1631,9 @@ package body Gprbuild.Link is
 
       Find_Binding_Languages (Main_File.Tree, Main_File.Project);
 
+      --  Build the objects list
       if Builder_Data (Main_File.Tree).There_Are_Binder_Drivers then
-         First_Object_Index := Last_Argument + 1;
-         Binding_Options.Init;
+         Binding_Options.Clear;
 
          B_Data := Builder_Data (Main_File.Tree).Binding;
 
@@ -1857,8 +1697,7 @@ package body Gprbuild.Link is
                                           (Create_Name
                                                (Line (1 .. Last))));
 
-                                 Add_Argument
-                                   (Line (1 .. Last), Opt.Verbose_Mode);
+                                 Objects.Append (Line (1 .. Last));
 
                               when Bound_Object_Files =>
                                  if Normalize_Pathname
@@ -1874,16 +1713,14 @@ package body Gprbuild.Link is
                                      not Is_In_Library_Project
                                        (Line (1 .. Last))
                                  then
-                                    Add_Argument
-                                      (Line (1 .. Last), Opt.Verbose_Mode);
+                                    Objects.Append (Line (1 .. Last));
                                  end if;
 
                               when Resulting_Options =>
                                  if Line (1 .. Last) /= "-static"
                                    and then Line (1 .. Last) /= "-shared"
                                  then
-                                    Binding_Options.Append
-                                      (new String'(Line (1 .. Last)));
+                                    Binding_Options.Append (Line (1 .. Last));
                                  end if;
 
                               when Gprexch.Run_Path_Option =>
@@ -1892,8 +1729,7 @@ package body Gprbuild.Link is
                                      Main_Proj.Config.Run_Path_Option /=
                                        No_Name_List
                                  then
-                                    Path_Options.Append
-                                      (new String'(Line (1 .. Last)));
+                                    Path_Options.Append (Line (1 .. Last));
                                  end if;
 
                               when others =>
@@ -1943,8 +1779,6 @@ package body Gprbuild.Link is
             <<No_Binding>>
             B_Data := B_Data.Next;
          end loop Binding_Loop;
-
-         Last_Object_Index := Last_Argument;
       end if;
 
       --  Add the global archive, if there is one
@@ -2092,7 +1926,10 @@ package body Gprbuild.Link is
 
       else
          if Global_Archive_Exists then
-            Add_Argument (Global_Archive_Name (Main_Proj), Opt.Verbose_Mode);
+            Add_Argument
+              (Other_Arguments,
+               Global_Archive_Name (Main_Proj),
+               Opt.Verbose_Mode);
          end if;
 
          --  Add the library switches, if there are libraries
@@ -2101,16 +1938,17 @@ package body Gprbuild.Link is
 
          Library_Dirs.Reset;
 
-         for J in reverse 1 .. Library_Projs.Last loop
-            if not Library_Projs.Table (J).Is_Aggregated then
-               if Is_Static (Library_Projs.Table (J).Proj) then
+         for J in reverse 1 .. Library_Projs.Last_Index loop
+            if not Library_Projs (J).Is_Aggregated then
+               if Is_Static (Library_Projs (J).Proj) then
                   Add_Argument
-                    (Get_Name_String
-                       (Library_Projs.Table (J).Proj.Library_Dir.Display_Name)
+                    (Other_Arguments,
+                     Get_Name_String
+                       (Library_Projs (J).Proj.Library_Dir.Display_Name)
                        & "lib"
                        & Get_Name_String
-                       (Library_Projs.Table (J).Proj.Library_Name)
-                       & Archive_Suffix (Library_Projs.Table (J).Proj),
+                       (Library_Projs (J).Proj.Library_Name)
+                       & Archive_Suffix (Library_Projs (J).Proj),
                      Opt.Verbose_Mode);
 
                else
@@ -2119,25 +1957,27 @@ package body Gprbuild.Link is
                   --  directory.
 
                   if not Library_Dirs.Get
-                    (Library_Projs.Table (J).Proj.Library_Dir.Name)
+                    (Library_Projs (J).Proj.Library_Dir.Name)
                   then
                      Library_Dirs.Set
-                       (Library_Projs.Table (J).Proj.Library_Dir.Name, True);
+                       (Library_Projs (J).Proj.Library_Dir.Name, True);
 
                      if Main_Proj.Config.Linker_Lib_Dir_Option = No_Name then
                         Add_Argument
-                          ("-L" &
+                          (Other_Arguments,
+                           "-L" &
                              Get_Name_String
-                             (Library_Projs.Table (J).
+                             (Library_Projs (J).
                                 Proj.Library_Dir.Display_Name),
                            Opt.Verbose_Mode);
 
                      else
                         Add_Argument
-                          (Get_Name_String
+                          (Other_Arguments,
+                           Get_Name_String
                              (Main_Proj.Config.Linker_Lib_Dir_Option) &
                              Get_Name_String
-                             (Library_Projs.Table (J).
+                             (Library_Projs (J).
                                 Proj.Library_Dir.Display_Name),
                            Opt.Verbose_Mode);
                      end if;
@@ -2147,25 +1987,28 @@ package body Gprbuild.Link is
                          Main_Proj.Config.Run_Path_Option /= No_Name_List
                      then
                         Add_Rpath
-                          (Get_Name_String
-                             (Library_Projs.Table
-                                (J).Proj.Library_Dir.Display_Name));
+                          (Rpaths,
+                           Get_Name_String
+                             (Library_Projs
+                                  (J).Proj.Library_Dir.Display_Name));
                      end if;
                   end if;
 
                   if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
                      Add_Argument
-                       ("-l" &
+                       (Other_Arguments,
+                        "-l" &
                           Get_Name_String
-                          (Library_Projs.Table (J).Proj.Library_Name),
+                          (Library_Projs (J).Proj.Library_Name),
                         Opt.Verbose_Mode);
 
                   else
                      Add_Argument
-                       (Get_Name_String
+                       (Other_Arguments,
+                        Get_Name_String
                           (Main_Proj.Config.Linker_Lib_Name_Option) &
                           Get_Name_String
-                          (Library_Projs.Table (J).Proj.Library_Name),
+                          (Library_Projs (J).Proj.Library_Name),
                         Opt.Verbose_Mode);
                   end if;
                end if;
@@ -2269,7 +2112,9 @@ package body Gprbuild.Link is
                                  Get_Name_String (Main_Proj.Directory.Name),
                                  Dash_L);
 
-                              Add_Argument (Option.all, True);
+                              Add_Argument
+                                (Other_Arguments, Option.all, True);
+                              Free (Option);
                            end if;
 
                            Switch_List := Element.Next;
@@ -2280,20 +2125,21 @@ package body Gprbuild.Link is
          end;
 
          --  Get the Linker_Options, if any
-
-         Get_Linker_Options (For_Project => Main_Proj);
+         Add_Linker_Options (Other_Arguments, For_Project => Main_Proj);
 
          --  Add the linker switches specified on the command line
-
-         for J in 1 .. Command_Line_Linker_Options.Last loop
-            Add_Argument
-              (Command_Line_Linker_Options.Table (J), Opt.Verbose_Mode);
-         end loop;
+         Add_Arguments
+           (Other_Arguments,
+            Command_Line_Linker_Options,
+            Opt.Verbose_Mode);
 
          --  Then the binding options
 
-         for J in 1 .. Binding_Options.Last loop
-            Add_Argument (Binding_Options.Table (J), Opt.Verbose_Mode);
+         for Option of Binding_Options loop
+            Add_Argument
+              (Other_Arguments,
+               Option,
+               Opt.Verbose_Mode);
          end loop;
 
          --  Then the required switches, if any. These are put here because,
@@ -2305,7 +2151,8 @@ package body Gprbuild.Link is
 
          while Min_Linker_Opts /= No_Name_List loop
             Add_Argument
-              (Get_Name_String
+              (Other_Arguments,
+               Get_Name_String
                  (Main_File.Tree.Shared.Name_Lists.Table
                     (Min_Linker_Opts).Name),
                Opt.Verbose_Mode);
@@ -2340,7 +2187,6 @@ package body Gprbuild.Link is
                          Main_File.Tree.Shared.Packages.Table
                            (Linker_Package).Decl.Arrays,
                        Shared    => Main_File.Tree.Shared);
-                  Option         : String_Access;
 
                begin
                   Switches :=
@@ -2384,11 +2230,10 @@ package body Gprbuild.Link is
                             (Switch_List);
                         Get_Name_String (Element.Value);
 
-                        if Name_Len > 0 then
-                           Option :=
-                             new String'(Name_Buffer (1 .. Name_Len));
-                           Add_Argument (Option.all, True);
-                        end if;
+                        Add_Argument
+                          (Other_Arguments,
+                           Name_Buffer (1 .. Name_Len),
+                           True);
 
                         Switch_List := Element.Next;
                      end loop;
@@ -2408,61 +2253,72 @@ package body Gprbuild.Link is
          --  switches --lto or -flto and add =nn to the switch.
 
          Clean_Link_Option_Set : declare
-            J        : Natural := Last_Object_Index + 1;
+            J        : Natural := Other_Arguments.First_Index;
             Stack_Op : Boolean := False;
+            Inc      : Boolean;
 
          begin
-            while J <= Last_Argument loop
+            while J <= Other_Arguments.Last_Index loop
+               --  Incriment J by default
+               Inc := True;
 
                --  Check for two switches "-Xlinker" followed by "--stack=..."
 
-               if Arguments (J).all = "-Xlinker"
-                 and then J < Last_Argument
-                 and then Arguments (J + 1)'Length > 8
-                 and then Arguments (J + 1) (1 .. 8) = "--stack="
+               if J /= Other_Arguments.Last_Index
+                 and then Other_Arguments (J).Name = "-Xlinker"
+                 and then Other_Arguments (J + 1).Name'Length > 8
+                 and then Other_Arguments (J + 1).Name (1 .. 8) = "--stack="
                then
                   if Stack_Op then
-                     Arguments (J .. Last_Argument - 2) :=
-                       Arguments (J + 2 .. Last_Argument);
-                     Last_Argument := Last_Argument - 2;
+                     Other_Arguments.Delete (J + 1);
+                     Other_Arguments.Delete (J);
+                     Inc := False;
 
                   else
                      Stack_Op := True;
                   end if;
-               end if;
 
                --  Check for single switch
 
-               if (Arguments (J)'Length > 17
-                   and then Arguments (J) (1 .. 17) = "-Xlinker --stack=")
+               elsif (Other_Arguments (J).Name'Length > 17
+                   and then Other_Arguments (J).Name (1 .. 17) =
+                     "-Xlinker --stack=")
                  or else
-                  (Arguments (J)'Length > 12
-                   and then Arguments (J) (1 .. 12) = "-Wl,--stack=")
+                  (Other_Arguments (J).Name'Length > 12
+                   and then Other_Arguments (J).Name (1 .. 12) =
+                         "-Wl,--stack=")
                then
                   if Stack_Op then
-                     Arguments (J .. Last_Argument - 1) :=
-                       Arguments (J + 1 .. Last_Argument);
-                     Last_Argument := Last_Argument - 1;
+                     Other_Arguments.Delete (J);
+                     Inc := False;
 
                   else
                      Stack_Op := True;
                   end if;
-               end if;
 
-               if Opt.Maximum_Processes > 1 then
-                  if Arguments (J).all = "--lto" or else
-                     Arguments (J).all = "-flto"
+               elsif Opt.Maximum_Processes > 1 then
+                  if Other_Arguments (J).Name = "--lto" or else
+                     Other_Arguments (J).Name = "-flto"
                   then
                      declare
                         Img : String := Opt.Maximum_Processes'Img;
+                        Arg : Option_Type renames Other_Arguments (J);
                      begin
                         Img (1) := '=';
-                        Arguments (J) := new String'(Arguments (J).all & Img);
+                        Other_Arguments.Replace_Element
+                          (J,
+                           Option_Type'
+                             (Name_Len    => Arg.Name_Len + Img'Length,
+                              Name        => Arg.Name & Img,
+                              Displayed   => Arg.Displayed,
+                              Simple_Name => Arg.Simple_Name));
                      end;
                   end if;
                end if;
 
-               J := J + 1;
+               if Inc then
+                  J := J + 1;
+               end if;
             end loop;
          end Clean_Link_Option_Set;
 
@@ -2472,39 +2328,26 @@ package body Gprbuild.Link is
          declare
             Dash_Shared_Libgcc : Boolean := False;
             Dash_Static_Libgcc : Boolean := False;
-            Arg : Natural;
-
-            procedure Remove_Argument;
-            --  Remove Arguments (Arg)
-
-            procedure Remove_Argument is
-            begin
-               Arguments (Arg .. Last_Argument - 1) :=
-                 Arguments (Arg + 1 .. Last_Argument);
-               Last_Argument := Last_Argument - 1;
-            end Remove_Argument;
 
          begin
-            Arg := Last_Argument;
+            for Arg in reverse
+              Other_Arguments.First_Index .. Other_Arguments.Last_Index
             loop
-               if Arguments (Arg).all = "-shared-libgcc" then
+               if Other_Arguments (Arg).Name = "-shared-libgcc" then
                   if Dash_Shared_Libgcc or Dash_Static_Libgcc then
-                     Remove_Argument;
+                     Other_Arguments.Delete (Arg);
 
                   else
                      Dash_Shared_Libgcc := True;
                   end if;
 
-               elsif Arguments (Arg).all = "-static-libgcc" then
+               elsif Other_Arguments (Arg).Name = "-static-libgcc" then
                   if Dash_Shared_Libgcc or Dash_Static_Libgcc then
-                     Remove_Argument;
+                     Other_Arguments.Delete (Arg);
                   else
                      Dash_Static_Libgcc := True;
                   end if;
                end if;
-
-               Arg := Arg - 1;
-               exit when Arg = 0;
             end loop;
          end;
 
@@ -2512,7 +2355,8 @@ package body Gprbuild.Link is
          if Opt.Run_Path_Option
            and then Main_Proj.Config.Run_Path_Option /= No_Name_List
          then
-            Add_Rpath_From_Arguments (Main_Proj);
+            Add_Rpath_From_Arguments (Rpaths, Arguments, Main_Proj);
+            Add_Rpath_From_Arguments (Rpaths, Other_Arguments, Main_Proj);
             Add_Run_Path_Options;
          end if;
 
@@ -2532,7 +2376,8 @@ package body Gprbuild.Link is
                Add_Str_To_Name_Buffer (".map");
             end if;
 
-            Add_Argument (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
+            Add_Argument
+              (Other_Arguments, Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
          end if;
 
          --  Add the switch(es) to specify the name of the executable
@@ -2554,7 +2399,8 @@ package body Gprbuild.Link is
             begin
                Add_Str_To_Name_Buffer (Get_Name_String (Exec_Path_Name));
                Add_Argument
-                 (Name_Buffer (1 .. Name_Len),
+                 (Other_Arguments,
+                  Name_Buffer (1 .. Name_Len),
                   True,
                   Simple_Name => not Opt.Verbose_Mode);
             end Add_Executable_Name;
@@ -2570,14 +2416,15 @@ package body Gprbuild.Link is
                      exit;
 
                   else
-                     Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                     Add_Argument
+                       (Other_Arguments, Name_Buffer (1 .. Name_Len), True);
                   end if;
 
                   List := Nam.Next;
                end loop;
 
             else
-               Add_Argument ("-o", True);
+               Add_Argument (Other_Arguments, "-o", True);
                Name_Len := 0;
                Add_Executable_Name;
             end if;
@@ -2589,14 +2436,19 @@ package body Gprbuild.Link is
 
          if Main_Proj.Config.Max_Command_Line_Length > 0
            and then Main_Proj.Config.Resp_File_Format /= GPR.None
-           and then First_Object_Index > 0
          then
             declare
                Arg_Length            : Natural := 0;
                Min_Number_Of_Objects : Natural := 0;
             begin
-               for J in 1 .. Last_Argument loop
-                  Arg_Length := Arg_Length + Arguments (J)'Length + 1;
+               for Arg of Arguments loop
+                  Arg_Length := Arg_Length + Arg.Name'Length + 1;
+               end loop;
+               for Arg of Objects loop
+                  Arg_Length := Arg_Length + Arg'Length + 1;
+               end loop;
+               for Arg of Other_Arguments loop
+                  Arg_Length := Arg_Length + Arg.Name'Length + 1;
                end loop;
 
                if Arg_Length > Main_Proj.Config.Max_Command_Line_Length then
@@ -2609,38 +2461,34 @@ package body Gprbuild.Link is
                   --  Don't create a response file if there would not be
                   --  a smaller number of arguments.
 
-                  if Last_Object_Index - First_Object_Index + 1 >
-                    Min_Number_Of_Objects
-                  then
+                  if Natural (Objects.Length) > Min_Number_Of_Objects then
                      declare
-                        Resp_File_Options : String_List_Access :=
-                                              new String_List (1 .. 0);
+                        Resp_File_Options : String_Vectors.Vector;
                         List              : Name_List_Index :=
                                               Main_Proj.Config.
                                                 Resp_File_Options;
                         Nam_Nod           : Name_Node;
+                        Other_Args        : String_Vectors.Vector;
 
                      begin
                         while List /= No_Name_List loop
                            Nam_Nod :=
                              Main_File.Tree.Shared.Name_Lists.Table (List);
-                           Resp_File_Options :=
-                             new String_List'
-                               (Resp_File_Options.all
-                                & new String'
-                                  (Get_Name_String (Nam_Nod.Name)));
+                           Resp_File_Options.Append
+                             (Get_Name_String (Nam_Nod.Name));
                            List := Nam_Nod.Next;
+                        end loop;
+
+                        for Arg of Other_Arguments loop
+                           Other_Args.Append (Arg.Name);
                         end loop;
 
                         Aux.Create_Response_File
                           (Format            =>
                              Main_Proj.Config.Resp_File_Format,
-                           Objects           => Arguments
-                             (First_Object_Index .. Last_Object_Index),
-                           Other_Arguments   =>
-                             Arguments (Last_Object_Index + 1 ..
-                                 Last_Argument),
-                           Resp_File_Options => Resp_File_Options.all,
+                           Objects           => Objects,
+                           Other_Arguments   => Other_Args,
+                           Resp_File_Options => Resp_File_Options,
                            Name_1            => Response_File_Name,
                            Name_2            => Response_2);
 
@@ -2662,11 +2510,12 @@ package body Gprbuild.Link is
                           or else
                             Main_Proj.Config.Resp_File_Format = GCC_Option_List
                         then
-                           Arguments (First_Object_Index) :=
-                             new String'("@" &
-                                           Get_Name_String
-                                           (Response_File_Name));
-                           Last_Argument := First_Object_Index;
+                           Add_Argument
+                             (Arguments,
+                              "@" & Get_Name_String (Response_File_Name),
+                              Opt.Verbose_Mode);
+                           Objects.Clear;
+                           Other_Arguments.Clear;
 
                         else
                            --  Replace the first object file arguments
@@ -2675,30 +2524,23 @@ package body Gprbuild.Link is
                            --  Arguments_Displayed, as the values are
                            --  already correct (= Verbose_Mode).
 
-                           if Resp_File_Options'Length = 0 then
-                              Arguments (First_Object_Index) :=
-                                new String'(Get_Name_String
-                                            (Response_File_Name));
-                              First_Object_Index := First_Object_Index + 1;
+                           if Resp_File_Options.Is_Empty then
+                              Add_Argument
+                                (Arguments,
+                                 Get_Name_String (Response_File_Name),
+                                 Opt.Verbose_Mode);
+                              Objects.Clear;
 
                            else
-                              for J in Resp_File_Options'First ..
-                                Resp_File_Options'Last - 1
-                              loop
-                                 Arguments (First_Object_Index) :=
-                                   Resp_File_Options (J);
-                                 First_Object_Index :=
-                                   First_Object_Index + 1;
-                              end loop;
-
-                              Arguments (First_Object_Index) :=
-                                new String'(Resp_File_Options
-                                            (Resp_File_Options'Last).all
-                                            &
-                                              Get_Name_String
-                                              (Response_File_Name));
-                              First_Object_Index :=
-                                First_Object_Index + 1;
+                              Resp_File_Options.Replace_Element
+                                (Resp_File_Options.Last_Index,
+                                 Resp_File_Options.Last_Element &
+                                   Get_Name_String (Response_File_Name));
+                              Add_Arguments
+                                (Arguments,
+                                 Resp_File_Options,
+                                 Opt.Verbose_Mode);
+                              Objects.Clear;
                            end if;
 
                            --  And put the arguments following the object
@@ -2706,31 +2548,28 @@ package body Gprbuild.Link is
                            --  argument(s). Update Arguments_Displayed
                            --  too.
 
-                           Arguments (First_Object_Index ..
-                                        Last_Argument -
-                                          Last_Object_Index +
-                                            First_Object_Index -
-                                              1) :=
-                                     Arguments (Last_Object_Index + 1 ..
-                                                          Last_Argument);
-                           Arguments_Displayed
-                             (First_Object_Index ..
-                                Last_Argument -
-                                  Last_Object_Index +
-                                    First_Object_Index -
-                                      1) :=
-                                     Arguments_Displayed
-                                       (Last_Object_Index + 1 ..
-                                                    Last_Argument);
-                           Last_Argument :=
-                             Last_Argument - Last_Object_Index +
-                               First_Object_Index - 1;
+                           Arguments.Append (Other_Arguments);
+                           Other_Arguments.Clear;
                         end if;
                      end;
                   end if;
                end if;
             end;
          end if;
+
+         --  Complete the command line if needed
+         for Obj of Objects loop
+            Add_Argument
+              (Arguments,
+               Obj,
+               Opt.Verbose_Mode,
+               not Opt.Verbose_Mode);
+         end loop;
+
+         Arguments.Append (Other_Arguments);
+
+         Objects.Clear;
+         Other_Arguments.Clear;
 
          --  Delete an eventual executable, in case it is a symbolic
          --  link as we don't want to modify the target of the link.
@@ -2745,7 +2584,7 @@ package body Gprbuild.Link is
 
          if not Opt.Quiet_Output then
             if Opt.Verbose_Mode then
-               Display_Command (Linker_Path);
+               Display_Command (Arguments, Linker_Path);
             else
                Display
                  (Section  => GPR.Link,
@@ -2755,11 +2594,22 @@ package body Gprbuild.Link is
          end if;
 
          declare
-            Pid : Process_Id;
+            Pid         : Process_Id;
+            Args_Vector : String_Vectors.Vector;
+            Args_List   : String_List_Access;
          begin
-            Script_Write (Linker_Path.all,  Arguments (1 .. Last_Argument));
+            for Arg of Arguments loop
+               Args_Vector.Append (Arg.Name);
+            end loop;
+
+            Args_List := new String_List'(To_Argument_List (Args_Vector));
+
+            Script_Write
+              (Linker_Path.all,  Args_Vector);
             Pid := Non_Blocking_Spawn
-              (Linker_Path.all,  Arguments (1 .. Last_Argument));
+              (Linker_Path.all,  Args_List.all);
+
+            Free (Args_List);
 
             if Pid = Invalid_Pid then
                Record_Failure (Main_File);
@@ -2859,21 +2709,22 @@ package body Gprbuild.Link is
          Await_Link;
       end loop;
 
-      if Bad_Processes.Last = 1 then
-         Main := Bad_Processes.Table (1);
+      if Bad_Processes.Length = 1 then
+         Main := Bad_Processes.First_Element;
          Fail_Program
            (Main.Tree,
             "link of " & Get_Name_String (Main.File) & " failed");
 
-      elsif Bad_Processes.Last > 1 then
-         for J in 1 .. Bad_Processes.Last loop
-            Main := Bad_Processes.Table (J);
+      elsif not Bad_Processes.Is_Empty then
+         for Main of Bad_Processes loop
             Put ("   link of ");
             Put (Get_Name_String (Main.File));
             Put_Line (" failed");
          end loop;
 
-         Fail_Program (Main.Tree, "*** link phase failed");
+         Fail_Program
+           (Bad_Processes.Last_Element.Tree,
+            "*** link phase failed");
       end if;
    end Run;
 

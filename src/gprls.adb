@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                    Copyright (C) 2015-2017, AdaCore                      --
+--                    Copyright (C) 2015-2018, AdaCore                      --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -95,17 +95,12 @@ package body Gprls is
          Put_Line ("adding file """ & File_Name & '"');
       end if;
 
-      Number_File_Names := Number_File_Names + 1;
-
-      --  As Add_File may be called for mains specified inside a project file,
-      --  File_Names may be too short and needs to be extended.
-
-      if Number_File_Names > File_Names'Last then
-         File_Names := new File_Name_Array'(File_Names.all & File_Names.all);
-      end if;
-
-      File_Names (Number_File_Names) :=
-        (new String'(File_Name), Source, No_ALI_Id);
+      File_Names.Append
+        (File_Name_Source'
+           (Name_Len  => File_Name'Length,
+            File_Name => File_Name,
+            Source    => Source,
+            The_ALI   => No_ALI_Id));
    end Add_File;
 
    ------------------------------

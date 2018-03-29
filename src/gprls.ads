@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2015-2017, AdaCore                     --
+--                     Copyright (C) 2015-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -16,7 +16,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Containers.Indefinite_Vectors;
 
 with GNAT.HTable;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
@@ -119,22 +119,18 @@ private
    Exit_Status : Exit_Code_Type := E_Success;
    --  Reset to E_Fatal if bad error found
 
-   type File_Name_Source is record
-      File_Name : String_Access;
+   type File_Name_Source (Name_Len : Natural) is record
+      File_Name : String (1 .. Name_Len);
       Source    : GPR.Source_Id;
       The_ALI   : ALI_Id;
    end record;
 
-   type File_Name_Array is array (Positive range <>) of File_Name_Source;
-   type File_Name_Array_Ptr is access File_Name_Array;
-   File_Names : File_Name_Array_Ptr :=
-                  new File_Name_Array (1 .. Argument_Count + 2);
+   package File_Name_Vectors is new Ada.Containers.Indefinite_Vectors
+     (Positive, File_Name_Source);
+   File_Names : File_Name_Vectors.Vector;
    --  As arguments are scanned, file names are stored in this array. The array
    --  is extensible, because there may be more files than arguments on the
    --  command line.
-
-   Number_File_Names : Natural := 0;
-   --  Number of file names found on command line and placed in File_Names
 
    Tree : constant GPR.Project_Node_Tree_Ref := new Project_Node_Tree_Data;
    --  The project tree where the project file is parsed

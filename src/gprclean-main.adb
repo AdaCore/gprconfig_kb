@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2017, AdaCore                     --
+--                     Copyright (C) 2011-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -951,7 +951,7 @@ begin
       New_Line;
    end if;
 
-   Processed_Projects.Init;
+   Processed_Projects.Clear;
 
    if Slave_Env = null and then Distributed_Mode then
       Slave_Env :=

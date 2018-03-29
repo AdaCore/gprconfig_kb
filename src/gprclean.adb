@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2017, AdaCore                     --
+--                     Copyright (C) 2006-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -22,7 +22,6 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.IO;                   use GNAT.IO;
 with GNAT.Regexp;               use GNAT.Regexp;
 
-with Gpr_Build_Util; use Gpr_Build_Util;
 with Gprexch;        use Gprexch;
 with GPR.Opt;        use GPR.Opt;
 with GPR.Osint;
@@ -698,8 +697,7 @@ package body Gprclean is
 
       --  Add project to the list of processed projects
 
-      Processed_Projects.Increment_Last;
-      Processed_Projects.Table (Processed_Projects.Last) := Project;
+      Processed_Projects.Append (Project);
 
       --  Nothing to clean in an externally built project
 
@@ -886,25 +884,13 @@ package body Gprclean is
       if All_Projects then
          declare
             Imported : Project_List := Project.Imported_Projects;
-            Process  : Boolean;
 
          begin
             --  For each imported project, call Clean_Project if the project
             --  has not been processed already.
 
             while Imported /= null loop
-               Process := True;
-
-               for
-                 J in Processed_Projects.First .. Processed_Projects.Last
-               loop
-                  if Imported.Project = Processed_Projects.Table (J) then
-                     Process := False;
-                     exit;
-                  end if;
-               end loop;
-
-               if Process then
+               if not Processed_Projects.Contains (Imported.Project) then
                   Clean_Project (Imported.Project, Project_Tree, False, False);
                end if;
                Imported := Imported.Next;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---            Copyright (C) 2017, Free Software Foundation, Inc.            --
+--          Copyright (C) 2017-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -265,6 +265,41 @@ package body GPR.Util.Aux is
       Name_1            : out Path_Name_Type;
       Name_2            : out Path_Name_Type)
    is
+      Objects_Vector : String_Vectors.Vector;
+      Other_Args_Vector : String_Vectors.Vector;
+      Resp_File_Options_Vector : String_Vectors.Vector;
+   begin
+      for J in Objects'Range loop
+         Objects_Vector.Append (Objects (J).all);
+      end loop;
+      for J in Other_Arguments'Range loop
+         Other_Args_Vector.Append (Other_Arguments (J).all);
+      end loop;
+      for J in Resp_File_Options'Range loop
+         Resp_File_Options_Vector.Append (Resp_File_Options (J).all);
+      end loop;
+
+      Create_Response_File
+        (Format,
+         Objects_Vector,
+         Other_Args_Vector,
+         Resp_File_Options_Vector,
+         Name_1,
+         Name_2);
+   end Create_Response_File;
+
+   --------------------------
+   -- Create_Response_File --
+   --------------------------
+
+   procedure Create_Response_File
+     (Format            : Response_File_Format;
+      Objects           : String_Vectors.Vector;
+      Other_Arguments   : String_Vectors.Vector;
+      Resp_File_Options : String_Vectors.Vector;
+      Name_1            : out Path_Name_Type;
+      Name_2            : out Path_Name_Type)
+   is
       GNU_Header  : aliased constant String := "INPUT (";
       GNU_Opening : aliased constant String := """";
       GNU_Closing : aliased constant String := '"' & ASCII.LF;
@@ -321,14 +356,14 @@ package body GPR.Util.Aux is
          Status := Write (Resp_File, GNU_Header'Address, GNU_Header'Length);
       end if;
 
-      for J in Objects'Range loop
+      for Object of Objects loop
          if Format = GNU or else Format = GCC_GNU then
             Status :=
               Write (Resp_File, GNU_Opening'Address, GNU_Opening'Length);
          end if;
 
          Status :=
-           Write (Resp_File, Objects (J).all'Address, Objects (J)'Length);
+           Write (Resp_File, Object (1)'Address, Object'Length);
 
          if Format = GNU or else Format = GCC_GNU then
             Status :=
@@ -351,23 +386,22 @@ package body GPR.Util.Aux is
             Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
             Record_Temp_File (null, Name_1);
 
+            for Option of Resp_File_Options loop
+               Status :=
+                 Write
+                   (Resp_File,
+                    Option (1)'Address,
+                    Option'Length);
+               if Option /= Resp_File_Options.Last_Element then
+                  Status := Write (Resp_File, ASCII.LF'Address, 1);
+               end if;
+            end loop;
+
             declare
                Arg : constant String :=
                        Modified_Argument (Get_Name_String (Name_2));
 
             begin
-               for J in Resp_File_Options'Range loop
-                  Status :=
-                    Write
-                      (Resp_File,
-                       Resp_File_Options (J) (1)'Address,
-                       Resp_File_Options (J)'Length);
-
-                  if J < Resp_File_Options'Last then
-                     Status := Write (Resp_File, ASCII.LF'Address, 1);
-                  end if;
-               end loop;
-
                Status := Write (Resp_File, Arg (1)'Address, Arg'Length);
             end;
 
@@ -385,10 +419,10 @@ package body GPR.Util.Aux is
         or else Format = GCC_Object_List
         or else Format = GCC_Option_List
       then
-         for J in Other_Arguments'Range loop
+         for Argument of Other_Arguments loop
             declare
                Arg : constant String :=
-                       Modified_Argument (Other_Arguments (J).all);
+                       Modified_Argument (Argument);
 
             begin
                Status := Write (Resp_File, Arg (1)'Address, Arg'Length);

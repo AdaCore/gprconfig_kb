@@ -133,7 +133,7 @@ procedure Gprbuild.Main is
    Current_Processor : Processor := None;
    --  This variable changes when switches -*args are used
 
-   Current_Builder_Comp_Option_Table : Builder_Comp_Option_Table_Ref :=
+   Current_Builder_Comp_Option_Table : String_Vector_Access :=
                                          No_Builder_Comp_Option_Table;
 
    -------------------------------------------
@@ -283,12 +283,10 @@ procedure Gprbuild.Main is
          if Current_Builder_Comp_Option_Table =
            No_Builder_Comp_Option_Table
          then
-            Current_Builder_Comp_Option_Table :=
-              new Builder_Compiling_Options.Instance;
+            Current_Builder_Comp_Option_Table := new String_Vectors.Vector'
+              (String_Vectors.Empty_Vector);
             Builder_Compiling_Options_HTable.Set
               (For_Lang, Current_Builder_Comp_Option_Table);
-            Builder_Compiling_Options.Init
-              (Current_Builder_Comp_Option_Table.all);
          end if;
 
          Add_Option (Switch, Command_Line => False);
@@ -327,7 +325,7 @@ procedure Gprbuild.Main is
                   Including_Switch => Dash_L);
             end if;
 
-            Command_Line_Linker_Options.Append (Option);
+            Command_Line_Linker_Options.Append (Option.all);
 
          when Binder =>
 
@@ -347,13 +345,12 @@ procedure Gprbuild.Main is
             if Current_Bind_Option_Table = No_Bind_Option_Table then
                --  Option for all binder
 
-               All_Language_Binder_Options.Append (Option);
+               All_Language_Binder_Options.Append (Option.all);
 
             else
                --  Option for a single binder
 
-               Binder_Options.Append
-                 (Current_Bind_Option_Table.all, Option);
+               Current_Bind_Option_Table.Append (Option.all);
             end if;
 
          when Compiler =>
@@ -362,13 +359,12 @@ procedure Gprbuild.Main is
                if Current_Comp_Option_Table = No_Comp_Option_Table then
                   --  Option for all compilers
 
-                  All_Language_Compiling_Options.Append (Option);
+                  All_Language_Compiling_Options.Append (Arg);
 
                else
                   --  Option for a single compiler
 
-                  Compiling_Options.Append
-                    (Current_Comp_Option_Table.all, Option);
+                  Current_Comp_Option_Table.Append (Arg);
                end if;
 
             else
@@ -377,13 +373,12 @@ procedure Gprbuild.Main is
                then
                   --  Option for all compilers
 
-                  All_Language_Builder_Compiling_Options.Append (Option);
+                  All_Language_Builder_Compiling_Options.Append (Arg);
 
                else
                   --  Option for a single compiler
 
-                  Builder_Compiling_Options.Append
-                    (Current_Builder_Comp_Option_Table.all, Option);
+                  Current_Builder_Comp_Option_Table.Append (Arg);
                end if;
             end if;
       end case;
@@ -415,12 +410,10 @@ procedure Gprbuild.Main is
          Value  : Natural := 0;
       end record;
 
-      package Command_Line_Options is new GNAT.Table
-        (Table_Component_Type => Option_Data,
-         Table_Index_Type     => Natural,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 10,
-         Table_Increment      => 100);
+      package Option_Data_Vectors is new Ada.Containers.Vectors
+        (Positive, Option_Data);
+
+      Command_Line_Options : Option_Data_Vectors.Vector;
       --  Table to store the command line options
 
       ----------------------------------
@@ -429,8 +422,8 @@ procedure Gprbuild.Main is
 
       procedure Process_Command_Line_Options is
       begin
-         for Index in 1 .. Command_Line_Options.Last loop
-            case Command_Line_Options.Table (Index).Option is
+         for Item of Command_Line_Options loop
+            case Item.Option is
                when Force_Compilations_Option =>
                   Opt.Force_Compilations := True;
 
@@ -438,8 +431,7 @@ procedure Gprbuild.Main is
                   Opt.Keep_Going := True;
 
                when Maximum_Processes_Option =>
-                  Opt.Maximum_Processes :=
-                    Command_Line_Options.Table (Index).Value;
+                  Opt.Maximum_Processes := Item.Value;
 
                when Quiet_Output_Option =>
                   Opt.Quiet_Output    := True;
@@ -479,8 +471,7 @@ procedure Gprbuild.Main is
                   Opt.Warning_Mode := Opt.Suppress;
 
                when Indirect_Imports =>
-                  Gprbuild.Indirect_Imports :=
-                    Command_Line_Options.Table (Index).Value /= 0;
+                  Gprbuild.Indirect_Imports := Item.Value /= 0;
             end case;
          end loop;
       end Process_Command_Line_Options;
@@ -493,9 +484,8 @@ procedure Gprbuild.Main is
         (Option : Option_Type; Value : Natural := 0)
       is
       begin
-         Command_Line_Options.Increment_Last;
-         Command_Line_Options.Table (Command_Line_Options.Last) :=
-           (Option => Option, Value => Value);
+         Command_Line_Options.Append
+           (Option_Data'(Option => Option, Value => Value));
       end Register_Command_Line_Option;
 
    end Options;
@@ -625,10 +615,10 @@ procedure Gprbuild.Main is
                  Compiling_Options_HTable.Get (Lang);
 
                if Current_Comp_Option_Table = No_Comp_Option_Table then
-                  Current_Comp_Option_Table := new Compiling_Options.Instance;
+                  Current_Comp_Option_Table := new String_Vectors.Vector'
+                    (String_Vectors.Empty_Vector);
                   Compiling_Options_HTable.Set
                     (Lang, Current_Comp_Option_Table);
-                  Compiling_Options.Init (Current_Comp_Option_Table.all);
                end if;
 
             else
@@ -639,11 +629,9 @@ procedure Gprbuild.Main is
                  No_Builder_Comp_Option_Table
                then
                   Current_Builder_Comp_Option_Table :=
-                    new Builder_Compiling_Options.Instance;
+                    new String_Vectors.Vector'(String_Vectors.Empty_Vector);
                   Builder_Compiling_Options_HTable.Set
                     (Lang, Current_Builder_Comp_Option_Table);
-                  Builder_Compiling_Options.Init
-                    (Current_Builder_Comp_Option_Table.all);
                end if;
             end if;
          end;
@@ -672,10 +660,10 @@ procedure Gprbuild.Main is
               Binder_Options_HTable.Get (Lang);
 
             if Current_Bind_Option_Table = No_Bind_Option_Table then
-               Current_Bind_Option_Table := new Binder_Options.Instance;
+               Current_Bind_Option_Table :=
+                 new String_Vectors.Vector'(String_Vectors.Empty_Vector);
                Binder_Options_HTable.Set
                  (Lang, Current_Bind_Option_Table);
-               Binder_Options.Init (Current_Bind_Option_Table.all);
             end if;
          end;
 
@@ -1545,10 +1533,10 @@ procedure Gprbuild.Main is
                  Compiling_Options_HTable.Get (Name_Ada);
 
                if Current_Comp_Option_Table = No_Comp_Option_Table then
-                  Current_Comp_Option_Table := new Compiling_Options.Instance;
+                  Current_Comp_Option_Table := new String_Vectors.Vector'
+                    (String_Vectors.Empty_Vector);
                   Compiling_Options_HTable.Set
                     (Name_Ada, Current_Comp_Option_Table);
-                  Compiling_Options.Init (Current_Comp_Option_Table.all);
                end if;
 
             else
@@ -1559,11 +1547,9 @@ procedure Gprbuild.Main is
                   No_Builder_Comp_Option_Table
                then
                   Current_Builder_Comp_Option_Table :=
-                    new Builder_Compiling_Options.Instance;
+                    new String_Vectors.Vector'(String_Vectors.Empty_Vector);
                   Builder_Compiling_Options_HTable.Set
                     (Name_Ada, Current_Builder_Comp_Option_Table);
-                  Builder_Compiling_Options.Init
-                    (Current_Builder_Comp_Option_Table.all);
                end if;
             end if;
 
@@ -1582,10 +1568,10 @@ procedure Gprbuild.Main is
               Binder_Options_HTable.Get (Name_Ada);
 
             if Current_Bind_Option_Table = No_Bind_Option_Table then
-               Current_Bind_Option_Table := new Binder_Options.Instance;
+               Current_Bind_Option_Table :=
+                 new String_Vectors.Vector'(String_Vectors.Empty_Vector);
                Binder_Options_HTable.Set
                  (Name_Ada, Current_Bind_Option_Table);
-               Binder_Options.Init (Current_Bind_Option_Table.all);
             end if;
 
             Current_Processor := Binder;
@@ -2440,9 +2426,9 @@ begin
       Options_Instance : constant Bind_Option_Table_Ref :=
                            Binder_Options_HTable.Get (Name_Ada);
    begin
-      if All_Language_Binder_Options.Last > 0
+      if not All_Language_Binder_Options.Is_Empty
         or else (Options_Instance /= No_Bind_Option_Table
-                 and then Binder_Options.Last (Options_Instance.all) > 0)
+                 and then not Options_Instance.Is_Empty)
       then
          if Main_Project.Standalone_Library /= No then
             GPR.Err.Error_Msg

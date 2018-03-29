@@ -302,10 +302,10 @@ package body GPR.Util is
    package MPT_Sets is new Ada.Containers.Indefinite_Ordered_Sets
      (Element_Type => Main_Project_Tree);
 
-   type File_Names is array (Positive range <>) of File_Name_Type;
-   type File_Names_Ref is access File_Names;
-   procedure Free is
-      new Ada.Unchecked_Deallocation (File_Names, File_Names_Ref);
+   package File_Name_Vectors is new Ada.Containers.Vectors
+     (Positive, File_Name_Type);
+
+   subtype File_Names is File_Name_Vectors.Vector;
 
    package Path_Sets is new Ada.Containers.Indefinite_Ordered_Sets
      (Element_Type => String);
@@ -983,17 +983,17 @@ package body GPR.Util is
    procedure Get_Closures
      (Project                  : Project_Id;
       In_Tree                  : Project_Tree_Ref;
-      Mains                    : String_List;
+      Mains                    : String_Vectors.Vector;
       All_Projects             : Boolean := True;
       Include_Externally_Built : Boolean := False;
       Status                   : out Status_Type;
-      Result                   : out String_List_Access)
+      Result                   : out String_Vectors.Vector)
    is
       Closures             : Path_Sets.Set;
       Projects_And_Trees   : Projects_And_Trees_Sets.Set;
       Mains_Projects_Trees : MPT_Sets.Set;
 
-      The_File_Names : File_Names_Ref := null;
+      The_File_Names : File_Names := File_Name_Vectors.Empty_Vector;
 
       procedure Add_To_Projects (Proj : Project_Id; Tree : Project_Tree_Ref);
       --  Add project Proc with its Tree to the list of projects
@@ -1087,7 +1087,7 @@ package body GPR.Util is
          Closures.Clear;
          Projects_And_Trees.Clear;
          Mains_Projects_Trees.Clear;
-         Free (The_File_Names);
+         The_File_Names.Clear;
       end Cleanup;
 
       --------------------
@@ -1169,7 +1169,7 @@ package body GPR.Util is
 
       procedure Look_For_Mains is
       begin
-         for J in The_File_Names'Range loop
+         for FName of The_File_Names loop
             declare
                Saved_Mains_Length : constant Ada.Containers.Count_Type :=
                  Mains_Projects_Trees.Length;
@@ -1200,7 +1200,7 @@ package body GPR.Util is
                           Project          => The_Project,
                           In_Imported_Only => False,
                           In_Extended_Only => False,
-                          Base_Name        => The_File_Names (J));
+                          Base_Name        => FName);
 
                   begin
                      for L in Sources'Range loop
@@ -1425,28 +1425,28 @@ package body GPR.Util is
 
    begin
       Status := Success;
-      Result := null;
+      Result := String_Vectors.Empty_Vector;
 
       --  Fail immediately if there are no Mains
 
-      if Mains'Length = 0 then
+      if Mains.Is_Empty then
          Status := No_Main;
          Cleanup;
          return;
 
       else
-         The_File_Names := new File_Names (Mains'Range);
+         The_File_Names.Clear;
 
-         for J in Mains'Range loop
-            if Mains (J) = null or else Mains (J)'Length = 0 then
+         for Src of Mains loop
+            if Src'Length = 0 then
                Status := No_Main;
                Cleanup;
                return;
 
             else
-               Name_Len := Mains (J)'Length;
-               Name_Buffer (1 .. Name_Len) := Mains (J).all;
-               The_File_Names (J) := Name_Find;
+               Name_Len := Src'Length;
+               Name_Buffer (1 .. Name_Len) := Src;
+               The_File_Names.Append (Name_Find);
             end if;
          end loop;
       end if;
@@ -1524,22 +1524,15 @@ package body GPR.Util is
          end loop;
       end;
 
-      Result := new String_List (1 .. Integer (Closures.Length));
-
-      declare
-         Cursor : Path_Sets.Cursor := Closures.First;
-      begin
-         for J in 1 .. Result'Last loop
-            Result (J) := new String'(Path_Sets.Element (Cursor));
-            Path_Sets.Next (Cursor);
-         end loop;
-      end;
+      for Closure of Closures loop
+         Result.Append (Closure);
+      end loop;
 
       Cleanup;
 
    exception
       when others =>
-         Result := null;
+         Result.Clear;
          Status := Unknown_Error;
    end Get_Closures;
 
@@ -3514,6 +3507,71 @@ package body GPR.Util is
 
       return Origin & "/" & N * "../" & Full (Idx .. Full'Last);
    end Relative_RPath;
+
+   ------------------
+   -- Concat_Paths --
+   ------------------
+
+   function Concat_Paths
+     (List      : String_Vectors.Vector;
+      Separator : String) return String
+   is
+      Length : Natural := Natural (List.Length) * Separator'Length;
+   begin
+      for Path of List loop
+         Length := Length + Path'Length;
+      end loop;
+
+      declare
+         Ret : String (1 .. Length);
+         Idx : Integer := 1;
+      begin
+         for Path of List loop
+            Ret (Idx .. Idx + Path'Length - 1) := Path;
+            Idx := Idx + Path'Length;
+
+            if Idx in Ret'Range then
+               Ret (Idx .. Idx + Separator'Length - 1) := Separator;
+               Idx := Idx + Separator'Length;
+            end if;
+         end loop;
+
+         return Ret;
+      end;
+   end Concat_Paths;
+
+   ----------------------
+   -- To_Argument_List --
+   ----------------------
+
+   function To_Argument_List
+     (List : String_Vectors.Vector) return Argument_List
+   is
+      Ret : Argument_List (1 .. Natural (List.Length));
+   begin
+      for J in 1 .. List.Last_Index loop
+         Ret (J) := new String'(List (J));
+      end loop;
+
+      return Ret;
+   end To_Argument_List;
+
+   -----------
+   -- Slice --
+   -----------
+
+   function Slice
+     (List : String_Vectors.Vector;
+      From, To : Positive) return String_Vectors.Vector
+   is
+      Ret : String_Vectors.Vector;
+   begin
+      for J in From .. To loop
+         Ret.Append (List (J));
+      end loop;
+
+      return Ret;
+   end Slice;
 
    ------------------------------
    -- Get_Compiler_Driver_Path --

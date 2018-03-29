@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -25,11 +25,11 @@
 with Ada.Containers.Vectors;
 with Ada.Strings.Unbounded;
 
-with GNAT.OS_Lib;
 with GNAT.Sockets;
 
 with GPR.Compilation.Protocol;
 with GPR.Compilation.Sync;
+with GPR.Util;                 use GPR.Util;
 
 package GPR.Compilation.Slave is
 
@@ -62,10 +62,10 @@ package GPR.Compilation.Slave is
    function Run
      (Project  : Project_Id;
       Language : String;
-      Options  : GNAT.OS_Lib.Argument_List;
+      Options  : String_Vectors.Vector;
       Obj_Name : String;
       Dep_Name : String := "";
-      Env      : String := "") return Id;
+      Env      : String := "") return GPR.Compilation.Id;
    --  Send a compilation job to one slave that has still some free slot. There
    --  is also free slot when this routine is called (gprbuild ensure this).
 

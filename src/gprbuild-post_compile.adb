@@ -135,30 +135,15 @@ package body Gprbuild.Post_Compile is
       --  Objects that are in the library file with their time stamps, ordered
       --  by increasing path names.
 
-      package Library_SAL_Projs is new GNAT.Table
-        (Table_Component_Type => Project_Id,
-         Table_Index_Type     => Integer,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 10,
-         Table_Increment      => 100);
+      Library_SAL_Projs : Project_Vectors.Vector;
       --  List of non extended projects that are part of a Stand-Alone
       --  (aggregate) library project.
 
-      package Library_Sources is new GNAT.Table
-        (Table_Component_Type => Source_Id,
-         Table_Index_Type     => Integer,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 10,
-         Table_Increment      => 100);
+      Library_Sources   : Source_Vectors.Vector;
       --  Library Ada sources of Stand-Alone library, that is sources of the
       --  project in the closure of the interface.
 
-      package Closure_Sources is new GNAT.Table
-        (Table_Component_Type => Source_Id,
-         Table_Index_Type     => Integer,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 10,
-         Table_Increment      => 100);
+      Closure_Sources   : Source_Vectors.Vector;
       --  Library Ada sources of Stand-Alone library, that is sources
       --  in the closure of the interface, including in imported projects.
 
@@ -864,22 +849,14 @@ package body Gprbuild.Post_Compile is
          --  Start of processing for Get_Closure
 
          begin
-            Closure_Sources.Init;
-            for J in 1 .. Library_Sources.Last loop
-               Closure_Sources.Append (Library_Sources.Table (J));
-            end loop;
+            Closure_Sources.Clear;
+            Closure_Sources.Append (Library_Sources);
 
-            while Index < Closure_Sources.Last loop
-               From_Object_Dir := False;
+            while Index < Closure_Sources.Last_Index loop
                Index := Index + 1;
-               Source := Closure_Sources.Table (Index);
+               Source := Closure_Sources (Index);
 
-               for J in 1 .. Library_Sources.Last loop
-                  if Source = Library_Sources.Table (J) then
-                     From_Object_Dir := True;
-                     exit;
-                  end if;
-               end loop;
+               From_Object_Dir := Library_Sources.Contains (Source);
 
                Add_To_Mapping (Source, From_Object_Dir);
                Dep_Path := Source.Dep_Path;
@@ -951,7 +928,6 @@ package body Gprbuild.Post_Compile is
                            if Src_Id /= No_Source then
                               declare
                                  Proj : Project_Id := Src_Id.Project;
-                                 New_In_Closure : Boolean := True;
                               begin
                                  OK := False;
 
@@ -959,33 +935,21 @@ package body Gprbuild.Post_Compile is
                                     Proj := Proj.Extended_By;
                                  end loop;
 
-                                 for J in 1 .. Library_SAL_Projs.Last loop
-                                    if Proj = Library_SAL_Projs.Table (J) then
+                                 for SAL_Prj of Library_SAL_Projs loop
+                                    if Proj = SAL_Prj then
                                        OK := True;
                                        exit;
                                     end if;
                                  end loop;
 
-                                 for J in 1 .. Closure_Sources.Last loop
-                                    if Closure_Sources.Table (J) = Src_Id
-                                    then
-                                       New_In_Closure := False;
-                                       exit;
-                                    end if;
-                                 end loop;
-
-                                 if New_In_Closure then
+                                 if not Closure_Sources.Contains (Src_Id) then
                                     Closure_Sources.Append (Src_Id);
                                  end if;
 
                                  if OK then
-                                    for J in 1 .. Library_Sources.Last loop
-                                       if Src_Id = Library_Sources.Table (J)
-                                       then
-                                          OK := False;
-                                          exit;
-                                       end if;
-                                    end loop;
+                                    if Library_Sources.Contains (Src_Id) then
+                                       OK := False;
+                                    end if;
 
                                     if OK then
                                        Library_Sources.Append (Src_Id);
@@ -1039,9 +1003,9 @@ package body Gprbuild.Post_Compile is
 
       begin
          Library_Objs.Clear;
-         Library_Sources.Init;
-         Library_Projs.Init;
-         Library_SAL_Projs.Init;
+         Library_Sources.Clear;
+         Library_Projs.Clear;
+         Library_SAL_Projs.Clear;
          Processed_ALIs.Reset;
          Interface_ALIs.Reset;
          Library_ALIs.Reset;
@@ -1085,8 +1049,7 @@ package body Gprbuild.Post_Compile is
 
             --  Put all the object files in the closure in Library_Objs
 
-            for J in 1 .. Library_Sources.Last loop
-               Source := Library_Sources.Table (J);
+            for Source of Library_Sources loop
                Library_Objs.Insert
                  ((Path  => Source.Object_Path,
                    TS    => Source.Object_TS,
@@ -1122,14 +1085,12 @@ package body Gprbuild.Post_Compile is
       -- Write_Object_Directory --
       ----------------------------
 
-      procedure Write_Object_Directory is
+      procedure Write_Object_Directory
+      is
 
-         package Object_Projects is new GNAT.Table
-           (Table_Component_Type => Project_Id,
-            Table_Index_Type     => Integer,
-            Table_Low_Bound      => 1,
-            Table_Initial        => 10,
-            Table_Increment      => 100);
+         Object_Projects : Project_Vectors.Vector;
+         Prj             : Project_Id;
+         Index           : Natural;
          --  The projects that have already be found when looking for object
          --  directories.
 
@@ -1141,8 +1102,6 @@ package body Gprbuild.Post_Compile is
             Hash       => Hash,
             Equal      => "=");
          --  The object directories that have already be found
-
-         Prj : Project_Id;
 
          procedure Get_Object_Projects (Prj : Project_Id);
          --  Recursive procedure to collect the aggregated projects
@@ -1218,38 +1177,30 @@ package body Gprbuild.Post_Compile is
 
          function Is_In_Object_Projects (Prj : Project_Id) return Boolean is
          begin
-            for J in 1 .. Object_Projects.Last loop
-               if Prj = Object_Projects.Table (J) then
-                  return True;
-               end if;
-            end loop;
-
-            return False;
+            return Object_Projects.Contains (Prj);
          end Is_In_Object_Projects;
 
       --  Start of processing for Write_Object_Directory
 
       begin
-         Object_Projects.Init;
+         Object_Projects.Clear;
          Object_Directories.Reset;
          Put_Line (Exchange_File, Library_Label (Object_Directory));
          Get_Object_Projects (For_Project);
 
-         for J in 1 .. Object_Projects.Last loop
-            Prj := Object_Projects.Table (J);
-
+         Index := Object_Projects.First_Index;
+         --  Note: cannot iterate on Object_Projects as we're modifying
+         --  the container within the loop.
+         while Index <= Object_Projects.Last_Index loop
+            Prj := Object_Projects.Element (Index);
+            Index := Index + 1;
             --  Add object directories of imported non library projects
 
             Process_Imported_Non_Libraries (Prj);
 
-            declare
-               Proj : Project_Id;
-            begin
-               for J in 1 .. Non_Library_Projs.Last loop
-                  Proj := Non_Library_Projs.Table (J);
-                  Get_Object_Projects (Proj);
-               end loop;
-            end;
+            for Proj of Non_Library_Projs loop
+               Get_Object_Projects (Proj);
+            end loop;
 
             --  Add ALI dir directories of imported projects (only if it
             --  is not an externally built project or if the project has
@@ -1606,8 +1557,6 @@ package body Gprbuild.Post_Compile is
       -------------------------------
 
       procedure Write_Runtime_Library_Dir is
-
-         use type Ada.Containers.Count_Type;
 
          procedure RTL_For
            (Project : Project_Id;
@@ -2251,22 +2200,22 @@ package body Gprbuild.Post_Compile is
          --  If there are imported libraries, put their data in the exchange
          --  file.
 
-         if Library_Projs.Last > 0 then
+         if not Library_Projs.Is_Empty then
             Put_Line (Exchange_File, Library_Label (Imported_Libraries));
 
-            for J in reverse 1 .. Library_Projs.Last loop
+            for J in reverse 1 .. Library_Projs.Last_Index loop
                if For_Project.Qualifier /= Aggregate_Library
-                 or else Library_Projs.Table (J).Proj.Externally_Built
+                 or else Library_Projs (J).Proj.Externally_Built
                then
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
-                       (Library_Projs.Table (J).
+                       (Library_Projs (J).
                             Proj.Library_Dir.Display_Name));
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
-                       (Library_Projs.Table (J).Proj.Library_Name));
+                       (Library_Projs (J).Proj.Library_Name));
                end if;
             end loop;
          end if;
@@ -2352,8 +2301,7 @@ package body Gprbuild.Post_Compile is
          Process_Aggregate_Library (For_Project, Project_Tree);
 
          if For_Project.Standalone_Library /= No then
-            for J in 1 .. Library_Sources.Last loop
-               Source := Library_Sources.Table (J);
+            for Source of Library_Sources loop
                Add_Dep (Get_Name_String (Source.Dep_Path));
             end loop;
          end if;
@@ -2381,8 +2329,6 @@ package body Gprbuild.Post_Compile is
       -----------------------------
 
       procedure Write_Toolchain_Version is
-
-         use type Ada.Containers.Count_Type;
 
          procedure Toolchain_Version_For
            (Project : Project_Id;
@@ -3288,19 +3234,17 @@ package body Gprbuild.Post_Compile is
             Put_Line (Exchange_File, Library_Label (Archive_Builder));
             Put_Line (Exchange_File, Archive_Builder_Path.all);
 
-            for J in 1 .. Archive_Builder_Opts.Last loop
-               Put_Line (Exchange_File, Archive_Builder_Opts.Options (J).all);
+            for Opt of Archive_Builder_Opts loop
+               Put_Line (Exchange_File, Opt.Name);
             end loop;
 
-            if Archive_Builder_Append_Opts.Last > 0 then
+            if not Archive_Builder_Append_Opts.Is_Empty then
                Put_Line
                  (Exchange_File,
                   Library_Label (Archive_Builder_Append_Option));
 
-               for J in 1 .. Archive_Builder_Append_Opts.Last loop
-                  Put_Line
-                    (Exchange_File,
-                     Archive_Builder_Append_Opts.Options (J).all);
+               for Option of Archive_Builder_Append_Opts loop
+                  Put_Line (Exchange_File, Option.Name);
                end loop;
             end if;
 
@@ -3315,9 +3259,8 @@ package body Gprbuild.Post_Compile is
                Put_Line (Exchange_File, Library_Label (Archive_Indexer));
                Put_Line (Exchange_File, Archive_Indexer_Path.all);
 
-               for J in 1 .. Archive_Indexer_Opts.Last loop
-                  Put_Line
-                    (Exchange_File, Archive_Indexer_Opts.Options (J).all);
+               for Option of Archive_Indexer_Opts loop
+                  Put_Line (Exchange_File, Option.Name);
                end loop;
             end if;
 
@@ -3459,9 +3402,8 @@ package body Gprbuild.Post_Compile is
                   Put_Line (Exchange_File, Library_Label (Object_Lister));
                   Put_Line (Exchange_File, Object_Lister_Path.all);
 
-                  for J in 1 .. Object_Lister_Opts.Last loop
-                     Put_Line
-                       (Exchange_File, Object_Lister_Opts.Options (J).all);
+                  for Option of Object_Lister_Opts loop
+                     Put_Line (Exchange_File, Option.Name);
                   end loop;
 
                   Put_Line
@@ -3643,21 +3585,21 @@ package body Gprbuild.Post_Compile is
          Display_Processes ("bind");
       end loop;
 
-      if Bad_Processes.Last = 1 then
-         Main := Bad_Processes.Table (1);
+      if Bad_Processes.Length = 1 then
+         Main := Bad_Processes.First_Element;
          Fail_Program
            (Main.Tree,
             "unable to bind " & Get_Name_String (Main.File));
 
-      elsif Bad_Processes.Last > 1 then
-         for J in 1 .. Bad_Processes.Last loop
-            Main := Bad_Processes.Table (J);
+      elsif not Bad_Processes.Is_Empty then
+         for Main of Bad_Processes loop
             Put ("   binding of ");
             Put (Get_Name_String (Main.File));
             Put_Line (" failed");
          end loop;
 
-         Fail_Program (Main.Tree, "*** post compilation phase failed");
+         Fail_Program (Bad_Processes.Last_Element.Tree,
+                       "*** post compilation phase failed");
       end if;
    end Run;
 
@@ -4612,7 +4554,7 @@ package body Gprbuild.Post_Compile is
 
                if Config.Binder_Required_Switches /= No_Name_List
                  or else Switches.Kind = GPR.List
-                 or else All_Language_Binder_Options.Last > 0
+                 or else not All_Language_Binder_Options.Is_Empty
                  or else Options_Instance /= No_Bind_Option_Table
                  or else Opt.CodePeer_Mode
                  or else (B_Data.Language_Name = Name_Ada
@@ -4686,10 +4628,8 @@ package body Gprbuild.Post_Compile is
                   --  Then those on the command line, for all
                   --  binder drivers, if any.
 
-                  for J in 1 .. All_Language_Binder_Options.Last loop
-                     Put_Line
-                       (Exchange_File,
-                        All_Language_Binder_Options.Table (J).all);
+                  for Option of All_Language_Binder_Options loop
+                     Put_Line (Exchange_File, Option);
                   end loop;
 
                   --  Then -z if specified
@@ -4704,12 +4644,8 @@ package body Gprbuild.Post_Compile is
                   --  binder driver of the language
 
                   if Options_Instance /= No_Bind_Option_Table then
-                     for Index in 1 .. Binder_Options.Last
-                       (Options_Instance.all)
-                     loop
-                        Put_Line
-                          (Exchange_File,
-                           Options_Instance.Table (Index).all);
+                     for Option of Options_Instance.all loop
+                        Put_Line (Exchange_File, Option);
                      end loop;
                   end if;
 
@@ -4963,17 +4899,17 @@ package body Gprbuild.Post_Compile is
             There_Are_SALs     => There_Are_Stand_Alone_Libraries,
             And_Project_Itself => True);
 
-         if Library_Projs.Last > 0 then
+         if not Library_Projs.Is_Empty then
             declare
-               Lib_Projs : array (1 .. Library_Projs.Last) of Library_Project;
+               Lib_Projs : array (1 .. Library_Projs.Last_Index) of
+                             Library_Project;
                Proj      : Library_Project;
 
             begin
                --  Copy the list of library projects in local array Lib_Projs,
                --  as procedure Build_Library uses table Library_Projs.
-
-               for J in 1 .. Library_Projs.Last loop
-                  Lib_Projs (J) := Library_Projs.Table (J);
+               for J in Lib_Projs'Range loop
+                  Lib_Projs (J) := Library_Projs (J);
                end loop;
 
                for J in Lib_Projs'Range loop

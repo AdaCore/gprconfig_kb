@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---            Copyright (C) 2017, Free Software Foundation, Inc.            --
+--          Copyright (C) 2017-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -26,15 +26,24 @@ package GPR.Util.Aux is
 
    procedure Create_Response_File
      (Format            : Response_File_Format;
-      Objects           : String_List;
-      Other_Arguments   : String_List;
-      Resp_File_Options : String_List;
+      Objects           : String_Vectors.Vector;
+      Other_Arguments   : String_Vectors.Vector;
+      Resp_File_Options : String_Vectors.Vector;
       Name_1            : out Path_Name_Type;
       Name_2            : out Path_Name_Type);
    --  Create a temporary file as a response file that contains either the list
    --  of Objects in the correct Format, or for Format GCC the list of all
    --  arguments. It is the responsibility of the caller to delete this
    --  temporary file if needed.
+
+   procedure Create_Response_File
+     (Format            : Response_File_Format;
+      Objects           : String_List;
+      Other_Arguments   : String_List;
+      Resp_File_Options : String_List;
+      Name_1            : out Path_Name_Type;
+      Name_2            : out Path_Name_Type);
+   --  Same as above, but relying on String_List. Deprecated.
 
    procedure Create_Export_Symbols_File
      (Driver_Path         : String;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -34,7 +34,6 @@ with Ada.Unchecked_Deallocation;
 with GNAT.Rewrite_Data;
 with GNAT.String_Split; use GNAT.String_Split;
 
-with GPR.Util;
 with GPR.Version;       use GPR.Version;
 with Gpr_Build_Util;
 
@@ -720,7 +719,7 @@ package body GPR.Compilation.Protocol is
       Project  : String;
       Dir      : String;
       Language : String;
-      Options  : Argument_List;
+      Options  : String_Vectors.Vector;
       Obj_Name : String;
       Dep_Name : String;
       Env      : String;
@@ -733,11 +732,11 @@ package body GPR.Compilation.Protocol is
    begin
       --  Options are serialized into a string and separated with Opts_Sep
 
-      for K in Options'Range loop
-         R_Cmd := R_Cmd & Filter_Wrapper (Options (K).all, WD_Path_Tag);
+      for K in Options.First_Index .. Options.Last_Index loop
+         Append (R_Cmd, Filter_Wrapper (Options (K), WD_Path_Tag));
 
-         if K /= Options'Last then
-            R_Cmd := R_Cmd & Opts_Sep;
+         if K /= Options.Last_Index then
+            Append (R_Cmd, Opts_Sep);
          end if;
       end loop;
 

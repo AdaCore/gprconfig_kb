@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2016-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2016-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -75,17 +75,16 @@ package body GPR.Script is
    -- Script_Change_Dir --
    -----------------------
 
-   procedure Script_Change_Dir (New_Dir : Path_Name_Type) is
+   procedure Script_Change_Dir (New_Dir : Path_Name_Type)
+   is
+      Args : String_Vectors.Vector;
    begin
-      if Build_Script_Name /= null then
-         declare
-            Args : Argument_List :=
-              (1 => new String'(Get_Name_String (New_Dir)));
-         begin
-            Script_Write ("cd", Args);
-            Free (Args (1));
-         end;
+      if Build_Script_Name = null then
+         return;
       end if;
+
+      Args.Append (Get_Name_String (New_Dir));
+      Script_Write ("cd", Args);
    end Script_Change_Dir;
 
    -----------------
@@ -94,20 +93,21 @@ package body GPR.Script is
 
    procedure Script_Copy
      (File_Name   : String;
-      Destination : String_Access)
+      Destination : String)
    is
    begin
-      if Build_Script_Name /= null then
-         declare
-            Args : Argument_List :=
-              (1 => new String'(File_Name),
-               2 => Destination);
-
-         begin
-            Script_Write ("cp", Args);
-            Free (Args (1));
-         end;
+      if Build_Script_Name = null then
+         return;
       end if;
+
+      declare
+         Args : String_Vectors.Vector;
+      begin
+         Args.Append (File_Name);
+         Args.Append (Destination);
+
+         Script_Write ("cp", Args);
+      end;
    end Script_Copy;
 
    ------------------
@@ -116,28 +116,32 @@ package body GPR.Script is
 
    procedure Script_Write
      (Program_Name : String;
-      Args         : Argument_List)
+      Args         : String_Vectors.Vector)
    is
-      Already_Open : constant Boolean :=  Is_Open (Build_Script_File);
+      Already_Open : Boolean;
    begin
-      if Build_Script_Name /= null then
-         if not Already_Open then
-            Open (Build_Script_File, Append_File, Build_Script_Name.all);
-         end if;
+      if Build_Script_Name = null then
+         return;
+      end if;
 
-         Put (Build_Script_File, Potentially_Quoted (Program_Name));
+      Already_Open := Is_Open (Build_Script_File);
 
-         for J in Args'Range loop
-            Put
-              (Build_Script_File,
-               " " & Potentially_Quoted (Args (J).all));
-         end loop;
+      if not Already_Open then
+         Open (Build_Script_File, Append_File, Build_Script_Name.all);
+      end if;
 
-         New_Line (Build_Script_File);
+      Put (Build_Script_File, Potentially_Quoted (Program_Name));
 
-         if not Already_Open then
-            Close (Build_Script_File);
-         end if;
+      for Arg of Args loop
+         Put
+           (Build_Script_File,
+            " " & Potentially_Quoted (Arg));
+      end loop;
+
+      New_Line (Build_Script_File);
+
+      if not Already_Open then
+         Close (Build_Script_File);
       end if;
    end Script_Write;
 
@@ -147,12 +151,15 @@ package body GPR.Script is
 
    procedure Spawn_And_Script_Write
      (Program_Name : String;
-      Args         : Argument_List;
+      Args         : String_Vectors.Vector;
       Success      : out Boolean)
    is
+      Arg_List : String_List_Access :=
+                   new String_List'(To_Argument_List (Args));
    begin
       Script_Write (Program_Name, Args);
-      Spawn (Program_Name, Args, Success);
+      Spawn (Program_Name, Arg_List.all, Success);
+      Free (Arg_List);
    end Spawn_And_Script_Write;
 
 end GPR.Script;

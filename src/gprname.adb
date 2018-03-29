@@ -23,20 +23,19 @@ with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Text_IO;               use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
-with GNAT.Table;
 
 with GPR.Attr.PM;
 with GPR.Com;
 with GPR.Env;
-with GPR.Names;   use GPR.Names;
+with GPR.Names;      use GPR.Names;
 with GPR.Opt;
-with GPR.Osint;   use GPR.Osint;
+with GPR.Osint;      use GPR.Osint;
 with GPR.Part;
 with GPR.PP;
-with GPR.Tree;    use GPR.Tree;
-with GPR.Snames;  use GPR.Snames;
+with GPR.Tree;       use GPR.Tree;
+with GPR.Snames;     use GPR.Snames;
 with GPR.Tempdir;
-with GPR.Util;    use GPR.Util;
+with Gpr_Build_Util; use Gpr_Build_Util;
 
 with GPR.Sdefault;
 
@@ -116,21 +115,11 @@ package body GPRName is
    Naming_File_Suffix      : constant String := "_naming";
    Source_List_File_Suffix : constant String := "_source_list.txt";
 
-   package Processed_Directories is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 0,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Processed_Directories : String_Vectors.Vector;
    --  The list of already processed directories for each section, to avoid
    --  processing several times the same directory in the same section.
 
-   package Source_Directories is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 0,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Source_Directories : String_Vectors.Vector;
    --  The complete list of directories to be put in attribute Source_Dirs in
    --  the project file.
 
@@ -141,12 +130,10 @@ package body GPRName is
       Spec      : Boolean;
    end record;
 
-   package Sources is new GNAT.Table
-     (Table_Component_Type => Source,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 0,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   package Source_Vectors is new Ada.Containers.Vectors
+     (Positive, Source);
+
+   Sources : Source_Vectors.Vector;
    --  The list of Ada sources found, with their unit name and kind, to be put
    --  in the source attribute and package Naming of the project file, or in
    --  the pragmas Source_File_Name in the configuration pragmas file.
@@ -156,12 +143,10 @@ package body GPRName is
       File_Name : Name_Id;
    end record;
 
-   package Foreign_Sources is new GNAT.Table
-     (Table_Component_Type => Foreign_Source,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 0,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   package Foreign_Source_Vectors is new Ada.Containers.Vectors
+     (Positive, Foreign_Source);
+
+   Foreign_Sources : Foreign_Source_Vectors.Vector;
 
    package Source_Files is new System.HTable.Simple_HTable
      (Header_Num => GPR.Header_Num,
@@ -173,12 +158,7 @@ package body GPRName is
    --  Hash table to keep track of source file names, to avoid putting several
    --  times the same file name in case of multi-unit files.
 
-   package Languages is new GNAT.Table
-     (Table_Component_Type => Name_Id,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 0,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Languages : Name_Vectors.Vector;
 
    procedure Add_Language (Lang : Name_Id);
    --  Add Lang to the list of languages
@@ -189,13 +169,9 @@ package body GPRName is
 
    procedure Add_Language (Lang : Name_Id) is
    begin
-      for J in 1 .. Languages.Last loop
-         if Languages.Table (J) = Lang then
-            return;
-         end if;
-      end loop;
-
-      Languages.Append (Lang);
+      if not Languages.Contains (Lang) then
+         Languages.Append (Lang);
+      end if;
    end Add_Language;
 
    ---------
@@ -261,7 +237,7 @@ package body GPRName is
 
          for J in reverse 1 .. Source_Index - 1 loop
             declare
-               S : Source renames Sources.Table (J);
+               S : Source renames Sources (J);
             begin
                if S.File_Name = Current_Source.File_Name
                  and then S.Index = Current_Source.Index
@@ -517,7 +493,7 @@ package body GPRName is
 
       --  Put the languages in attribute Languages
 
-      for Language_Index in 1 .. Languages.Last loop
+      for Lang of Languages loop
          declare
             Expression : constant Project_Node_Id :=
               Default_Project_Node
@@ -549,8 +525,7 @@ package body GPRName is
             Current_Language_Node := Expression;
             Set_First_Term (Expression, Tree, To => Term);
             Set_Current_Term (Term, Tree, To => Value);
-            Set_String_Value_Of
-              (Value, Tree, To => Languages.Table (Language_Index));
+            Set_String_Value_Of (Value, Tree, To => Lang);
          end;
       end loop;
 
@@ -606,7 +581,7 @@ package body GPRName is
 
       --  Put the source directories in attribute Source_Dirs
 
-      for Source_Dir_Index in 1 .. Source_Directories.Last loop
+      for Source_Dir of Source_Directories loop
          declare
             Expression : constant Project_Node_Id :=
               Default_Project_Node
@@ -639,8 +614,7 @@ package body GPRName is
             Set_First_Term (Expression, Tree, To => Term);
             Set_Current_Term (Term, Tree, To => Value);
             Name_Len := 0;
-            Add_Str_To_Name_Buffer
-              (Source_Directories.Table (Source_Dir_Index).all);
+            Add_Str_To_Name_Buffer (Source_Dir);
             Set_String_Value_Of (Value, Tree, To => Name_Find);
          end;
       end loop;
@@ -715,8 +689,8 @@ package body GPRName is
 
          --  Put the foreign source file names in the source list file
 
-         for Source_Index in 1 .. Foreign_Sources.Last loop
-            Get_Name_String (Foreign_Sources.Table (Source_Index).File_Name);
+         for Source of Foreign_Sources loop
+            Get_Name_String (Source.File_Name);
             Add_Char_To_Name_Buffer (ASCII.LF);
 
             if Write (Source_List_FD,
@@ -728,137 +702,129 @@ package body GPRName is
          end loop;
 
          --  Put the exception declarations in package Naming
+         for Lang of Languages loop
+            if Lang /= Name_Ada then
+               --  Add an attribute declaration for
+               --  Implementation_Exceptions for the language.
 
-         for J in 1 .. Languages.Last loop
-            declare
-               Lang : constant Name_Id := Languages.Table (J);
+               declare
+                  Decl_Item  : constant Project_Node_Id :=
+                                 Default_Project_Node
+                                   (Of_Kind => N_Declarative_Item,
+                                    In_Tree => Tree);
 
-            begin
-               if Lang /= Name_Ada then
-                  --  Add an attribute declaration for
-                  --  Implementation_Exceptions for the language.
+                  Attribute : constant Project_Node_Id :=
+                                Default_Project_Node
+                                  (Of_Kind       => N_Attribute_Declaration,
+                                   In_Tree       => Tree,
+                                   And_Expr_Kind => List);
 
-                  declare
-                     Decl_Item  : constant Project_Node_Id :=
-                       Default_Project_Node
-                         (Of_Kind => N_Declarative_Item,
-                          In_Tree => Tree);
+                  Expression : constant Project_Node_Id :=
+                                 Default_Project_Node
+                                   (Of_Kind       => N_Expression,
+                                    In_Tree       => Tree,
+                                    And_Expr_Kind => List);
 
-                     Attribute : constant Project_Node_Id :=
-                       Default_Project_Node
-                         (Of_Kind       => N_Attribute_Declaration,
-                          In_Tree       => Tree,
-                          And_Expr_Kind => List);
+                  Term : constant Project_Node_Id :=
+                           Default_Project_Node
+                             (Of_Kind       => N_Term,
+                              In_Tree       => Tree,
+                              And_Expr_Kind => List);
 
-                     Expression : constant Project_Node_Id :=
-                       Default_Project_Node
-                         (Of_Kind       => N_Expression,
-                          In_Tree       => Tree,
-                          And_Expr_Kind => List);
+                  Source_List : Project_Node_Id;
+                  Expr        : Project_Node_Id;
+                  Prev_Expr   : Project_Node_Id;
+                  Trm         : Project_Node_Id;
+                  Value       : Project_Node_Id;
 
-                     Term : constant Project_Node_Id :=
-                       Default_Project_Node
-                         (Of_Kind       => N_Term,
-                          In_Tree       => Tree,
-                          And_Expr_Kind => List);
+               begin
+                  Set_Next_Declarative_Item
+                    (Decl_Item,
+                     To      => First_Declarative_Item_Of
+                       (Naming_Package, Tree),
+                     In_Tree => Tree);
+                  Set_First_Declarative_Item_Of
+                    (Naming_Package, Tree, To => Decl_Item);
+                  Set_Current_Item_Node (Decl_Item, Tree, To => Attribute);
+                  Set_Name_Of
+                    (Attribute, Tree, To => Name_Implementation_Exceptions);
+                  Set_Associative_Array_Index_Of
+                    (Attribute, Tree, To => Lang);
+                  Set_Expression_Of (Attribute, Tree, To => Expression);
+                  Set_First_Term (Expression, Tree, To => Term);
+                  Source_List :=
+                    Default_Project_Node
+                      (Of_Kind       => N_Literal_String_List,
+                       In_Tree       => Tree,
+                       And_Expr_Kind => List);
+                  Set_Current_Term (Term, Tree, To => Source_List);
+                  Prev_Expr := Empty_Project_Node;
 
-                     Source_List : Project_Node_Id;
-                     Expr        : Project_Node_Id;
-                     Prev_Expr   : Project_Node_Id;
-                     Trm         : Project_Node_Id;
-                     Value       : Project_Node_Id;
+                  --  Put all the sources for this language in the list
 
-                  begin
-                     Set_Next_Declarative_Item
-                       (Decl_Item,
-                        To      => First_Declarative_Item_Of
-                                     (Naming_Package, Tree),
-                        In_Tree => Tree);
-                     Set_First_Declarative_Item_Of
-                       (Naming_Package, Tree, To => Decl_Item);
-                     Set_Current_Item_Node (Decl_Item, Tree, To => Attribute);
-                     Set_Name_Of
-                       (Attribute, Tree, To => Name_Implementation_Exceptions);
-                     Set_Associative_Array_Index_Of
-                       (Attribute, Tree, To => Lang);
-                     Set_Expression_Of (Attribute, Tree, To => Expression);
-                     Set_First_Term (Expression, Tree, To => Term);
-                     Source_List :=
-                       Default_Project_Node
-                         (Of_Kind       => N_Literal_String_List,
-                          In_Tree       => Tree,
-                          And_Expr_Kind => List);
-                     Set_Current_Term (Term, Tree, To => Source_List);
-                     Prev_Expr := Empty_Project_Node;
-
-                     --  Put all the sources for this language in the list
-
-                     for J in 1 .. Foreign_Sources.Last loop
-                        if Foreign_Sources.Table (J).Language = Lang then
-                           Expr :=
-                             Default_Project_Node
-                               (Of_Kind       => N_Expression,
-                                In_Tree       => Tree,
-                                And_Expr_Kind => Single);
-                           if Prev_Expr = Empty_Project_Node then
-                              Set_First_Expression_In_List
-                                (Node    => Source_List,
-                                 In_Tree => Tree,
-                                 To      => Expr);
-                           else
-                              Set_Next_Expression_In_List
-                                (Node    => Prev_Expr,
-                                 In_Tree => Tree,
-                                 To      => Expr);
-                           end if;
-
-                           Prev_Expr := Expr;
-
-                           Trm :=
-                             Default_Project_Node
-                               (Of_Kind       => N_Term,
-                                In_Tree       => Tree,
-                                And_Expr_Kind => Single);
-                           Set_First_Term (Expr, Tree, To => Trm);
-
-                           Value := Default_Project_Node
-                             (Of_Kind       => N_Literal_String,
-                              And_Expr_Kind => Single,
-                              In_Tree       => Tree);
-                           Set_String_Value_Of
-                             (Node    => Value,
+                  for Source of Foreign_Sources loop
+                     if Source.Language = Lang then
+                        Expr :=
+                          Default_Project_Node
+                            (Of_Kind       => N_Expression,
+                             In_Tree       => Tree,
+                             And_Expr_Kind => Single);
+                        if Prev_Expr = Empty_Project_Node then
+                           Set_First_Expression_In_List
+                             (Node    => Source_List,
                               In_Tree => Tree,
-                              To      => Foreign_Sources.Table (J).File_Name);
-                           Set_Current_Term (Trm, Tree, To => Value);
+                              To      => Expr);
+                        else
+                           Set_Next_Expression_In_List
+                             (Node    => Prev_Expr,
+                              In_Tree => Tree,
+                              To      => Expr);
                         end if;
-                     end loop;
-                  end;
-               end if;
-            end;
+
+                        Prev_Expr := Expr;
+
+                        Trm :=
+                          Default_Project_Node
+                            (Of_Kind       => N_Term,
+                             In_Tree       => Tree,
+                             And_Expr_Kind => Single);
+                        Set_First_Term (Expr, Tree, To => Trm);
+
+                        Value := Default_Project_Node
+                          (Of_Kind       => N_Literal_String,
+                           And_Expr_Kind => Single,
+                           In_Tree       => Tree);
+                        Set_String_Value_Of
+                          (Node    => Value,
+                           In_Tree => Tree,
+                           To      => Source.File_Name);
+                        Set_Current_Term (Trm, Tree, To => Value);
+                     end if;
+                  end loop;
+               end;
+            end if;
          end loop;
 
          --  Put the sources in the source list files (or attribute
          --  Source_Files) and in the naming project (or the Naming package).
 
-         for Source_Index in 1 .. Sources.Last loop
+         for Source_Index in 1 .. Sources.Last_Index loop
 
             --  Add the corresponding attribute in the Naming package
 
             declare
                Current_Source : constant Source :=
-                 Sources.Table (Source_Index);
+                                  Sources (Source_Index);
 
                Decl_Item : constant Project_Node_Id :=
-                 Default_Project_Node
-                   (Of_Kind =>
-                      N_Declarative_Item,
-                    In_Tree => Tree);
+                             Default_Project_Node
+                               (Of_Kind => N_Declarative_Item,
+                                In_Tree => Tree);
 
                Attribute : constant Project_Node_Id :=
-                 Default_Project_Node
-                   (Of_Kind =>
-                      N_Attribute_Declaration,
-                    In_Tree => Tree);
+                             Default_Project_Node
+                               (Of_Kind => N_Attribute_Declaration,
+                                In_Tree => Tree);
 
                Expression : constant Project_Node_Id :=
                  Default_Project_Node
@@ -905,7 +871,7 @@ package body GPRName is
                         if Opt.Ignore_Duplicate_Files then
                            Process_File := False;
 
-                        elsif Sources.Table (Index).Unit_Name
+                        elsif Sources (Index).Unit_Name
                           = Current_Source.Unit_Name
                         then
                            Put_Line
@@ -924,7 +890,7 @@ package body GPRName is
                               Get_Name_String (Current_Source.Unit_Name) &
                               " and " &
                               Get_Name_String
-                                (Sources.Table (Index).Unit_Name));
+                                (Sources (Index).Unit_Name));
                               Put_Line
                                 ("warning: generated Naming package needs " &
                                  "to be reviewed manually");
@@ -1061,7 +1027,7 @@ package body GPRName is
 
    procedure Initialize
      (File_Path         : String;
-      Preproc_Switches  : Argument_List;
+      Preproc_Switches  : String_Vectors.Vector;
       Very_Verbose      : Boolean;
       Flags             : Processing_Flags)
    is
@@ -1082,20 +1048,22 @@ package body GPRName is
 
       GPR.Tree.Initialize (Tree);
 
-      Sources.Set_Last (0);
-      Source_Directories.Set_Last (0);
-      Foreign_Sources.Set_Last (0);
-      Languages.Set_Last (0);
+      Sources.Clear;
+      Source_Directories.Clear;
+      Foreign_Sources.Clear;
+      Languages.Clear;
 
       --  Initialize the compiler switches
 
-      Args := new Argument_List (1 .. Preproc_Switches'Length + 6);
+      Args := new Argument_List (1 .. Natural (Preproc_Switches.Length) + 6);
       Args (1) := new String'("-c");
       Args (2) := new String'("-gnats");
       Args (3) := new String'("-gnatu");
-      Args (4 .. 3 + Preproc_Switches'Length) := Preproc_Switches;
-      Args (4 + Preproc_Switches'Length) := new String'("-x");
-      Args (5 + Preproc_Switches'Length) := new String'("ada");
+      for J in 1 .. Preproc_Switches.Last_Index loop
+         Args (3 + J) := new String'(Preproc_Switches (J));
+      end loop;
+      Args (4 + Preproc_Switches.Last_Index) := new String'("-x");
+      Args (5 + Preproc_Switches.Last_Index) := new String'("ada");
 
       --  Get the path and file names
 
@@ -1405,7 +1373,7 @@ package body GPRName is
    -------------
 
    procedure Process
-     (Directories       : Argument_List;
+     (Directories       : String_Vectors.Vector;
       Name_Patterns     : Regexp_List;
       Excluded_Patterns : Regexp_List;
       Foreign_Patterns  : Foreign_Regexp_List)
@@ -1438,12 +1406,7 @@ package body GPRName is
       begin
          --  Avoid processing the same directory more than once
 
-         for Index in 1 .. Processed_Directories.Last loop
-            if Processed_Directories.Table (Index).all = Dir_Name then
-               Do_Process := False;
-               exit;
-            end if;
-         end loop;
+         Do_Process := not Processed_Directories.Contains (Dir_Name);
 
          if Do_Process then
             if Opt.Verbose_Mode then
@@ -1452,9 +1415,7 @@ package body GPRName is
                Put_Line ("""");
             end if;
 
-            Processed_Directories. Increment_Last;
-            Processed_Directories.Table (Processed_Directories.Last) :=
-              new String'(Dir_Name);
+            Processed_Directories.Append (Dir_Name);
 
             --  Get the source file names from the directory. Fails if the
             --  directory does not exist.
@@ -1491,9 +1452,8 @@ package body GPRName is
                   --  First, check if the file name matches at least one of
                   --  the excluded expressions;
 
-                  for Index in Excluded_Patterns'Range loop
-                     if Match (Canon (1 .. Last), Excluded_Patterns (Index))
-                     then
+                  for Ptrn of Excluded_Patterns loop
+                     if Match (Canon (1 .. Last), Ptrn) then
                         Matched := Excluded;
                         exit;
                      end if;
@@ -1506,9 +1466,8 @@ package body GPRName is
                   if Matched = Match then
                      Matched := No_Match;
 
-                     for Index in Name_Patterns'Range loop
-                        if Match (Canon (1 .. Last), Name_Patterns (Index))
-                        then
+                     for Ptrn of Name_Patterns loop
+                        if Match (Canon (1 .. Last), Ptrn) then
                            Matched := Match;
                            exit;
                         end if;
@@ -1590,6 +1549,8 @@ package body GPRName is
 
                         Spawn (Gcc_Path.all, Args.all, Success);
 
+                        Free (Args (Args'Last));
+
                         --  Restore the standard output and error
 
                         Dup2 (Saved_Output, Standout);
@@ -1625,7 +1586,7 @@ package body GPRName is
                                  Temp_File_Name.all);
                            end if;
 
-                           Save_Last_Source_Index := Sources.Last;
+                           Save_Last_Source_Index := Sources.Last_Index;
 
                            if End_Of_File (File) then
                               if Opt.Verbose_Mode then
@@ -1670,7 +1631,7 @@ package body GPRName is
                               end loop Line_Loop;
                            end if;
 
-                           if Save_Last_Source_Index = Sources.Last then
+                           if Save_Last_Source_Index = Sources.Last_Index then
                               if Opt.Verbose_Mode then
                                  Put_Line ("      not a unit");
                               end if;
@@ -1678,21 +1639,28 @@ package body GPRName is
                            else
                               Add_Language (Name_Ada);
 
-                              if Sources.Last >
+                              if Sources.Last_Index >
                                    Save_Last_Source_Index + 1
                               then
                                  for Index in Save_Last_Source_Index + 1 ..
-                                                Sources.Last
+                                                Sources.Last_Index
                                  loop
-                                    Sources.Table (Index).Index :=
-                                      Int (Index - Save_Last_Source_Index);
+                                    declare
+                                       Value : Source :=
+                                                 Sources.Element (Index);
+                                    begin
+                                       Value.Index :=
+                                         Int (Index - Save_Last_Source_Index);
+                                       Sources.Replace_Element
+                                         (Index, Value);
+                                    end;
                                  end loop;
                               end if;
 
                               for Index in Save_Last_Source_Index + 1 ..
-                                             Sources.Last
+                                             Sources.Last_Index
                               loop
-                                 Current_Source := Sources.Table (Index);
+                                 Current_Source := Sources (Index);
 
                                  if Opt.Verbose_Mode then
                                     if Current_Source.Spec then
@@ -1721,13 +1689,10 @@ package body GPRName is
                      --  If file is not excluded, see if this is foreign source
 
                      if Matched /= Excluded then
-                        for Index in Foreign_Patterns'Range loop
-                           if Match (Canon (1 .. Last),
-                                     Foreign_Patterns (Index).Pattern)
-                           then
+                        for Ptrn of Foreign_Patterns loop
+                           if Match (Canon (1 .. Last), Ptrn.Pattern) then
                               Matched := Match;
-                              Current_Language :=
-                                Foreign_Patterns (Index).Language;
+                              Current_Language := Ptrn.Language;
                               Add_Language (Current_Language);
                               exit;
                            end if;
@@ -1795,32 +1760,21 @@ package body GPRName is
    --  Start of processing for Process
 
    begin
-      Processed_Directories.Set_Last (0);
+      Processed_Directories.Clear;
 
       --  Process each directory
 
-      for Index in Directories'Range  loop
-
+      for Dir_Name of Directories loop
          declare
-            Dir_Name    : constant String := Directories (Index).all;
             Last        : Natural := Dir_Name'Last;
             Recursively : Boolean := False;
-            Found       : Boolean;
             Canonical   : String (1 .. Dir_Name'Length) := Dir_Name;
 
          begin
             Canonical_Case_File_Name (Canonical);
 
-            Found := False;
-            for J in 1 .. Source_Directories.Last loop
-               if Source_Directories.Table (J).all = Canonical then
-                  Found := True;
-                  exit;
-               end if;
-            end loop;
-
-            if not Found then
-               Source_Directories.Append (new String'(Canonical));
+            if not Source_Directories.Contains (Canonical) then
+               Source_Directories.Append (Canonical);
             end if;
 
             if Dir_Name'Length >= 4
@@ -1835,6 +1789,9 @@ package body GPRName is
          end;
 
       end loop;
+
+      --  The args are now unused: let's free the list
+      Free (Args);
    end Process;
 
 end GPRName;

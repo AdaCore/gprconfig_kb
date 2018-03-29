@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -19,10 +19,10 @@
 --  This package contains the implementation of gprclean.
 --  See gprclean.adb
 
-with GNAT.OS_Lib; use GNAT.OS_Lib;
-with GNAT.Table;
+with GNAT.OS_Lib;    use GNAT.OS_Lib;
 
-with GPR; use GPR;
+with GPR;            use GPR;
+with Gpr_Build_Util; use Gpr_Build_Util;
 
 package Gprclean is
 
@@ -62,12 +62,7 @@ private
    --  Set to True when option -r is used, so that all projects in the project
    --  tree are cleaned.
 
-   package Processed_Projects is new GNAT.Table
-     (Table_Component_Type => Project_Id,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Processed_Projects : Project_Vectors.Vector;
    --  Table to keep track of what project files have been processed, when
    --  switch -r is specified.
 

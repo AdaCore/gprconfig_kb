@@ -26,6 +26,8 @@
 --  particular those subprograms related to project management and build
 --  queue management.
 
+with Ada.Containers.Vectors;
+
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.Table;
 
@@ -92,6 +94,15 @@ package Gpr_Build_Util is
    Keep_Temp_Files_Option : constant String := "--keep-temp-files";
    --  Switch to suppress deletion of temp files created by the builder.
    --  Note that debug switch -gnatdn also has this effect.
+
+   package Project_Vectors is new Ada.Containers.Vectors
+     (Positive, Project_Id);
+
+   package Source_Vectors is new Ada.Containers.Vectors
+     (Positive, Source_Id);
+
+   package Name_Vectors is new Ada.Containers.Vectors
+     (Positive, Name_Id);
 
    package Directories is new GNAT.Table
      (Table_Component_Type => Path_Name_Type,
@@ -311,6 +322,9 @@ package Gpr_Build_Util is
 
    No_Main_Info : constant Main_Info :=
                     (No_File, 0, No_Location, No_Source, No_Project, null);
+
+   package Main_Info_Vectors is new Ada.Containers.Vectors
+     (Positive, Main_Info);
 
    package Mains is
       procedure Add_Main

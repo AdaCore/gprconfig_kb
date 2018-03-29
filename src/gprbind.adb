@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2017, AdaCore                     --
+--                     Copyright (C) 2006-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -21,6 +21,7 @@
 --  binding exchange file and gives back its results through the same file.
 
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Containers.Indefinite_Vectors;
 with Ada.Directories;
 with Ada.Text_IO;      use Ada.Text_IO;
 
@@ -28,14 +29,12 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gprexch;        use Gprexch;
-with Gpr_Build_Util; use Gpr_Build_Util;
 with GPR.Script;     use GPR.Script;
 with GPR;            use GPR;
 with GPR.ALI;        use GPR.ALI;
 with GPR.Names;      use GPR.Names;
 with GPR.Osint;      use GPR.Osint;
 with GPR.Tempdir;
-with GNAT.Table;
 with GPR.Util;       use GPR.Util;
 
 procedure Gprbind is
@@ -108,13 +107,9 @@ procedure Gprbind is
    Gnatbind_Path      : String_Access;
    Gnatbind_Path_Specified : Boolean := False;
 
-   Compiler_Options     : String_List_Access := new String_List (1 .. 100);
-   Last_Compiler_Option : Natural := 0;
-   Compiler_Trailing_Options : String_List_Access := new String_List (1 .. 10);
-   Last_Compiler_Trailing_Option : Natural := 0;
-
-   Gnatbind_Options     : String_List_Access := new String_List (1 .. 100);
-   Last_Gnatbind_Option : Natural := 0;
+   Compiler_Options          : String_Vectors.Vector;
+   Compiler_Trailing_Options : String_Vectors.Vector;
+   Gnatbind_Options          : String_Vectors.Vector;
 
    Main_ALI : String_Access := null;
 
@@ -162,12 +157,7 @@ procedure Gprbind is
    procedure Add_To_Display_Line (S : String);
    --  Add an argument to the Display_Line
 
-   package Binding_Options_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Binding_Options_Table : String_Vectors.Vector;
 
    Binding_Option_Dash_V_Specified : Boolean := False;
    --  Set to True if -v is specified in the binding options
@@ -179,24 +169,17 @@ procedure Gprbind is
    --  Set to True when GNAT_6_Or_Higher is True and if GNAT version is 6.xy
    --  with x >= 4.
 
-   package ALI_Files_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   ALI_Files_Table : String_Vectors.Vector;
 
-   type Path_And_Stamp is record
-      Path : String_Access;
-      Stamp : String_Access;
+   type Path_And_Stamp (Path_Len, Stamp_Len : Natural) is record
+      Path  : String (1 .. Path_Len);
+      Stamp : String (1 .. Stamp_Len);
    end record;
 
-   package Project_Paths is new GNAT.Table
-     (Table_Component_Type => Path_And_Stamp,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   package PS_Vectors is new Ada.Containers.Indefinite_Vectors
+     (Positive, Path_And_Stamp);
+
+   Project_Paths : PS_Vectors.Vector;
 
    type Bound_File;
    type Bound_File_Access is access Bound_File;
@@ -352,14 +335,10 @@ begin
                   Ada_Compiler_Path := new String'(Line (1 .. Last));
 
                when Compiler_Leading_Switches =>
-                  Add
-                    (Line (1 .. Last),
-                     Compiler_Options, Last_Compiler_Option);
+                  Compiler_Options.Append (Line (1 .. Last));
 
                when Compiler_Trailing_Switches =>
-                  Add
-                    (Line (1 .. Last),
-                     Compiler_Trailing_Options, Last_Compiler_Trailing_Option);
+                  Compiler_Trailing_Options.Append (Line (1 .. Last));
 
                when Main_Dependency_File =>
                   if Main_ALI /= null then
@@ -370,7 +349,7 @@ begin
                   Main_ALI := new String'(Line (1 .. Last));
 
                when Dependency_Files =>
-                  ALI_Files_Table.Append (new String'(Line (1 .. Last)));
+                  ALI_Files_Table.Append (Line (1 .. Last));
 
                when Binding_Options =>
                   --  Check if a gnatbind absolute is specified
@@ -422,8 +401,7 @@ begin
                   --  Ignore -C, as the generated sources are always in Ada
 
                   elsif  Line (1 .. Last) /= "-C" then
-                     Binding_Options_Table.Append
-                                             (new String'(Line (1 .. Last)));
+                     Binding_Options_Table.Append (Line (1 .. Last));
                   end if;
 
                when Project_Files =>
@@ -433,13 +411,16 @@ begin
 
                   else
                      declare
-                        PS : Path_And_Stamp;
+                        Path : constant String := Line (1 .. Last);
 
                      begin
-                        PS.Path := new String'(Line (1 .. Last));
                         Get_Line (IO_File, Line, Last);
-                        PS.Stamp := new String'(Line (1 .. Last));
-                        Project_Paths.Append (PS);
+                        Project_Paths.Append
+                          (Path_And_Stamp'
+                             (Path_Len  => Path'Length,
+                              Stamp_Len => Last,
+                              Path      => Path,
+                              Stamp     => Line (1 .. Last)));
                      end;
                   end if;
 
@@ -513,20 +494,20 @@ begin
 
    --  Modify binding option -A=<file> if <file> is not an absolute path
 
-   if Project_Paths.Last >= 1 then
+   if not Project_Paths.Is_Empty then
       declare
          Project_Dir : constant String :=
                          Ada.Directories.Containing_Directory
-                           (Project_Paths.Table (1).Path.all);
+                           (Project_Paths.First_Element.Path);
       begin
-         for J in 1 .. Binding_Options_Table.Last loop
-            if Binding_Options_Table.Table (J)'Length >= 4 and then
-               Binding_Options_Table.Table (J) (1 .. 3) = "-A="
+         for J in 1 .. Binding_Options_Table.Last_Index loop
+            if Binding_Options_Table.Element (J)'Length >= 4 and then
+               Binding_Options_Table (J) (1 .. 3) = "-A="
             then
                declare
-                  File : constant String :=
-                    Binding_Options_Table.Table (J)
-                      (4 .. Binding_Options_Table.Table (J)'Length);
+                  Value : constant String := Binding_Options_Table.Element (J);
+                  File  : constant String :=
+                            Value (4 .. Value'Last);
                begin
                   if not Is_Absolute_Path (File) then
                      declare
@@ -535,8 +516,8 @@ begin
                             (File, Project_Dir,
                              Resolve_Links => False);
                      begin
-                        Binding_Options_Table.Table (J) :=
-                          new String'("-A=" & New_File);
+                        Binding_Options_Table.Replace_Element
+                          (J, "-A=" & New_File);
                      end;
                   end if;
                end;
@@ -572,20 +553,17 @@ begin
    --  polluted.
 
    if Binding_Option_Dash_V_Specified and then GNAT_6_4_Or_Higher then
-      Binding_Options_Table.Append (new String'("-v"));
+      Binding_Options_Table.Append ("-v");
    end if;
 
    if not Static_Libs then
-      Add (Dash_shared, Gnatbind_Options, Last_Gnatbind_Option);
+      Gnatbind_Options.Append (Dash_shared);
    end if;
 
    --  Specify the name of the generated file to gnatbind
 
-   Add (Dash_o, Gnatbind_Options, Last_Gnatbind_Option);
-   Add
-     (Binder_Generated_File.all,
-      Gnatbind_Options,
-      Last_Gnatbind_Option);
+   Gnatbind_Options.Append (Dash_o);
+   Gnatbind_Options.Append (Binder_Generated_File.all);
 
    if Ada_Compiler_Path = null then
       Fail_Program (null, "no Ada compiler path specified");
@@ -595,7 +573,7 @@ begin
    end if;
 
    if Main_ALI /= null then
-      Add (Main_ALI.all, Gnatbind_Options, Last_Gnatbind_Option);
+      Gnatbind_Options.Append (Main_ALI.all);
    end if;
 
    --  If there are Stand-Alone Libraries, invoke gnatbind with -F (generate
@@ -607,31 +585,24 @@ begin
      and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
                 "3."
    then
-      Add ("-F", Gnatbind_Options, Last_Gnatbind_Option);
+      Gnatbind_Options.Append ("-F");
    end if;
 
-   for J in 1 .. ALI_Files_Table.Last loop
-      Add (ALI_Files_Table.Table (J), Gnatbind_Options, Last_Gnatbind_Option);
-   end loop;
+   Gnatbind_Options.Append (ALI_Files_Table);
 
-   for J in 1 .. Binding_Options_Table.Last loop
-      Add
-        (Binding_Options_Table.Table (J),
-         Gnatbind_Options,
-         Last_Gnatbind_Option);
+   for Option of Binding_Options_Table loop
+      Gnatbind_Options.Append (Option);
 
-      if Binding_Options_Table.Table (J).all = Dash_OO then
+      if Option = Dash_OO then
          Dash_O_Specified := True;
 
-      elsif Binding_Options_Table.Table (J)'Length >= 4 and then
-            Binding_Options_Table.Table (J) (1 .. 3) = Dash_OO & '='
+      elsif Option'Length >= 4 and then
+            Option (1 .. 3) = Dash_OO & '='
       then
          Dash_O_Specified := True;
          Dash_O_File_Specified := True;
          Name_Len := 0;
-         Add_Str_To_Name_Buffer
-           (Binding_Options_Table.Table (J)
-             (4 .. Binding_Options_Table.Table (J)'Last));
+         Add_Str_To_Name_Buffer (Option (4 .. Option'Last));
          Objects_Path := Name_Find;
       end if;
    end loop;
@@ -640,7 +611,7 @@ begin
    --  gnatbind does not try to look for sources, as the binder mapping file
    --  specified by -F- is not for sources, but for ALI files.
 
-   Add (Dash_x, Gnatbind_Options, Last_Gnatbind_Option);
+   Gnatbind_Options.Append (Dash_x);
 
    if Is_Absolute_Path (GNATBIND.all) then
       FULL_GNATBIND := GNATBIND;
@@ -697,7 +668,7 @@ begin
    end if;
 
    if Main_ALI = null then
-      Add (No_Main_Option, Gnatbind_Options, Last_Gnatbind_Option);
+      Gnatbind_Options.Append (No_Main_Option);
    end if;
 
    --  Add the switch -F=<mapping file> if the mapping file was specified
@@ -709,9 +680,7 @@ begin
      and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
                 "3."
    then
-      Add (Dash_Fequal & Mapping_File.all,
-           Gnatbind_Options,
-           Last_Gnatbind_Option);
+      Gnatbind_Options.Append (Dash_Fequal & Mapping_File.all);
    end if;
 
    --  Create temporary file to get the list of objects
@@ -722,15 +691,13 @@ begin
 
    if GNAT_6_4_Or_Higher then
       if not Dash_O_File_Specified then
-         Add
-           (Dash_OO & "=" & Get_Name_String (Objects_Path),
-            Gnatbind_Options,
-            Last_Gnatbind_Option);
+         Gnatbind_Options.Append
+           (Dash_OO & "=" & Get_Name_String (Objects_Path));
          Close (FD_Objects);
       end if;
 
    elsif not Dash_O_Specified then
-      Add (Dash_OO, Gnatbind_Options, Last_Gnatbind_Option);
+      Gnatbind_Options.Append (Dash_OO);
    end if;
 
    if not Quiet_Output then
@@ -738,8 +705,8 @@ begin
          Display_Last := 0;
          Add_To_Display_Line (Gnatbind_Path.all);
 
-         for Option in 1 .. Last_Gnatbind_Option loop
-            Add_To_Display_Line (Gnatbind_Options (Option).all);
+         for Option of Gnatbind_Options loop
+            Add_To_Display_Line (Option);
          end loop;
 
          Put_Line (Display_Line (1 .. Display_Last));
@@ -751,12 +718,12 @@ begin
                Command  => "Ada",
                Argument => Base_Name (Main_ALI.all));
 
-         elsif ALI_Files_Table.Last > 0 then
+         elsif not ALI_Files_Table.Is_Empty then
             Display
               (Section  => GPR.Bind,
                Command  => "Ada",
                Argument =>
-                 Base_Name (ALI_Files_Table.Table (1).all) &
+                 Base_Name (ALI_Files_Table.First_Element) &
                  " " &
                  No_Main_Option);
          end if;
@@ -765,10 +732,11 @@ begin
 
    declare
       Size : Natural := 0;
+      Args_List : String_List_Access;
 
    begin
-      for J in 1 .. Last_Gnatbind_Option loop
-         Size := Size + Gnatbind_Options (J)'Length + 1;
+      for Option of Gnatbind_Options loop
+         Size := Size + Option'Length + 1;
       end loop;
 
       --  Invoke gnatbind with the arguments if the size is not too large or
@@ -776,13 +744,16 @@ begin
 
       Script_Write
         (Gnatbind_Path.all,
-         Gnatbind_Options (1 .. Last_Gnatbind_Option));
+         Gnatbind_Options);
 
       if not GNAT_6_Or_Higher or else Size <= Maximum_Size then
+         Args_List :=
+           new String_List'(To_Argument_List (Gnatbind_Options));
+
          if not GNAT_6_4_Or_Higher then
             Spawn
               (Gnatbind_Path.all,
-               Gnatbind_Options (1 .. Last_Gnatbind_Option),
+               Args_List.all,
                FD_Objects,
                Return_Code,
                Err_To_Out => False);
@@ -792,8 +763,10 @@ begin
             Return_Code :=
               Spawn
                 (Gnatbind_Path.all,
-                 Gnatbind_Options (1 .. Last_Gnatbind_Option));
+                 Args_List.all);
          end if;
+
+         Free (Args_List);
 
       else
          --  Otherwise create a temporary response file
@@ -812,15 +785,15 @@ begin
             Tempdir.Create_Temp_File (FD, Path);
             Args (1) := new String'("@" & Get_Name_String (Path));
 
-            for J in 1 .. Last_Gnatbind_Option loop
+            for Option of Gnatbind_Options loop
 
                --  Check if the argument should be quoted
 
                Quotes_Needed := False;
-               Last_Char     := Gnatbind_Options (J)'Length;
+               Last_Char     := Option'Length;
 
-               for K in Gnatbind_Options (J)'Range loop
-                  Ch := Gnatbind_Options (J) (K);
+               for J in Option'Range loop
+                  Ch := Option (J);
 
                   if Ch = ' ' or else Ch = ASCII.HT or else Ch = '"' then
                      Quotes_Needed := True;
@@ -833,14 +806,14 @@ begin
                   --  Quote the argument, doubling '"'
 
                   declare
-                     Arg : String (1 .. Gnatbind_Options (J)'Length * 2 + 2);
+                     Arg : String (1 .. Option'Length * 2 + 2);
 
                   begin
                      Arg (1) := '"';
                      Last_Char := 1;
 
-                     for K in Gnatbind_Options (J)'Range loop
-                        Ch := Gnatbind_Options (J) (K);
+                     for J in Option'Range loop
+                        Ch := Option (J);
                         Last_Char := Last_Char + 1;
                         Arg (Last_Char) := Ch;
 
@@ -859,7 +832,7 @@ begin
                else
                   Status := Write
                     (FD,
-                     Gnatbind_Options (J) (Gnatbind_Options (J)'First)'Address,
+                     Option (Option'First)'Address,
                      Last_Char);
                end if;
 
@@ -915,17 +888,17 @@ begin
       Fail_Program (null, "invocation of gnatbind failed");
    end if;
 
-   Add (Dash_c, Compiler_Options, Last_Compiler_Option);
-   Add (Dash_gnatA, Compiler_Options, Last_Compiler_Option);
-   Add (Dash_gnatWb, Compiler_Options, Last_Compiler_Option);
-   Add (Dash_gnatiw, Compiler_Options, Last_Compiler_Option);
-   Add (Dash_gnatws, Compiler_Options, Last_Compiler_Option);
+   Compiler_Options.Append (Dash_c);
+   Compiler_Options.Append (Dash_gnatA);
+   Compiler_Options.Append (Dash_gnatWb);
+   Compiler_Options.Append (Dash_gnatiw);
+   Compiler_Options.Append (Dash_gnatws);
 
    --  Read the ALI file of the first ALI file. Fetch the back end switches
    --  from this ALI file and use these switches to compile the binder
    --  generated file.
 
-   if Main_ALI /= null or else ALI_Files_Table.Last >= 1 then
+   if Main_ALI /= null or else not ALI_Files_Table.Is_Empty then
       Initialize_ALI;
       Name_Len := 0;
 
@@ -933,7 +906,7 @@ begin
          Add_Str_To_Name_Buffer (Main_ALI.all);
 
       else
-         Add_Str_To_Name_Buffer (ALI_Files_Table.Table (1).all);
+         Add_Str_To_Name_Buffer (ALI_Files_Table.First_Element);
       end if;
 
       declare
@@ -975,10 +948,7 @@ begin
                     and then
                      (Argv'Last <= 6 or else Argv (1 .. 6) /= "--RTS=")
                   then
-                     Add
-                       (String_Access (Arg),
-                        Compiler_Options,
-                        Last_Compiler_Option);
+                     Compiler_Options.Append (Arg.all);
                   end if;
                end;
             end loop;
@@ -986,29 +956,17 @@ begin
       end;
    end if;
 
-   Add (Binder_Generated_File, Compiler_Options, Last_Compiler_Option);
+   Compiler_Options.Append (Binder_Generated_File.all);
 
    declare
       Object : constant String :=
                  "b__" & Main_Base_Name.all & Ada_Object_Suffix.all;
    begin
-      Add
-        (Dash_o,
-         Compiler_Options,
-         Last_Compiler_Option);
-      Add
-        (Object,
-         Compiler_Options,
-         Last_Compiler_Option);
+      Compiler_Options.Append (Dash_o);
+      Compiler_Options.Append (Object);
 
       --  Add the trailing options, if any
-
-      for J in 1 .. Last_Compiler_Trailing_Option loop
-         Add
-           (Compiler_Trailing_Options (J),
-            Compiler_Options,
-            Last_Compiler_Option);
-      end loop;
+      Compiler_Options.Append (Compiler_Trailing_Options);
 
       if Verbose_Low_Mode then
          Name_Len := 0;
@@ -1031,8 +989,8 @@ begin
          Display_Last := 0;
          Add_To_Display_Line (Name_Buffer (1 .. Name_Len));
 
-         for Option in 1 .. Last_Compiler_Option loop
-            Add_To_Display_Line (Compiler_Options (Option).all);
+         for Option of Compiler_Options loop
+            Add_To_Display_Line (Option);
          end loop;
 
          Put_Line (Display_Line (1 .. Display_Last));
@@ -1040,7 +998,7 @@ begin
 
       Spawn_And_Script_Write
         (Ada_Compiler_Path.all,
-         Compiler_Options (1 .. Last_Compiler_Option),
+         Compiler_Options,
          Success);
 
       if not Success then
@@ -1084,9 +1042,9 @@ begin
 
       Put_Line (IO_File, Binding_Label (Project_Files));
 
-      for J in 1 .. Project_Paths.Last loop
-         Put_Line (IO_File, Project_Paths.Table (J).Path.all);
-         Put_Line (IO_File, Project_Paths.Table (J).Stamp.all);
+      for PS of Project_Paths loop
+         Put_Line (IO_File, PS.Path);
+         Put_Line (IO_File, PS.Stamp);
       end loop;
 
       --  Get the bound object files from the Object file

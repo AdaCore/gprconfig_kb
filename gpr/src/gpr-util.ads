@@ -24,7 +24,7 @@
 
 --  Utilities for use in processing project files
 
-with Ada.Calendar; use Ada;
+with Ada.Calendar;                      use Ada;
 with Ada.Containers.Indefinite_Vectors;
 
 with GNAT.HTable;
@@ -39,6 +39,8 @@ package GPR.Util is
    package String_Vectors is new Ada.Containers.Indefinite_Vectors
      (Positive, String);
    --  General-purpose vector of strings
+
+   type String_Vector_Access is access all String_Vectors.Vector;
 
    type Config_Paths is array (Positive range <>) of Path_Name_Type;
    --  type used in Need_To_Compile
@@ -79,11 +81,11 @@ package GPR.Util is
    procedure Get_Closures
      (Project                  : Project_Id;
       In_Tree                  : Project_Tree_Ref;
-      Mains                    : String_List;
+      Mains                    : String_Vectors.Vector;
       All_Projects             : Boolean := True;
       Include_Externally_Built : Boolean := False;
       Status                   : out Status_Type;
-      Result                   : out String_List_Access);
+      Result                   : out String_Vectors.Vector);
    --  Return the list of source files in the closures of the Ada Mains in
    --  Result.
    --  The project and its project tree must have been parsed and processed.
@@ -771,6 +773,23 @@ package GPR.Util is
    --  to indicate the relative path: with dest = /foo/bar, Src = /foo/baz and
    --  Origin = $ORIGIN, the function will return $ORIGIN/../bar.
    --  If Absolute is set, then the rpath will be absolute.
+
+   function Concat_Paths
+     (List      : String_Vectors.Vector;
+      Separator : String) return String;
+   --  Concatenate the strings in the list, using Separator between the
+   --  strings.
+   --  Typical usage is to concatenate paths using the path separator between
+   --  those.
+
+   function To_Argument_List
+     (List : String_Vectors.Vector) return Argument_List;
+   --  Translates a string vector into an argument list
+
+   function Slice
+     (List : String_Vectors.Vector;
+      From, To : Positive) return String_Vectors.Vector;
+   --  Returns List (From .. To)
 
    --  Architecture
 

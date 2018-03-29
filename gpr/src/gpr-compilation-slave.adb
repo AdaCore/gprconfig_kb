@@ -38,7 +38,6 @@ with GPR.Compilation.Process;
 with GPR.Names;                     use GPR.Names;
 with GPR.Opt;                       use GPR.Opt;
 with GPR.Snames;                    use GPR.Snames;
-with GPR.Util;                      use GPR.Util;
 
 package body GPR.Compilation.Slave is
 
@@ -629,7 +628,7 @@ package body GPR.Compilation.Slave is
    function Run
      (Project  : Project_Id;
       Language : String;
-      Options  : GNAT.OS_Lib.Argument_List;
+      Options  : String_Vectors.Vector;
       Obj_Name : String;
       Dep_Name : String := "";
       Env      : String := "") return GPR.Compilation.Id

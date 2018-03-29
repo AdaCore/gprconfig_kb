@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                    Copyright (C) 2015-2017, AdaCore                      --
+--                    Copyright (C) 2015-2018, AdaCore                      --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -110,35 +110,31 @@ procedure Gprls.Main is
 
    procedure Display_Closures is
    begin
-      if Number_File_Names = 0 then
+      if File_Names.Is_Empty then
          Fail_Program (Project_Tree, "no main specified for closure");
 
       else
          declare
-            The_Sources : String_List (1 .. Number_File_Names);
-            Last_Source : Natural := 0;
-            Result : String_List_Access;
+            The_Sources : String_Vectors.Vector;
+            Result : String_Vectors.Vector;
             Status : GPR.Util.Status_Type;
 
          begin
-            for J in 1 .. Number_File_Names loop
-               if File_Names (J).Source /= No_Source then
-                  Last_Source := Last_Source + 1;
-                  The_Sources (Last_Source) :=
-                    new String'
-                      (Get_Name_String
-                         (File_Names (J).Source.File));
+            for FN_Source of File_Names loop
+               if FN_Source.Source /= No_Source then
+                  The_Sources.Append
+                    (Get_Name_String (FN_Source.Source.File));
                end if;
             end loop;
 
-            if Last_Source = 0 then
+            if The_Sources.Is_Empty then
                Finish_Program (Project_Tree);
             end if;
 
             Get_Closures
               (Project                  => Main_Project,
                In_Tree                  => Project_Tree,
-               Mains                    => The_Sources (1 .. Last_Source),
+               Mains                    => The_Sources,
                All_Projects             => True,
                Include_Externally_Built => True,
                Status                   => Status,
@@ -147,14 +143,14 @@ procedure Gprls.Main is
             New_Line;
 
             if Status = Incomplete_Closure then
-               if Last_Source = 1 then
+               if The_Sources.Last_Index = 1 then
                   Put_Line ("Incomplete closure:");
                else
                   Put_Line ("Incomplete closures:");
                end if;
 
             elsif Status = GPR.Util.Success then
-               if Last_Source = 1 then
+               if The_Sources.Last_Index = 1 then
                   Put_Line ("Closure:");
                else
                   Put_Line ("Closures:");
@@ -167,9 +163,9 @@ procedure Gprls.Main is
 
             New_Line;
 
-            if Result /= null then
-               for J in Result'Range loop
-                  Put_Line ("  " & Result (J).all);
+            if not Result.Is_Empty then
+               for Res of Result loop
+                  Put_Line ("  " & Res);
                end loop;
 
                New_Line;
@@ -187,36 +183,27 @@ procedure Gprls.Main is
       if Very_Verbose_Mode then
          --  First the ALI files that are not found
 
-         for J in 1 .. Number_File_Names loop
-            declare
-               FN_Source : File_Name_Source renames File_Names (J);
-            begin
-               if FN_Source.Source /= No_Source
-                 and then FN_Source.The_ALI = No_ALI_Id
-               then
-                  GNATDIST.Output_No_ALI (FN_Source);
-               end if;
-            end;
+         for FN_Source of File_Names loop
+            if FN_Source.Source /= No_Source
+              and then FN_Source.The_ALI = No_ALI_Id
+            then
+               GNATDIST.Output_No_ALI (FN_Source);
+            end if;
          end loop;
 
          --  Then the ALI that have been found
 
-         for J in 1 .. Number_File_Names loop
-            declare
-               FN_Source : File_Name_Source renames File_Names (J);
-            begin
-               if FN_Source.Source /= No_Source
-                 and then FN_Source.The_ALI /= No_ALI_Id
-               then
-                  GNATDIST.Output_ALI (FN_Source);
-               end if;
-            end;
+         for FN_Source of File_Names loop
+            if FN_Source.Source /= No_Source
+              and then FN_Source.The_ALI /= No_ALI_Id
+            then
+               GNATDIST.Output_ALI (FN_Source);
+            end if;
          end loop;
       else
 
-         for J in 1 .. Number_File_Names loop
+         for FN_Source of File_Names loop
             declare
-               FN_Source : File_Name_Source renames File_Names (J);
                Id        : ALI_Id;
                Last_U    : Unit_Id;
 
@@ -463,16 +450,16 @@ procedure Gprls.Main is
 
    procedure Look_For_Sources is
    begin
-      for J in 1 .. Number_File_Names loop
-         if File_Names (J).Source = No_Source then
+      for FN_Source of File_Names loop
+         if FN_Source.Source = No_Source then
             Put_Line
               (Standard_Error,
-               "Can't find source for " & File_Names (J).File_Name.all);
+               "Can't find source for " & FN_Source.File_Name);
 
          else
             declare
                Text   : Text_Buffer_Ptr;
-               Source : constant GPR.Source_Id := File_Names (J).Source;
+               Source : constant GPR.Source_Id := FN_Source.Source;
 
             begin
                Text := Osint.Read_Library_Info
@@ -502,19 +489,19 @@ procedure Gprls.Main is
                end if;
 
                if Text /= null then
-                  File_Names (J).The_ALI := Scan_ALI
+                  FN_Source.The_ALI := Scan_ALI
                     (F          => File_Name_Type
-                       (File_Names (J).Source.Dep_Path),
+                       (FN_Source.Source.Dep_Path),
                      T          => Text,
                      Ignore_ED  => False,
                      Err        => True,
                      Read_Lines => "WD",
                      Object_Path => File_Name_Type
-                       (File_Names (J).Source.Object_Path));
+                       (FN_Source.Source.Object_Path));
                   Free (Text);
 
                else
-                  File_Names (J).The_ALI := No_ALI_Id;
+                  FN_Source.The_ALI := No_ALI_Id;
 
                   if Very_Verbose_Mode then
                      --  With switch -V, when the ALI file is not found, this
@@ -527,7 +514,7 @@ procedure Gprls.Main is
                        (Standard_Error,
                         "Can't find ALI file for " &
                           Get_Name_String
-                          (File_Names (J).Source.Path.Display_Name));
+                          (FN_Source.Source.Path.Display_Name));
                   end if;
                end if;
             end;
@@ -913,7 +900,7 @@ begin
       Closure    := False;
       Dependable := False;
 
-      if Number_File_Names > 0 then
+      if not File_Names.Is_Empty then
          All_Projects := True;
       end if;
 
@@ -931,9 +918,9 @@ begin
       Usage;
    end if;
 
-   if Project_File_Name = null and then
-     Number_File_Names = 0 and then
-     not Verbose_Mode
+   if Project_File_Name = null
+     and then File_Names.Is_Empty
+     and then not Verbose_Mode
    then
       if Argument_Count = 0 then
          Usage;
@@ -953,7 +940,7 @@ begin
 
    if Verbose_Mode and then
      No_Project_File_Specified and then
-     Number_File_Names = 0
+     File_Names.Is_Empty
    then
       Verbose_Mode    := False;
       Verbosity_Level := None;
@@ -1056,7 +1043,7 @@ begin
    if Verbose_Mode then
       Display_Paths;
 
-      if No_Project_File_Specified and then Number_File_Names = 0 then
+      if No_Project_File_Specified and then File_Names.Is_Empty then
          Finish_Program (Project_Tree);
       end if;
    end if;
@@ -1075,7 +1062,7 @@ begin
       end loop;
    end;
 
-   if Closure and then Number_File_Names = 0 then
+   if Closure and then File_Names.Is_Empty then
       --  Get the mains declared in the main project
 
       declare
@@ -1090,7 +1077,7 @@ begin
       end;
    end if;
 
-   if Number_File_Names = 0 and not Closure then
+   if File_Names.Is_Empty and not Closure then
       --  Get all the compilable sources of the project
       declare
          Unit    : GPR.Unit_Index;
@@ -1150,9 +1137,9 @@ begin
    else
       --  Find the sources in the project files
 
-      for J in 1 .. Number_File_Names loop
+      for FN_Source of File_Names loop
          declare
-            File_Name : String := File_Names (J).File_Name.all;
+            File_Name : String renames FN_Source.File_Name;
             Unit      : GPR.Unit_Index;
             Subunit   : Boolean := False;
          begin
@@ -1209,7 +1196,7 @@ begin
                                  (Unit.File_Names (Impl).Display_File) =
                                  File_Name
                            then
-                              File_Names (J).Source := Unit.File_Names (Impl);
+                              FN_Source.Source := Unit.File_Names (Impl);
                               exit Unit_Loop;
                            end if;
                         end;
@@ -1245,7 +1232,7 @@ begin
                               (Unit.File_Names (Spec).Display_File) =
                               File_Name
                         then
-                           File_Names (J).Source := Unit.File_Names (Spec);
+                           FN_Source.Source := Unit.File_Names (Spec);
                         end if;
                      end;
                   end if;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -26,7 +26,7 @@
 --  The communication with the remote instances are done through sockets.
 
 with GNAT.OS_Lib;
-with GPR.Compilation; use GPR.Compilation;
+with GPR.Util;        use GPR.Util;
 
 package GPR.Compilation.Process is
 
@@ -45,7 +45,7 @@ package GPR.Compilation.Process is
 
    function Run
      (Executable    : String;
-      Options       : GNAT.OS_Lib.Argument_List;
+      Options       : String_Vectors.Vector;
       Project       : Project_Id;
       Obj_Name      : String;
       Source        : String := "";

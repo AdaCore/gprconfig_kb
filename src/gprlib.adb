@@ -27,9 +27,7 @@ with Ada.Text_IO;       use Ada.Text_IO;
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
-with GNAT.Table;
 
-with Gpr_Build_Util; use Gpr_Build_Util;
 with Gprexch;        use Gprexch;
 with GPR;            use GPR;
 with GPR.ALI;
@@ -57,19 +55,10 @@ procedure Gprlib is
 
    --  Switches used when spawning processes
 
-   No_Main_String : constant String := "-n";
-   No_Main        : constant String_Access := new String'(No_Main_String);
-
-   Output_Switch_String : constant String := "-o";
-   Output_Switch        : constant String_Access :=
-                            new String'(Output_Switch_String);
-
-   No_Warning_String : constant String := "-gnatws";
-   No_Warning : constant String_Access := new String'(No_Warning_String);
-
-   Auto_Initialize_String : constant String := "-a";
-   Auto_Initialize        : constant String_Access :=
-                              new String'(Auto_Initialize_String);
+   No_Main         : constant String := "-n";
+   Output_Switch   : constant String := "-o";
+   No_Warning      : constant String := "-gnatws";
+   Auto_Initialize : constant String := "-a";
 
    IO_File : File_Type;
    --  The file to get the inputs and to put the results
@@ -77,368 +66,233 @@ procedure Gprlib is
    Line : String (1 .. 100_000);
    Last : Natural;
 
-   Exchange_File_Name : String_Access;
+   Exchange_File_Name            : String_Access;
    --  Name of the exchange file
 
-   GNAT_Version : String_Access := new String'("000");
+   GNAT_Version                  : String_Access := new String'("000");
    --  The version of GNAT, coming from the Toolchain_Version for Ada
 
-   GNAT_Version_Set : Boolean := False;
+   GNAT_Version_Set              : Boolean := False;
    --  True when the toolchain version is in the input exchange file
 
-   S_Osinte_Ads : File_Name_Type := No_File;
+   S_Osinte_Ads                  : File_Name_Type := No_File;
    --  Name_Id for "s-osinte.ads"
 
-   S_Dec_Ads : File_Name_Type := No_File;
+   S_Dec_Ads                     : File_Name_Type := No_File;
    --  Name_Id for "dec.ads"
 
-   G_Trasym_Ads : File_Name_Type := No_File;
+   G_Trasym_Ads                  : File_Name_Type := No_File;
    --  Name_Id for "g-trasym.ads"
 
-   Libgnat : String_Access := new String'("-lgnat");
+   Libgnat                       : String_Access := new String'("-lgnat");
+   --  Switch to link with libgnat
 
-   Libgnarl : String_Access := new String'("-lgnarl");
+   Libgnarl                      : String_Access := new String'("-lgnarl");
+   --  Switch to link with libgnarl
 
-   Libgnarl_Needed : Boolean := False;
+   Libgnarl_Needed               : Boolean := False;
    --  True if libgnarl is needed
 
-   No_SAL_Binding : Boolean := False;
+   No_SAL_Binding                : Boolean := False;
+   --  Whether to bind a standalone library or not
 
-   Mapping_File_Name : String_Access := null;
+   Mapping_File_Name             : String_Access := null;
    --  The path name of the binder mapping file
 
-   type Dir_Data;
-   type Dir_Access is access Dir_Data;
-   type Dir_Data is record
-      Path : String_Access := null;
-      Next : Dir_Access := null;
-   end record;
-
-   Runtime_Library_Dirs : Dir_Access := null;
+   Runtime_Library_Dirs          : String_Vectors.Vector;
    --  Full path names of the Ada runtime library directories
 
-   Current_Section : Library_Section := No_Library_Section;
+   Current_Section               : Library_Section := No_Library_Section;
    --  The current section when reading the exchange file
 
-   No_Std_Lib_String : constant String := "-nostdlib";
-   Use_GNAT_Lib : Boolean := True;
+   No_Std_Lib_String             : constant String := "-nostdlib";
+   Use_GNAT_Lib                  : Boolean := True;
    --  Set to False when "-nostdlib" is in the library options. When False,
    --  a shared library is not linked with the GNAT libraries.
 
-   Standalone : GPR.Standalone := No;
+   Standalone                    : GPR.Standalone := No;
    --  True when building a stand-alone library
 
    Library_Path_Name : String_Access;
    --  Path name of the library file
 
-   package Object_Files is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Object_Files                  : String_Vectors.Vector;
    --  A table to store the object files of the library
 
-   package Additional_Switches is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
-   --  A table to store switches coming from the binder generated file
-
-   Last_Object_File_Index : Natural := 0;
+   Last_Object_File_Index        : Natural := 0;
    --  Index of the last object file in the Object_Files table. When building
    --  a Stand Alone Library, the binder generated object file will be added
    --  in the Object_Files table.
 
-   package Options_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Additional_Switches           : String_Vectors.Vector;
+   --  A table to store switches coming from the binder generated file
+
+   Options_Table                 : String_Vectors.Vector;
    --  A table to store the options from the exchange file
 
-   package Imported_Library_Directories is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Imported_Library_Directories  : String_Vectors.Vector;
    --  A table to store the directories of the imported libraries
 
-   package Imported_Library_Names is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Imported_Library_Names        : String_Vectors.Vector;
    --  A table to store the names of the imported libraries
 
-   package ALIs is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 50,
-      Table_Increment      => 100);
+   ALIs                          : String_Vectors.Vector;
    --  A table to store all of the ALI files
 
-   package Interface_ALIs is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 50,
-      Table_Increment      => 100);
+   Interface_ALIs                : String_Vectors.Vector;
    --  A table to store the ALI files of the interfaces of a SAL
 
-   package Other_Interfaces is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 50,
-      Table_Increment      => 100);
+   Other_Interfaces              : String_Vectors.Vector;
    --  A table to store the interface files other than the ALI files
 
-   package Interface_Objs is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 50,
-      Table_Increment      => 100);
+   Interface_Objs                : String_Vectors.Vector;
    --  A table to store the object files of the interfaces of a SAL. The
    --  symbols in these files are the only ones exported from a SAL.
 
-   package Binding_Options_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 5,
-      Table_Increment      => 100);
+   Binding_Options_Table         : String_Vectors.Vector;
    --  A table to store the binding options
 
-   package Leading_Library_Options_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Leading_Library_Options_Table : String_Vectors.Vector;
    --  A table to store the leading library options from the exchange file
 
-   package Library_Options_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 5,
-      Table_Increment      => 100);
+   Library_Options_Table         : String_Vectors.Vector;
    --  A table to store the library options
 
-   package Library_Rpath_Options_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 5,
-      Table_Increment      => 100);
+   Library_Rpath_Options_Table   : String_Vectors.Vector;
    --  A table to store the library rpath options
 
-   package Library_Switches_Table is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 5,
-      Table_Increment      => 100);
+   Library_Switches_Table        : String_Vectors.Vector;
    --  A table to store the switches for the imported libraries
 
-   package Object_Directories is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Object_Directories            : String_Vectors.Vector;
    --  A table to store the object directories of the project and of all
    --  the projects it extends.
 
-   package Sources is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Sources                       : String_Vectors.Vector;
 
-   package Generated_Sources is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Generated_Sources             : String_Vectors.Vector;
 
-   package Generated_Objects is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Generated_Objects             : String_Vectors.Vector;
 
-   package Ada_Leading_Switches is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Ada_Leading_Switches          : String_Vectors.Vector;
 
-   package Ada_Trailing_Switches is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Ada_Trailing_Switches         : String_Vectors.Vector;
 
-   Current_Language : Name_Id := No_Name;
+   Current_Language              : Name_Id := No_Name;
 
-   Language_Equal : constant String := "language=";
+   Language_Equal                : constant String := "language=";
 
-   Auto_Init : Boolean := False;
+   Auto_Init                     : Boolean := False;
    --  True when a SAL is auto initializable
 
-   Static : Boolean := False;
+   Static                        : Boolean := False;
    --  True if the library is an archive
 
-   No_Create : Boolean := False;
+   No_Create                     : Boolean := False;
    --  Should the library (static or dynamic) be built
 
-   Archive_Builder : String_Access := null;
+   Archive_Builder               : String_Access := null;
    --  Name of the archive builder
 
-   AB_Options     : String_List_Access := new String_List (1 .. 10);
-   Last_AB_Option : Natural := 0;
+   AB_Create_Options               : String_Vectors.Vector;
    --  Options of the archive builder
 
-   First_AB_Object_Pos : Natural;
-   Next_AB_Object_Pos  : Natural;
-   Object_Pos          : Natural;
-   --  Various indexes in AB_Options used when building an archive in chunks
-
-   AB_Append_Options : String_List_Access := new String_List (1 .. 10);
-   Last_AB_Append_Option : Natural := 0;
+   AB_Append_Options             : String_Vectors.Vector;
    --  Options for appending to an archive
 
-   Archive_Indexer : String_Access := null;
+   Archive_Indexer               : String_Access := null;
    --  Name of the archive indexer
 
-   AI_Options     : String_List_Access := new String_List (1 .. 10);
-   Last_AI_Option : Natural := 0;
+   AI_Options                    : String_Vectors.Vector;
    --  Options of the archive indexer
 
-   Object_Lister : String_Access := null;
+   Object_Lister                 : String_Access := null;
    --  Object lister
 
-   OL_Options : String_List_Access := new String_List (1 .. 10);
-   Last_OL_Option : Natural := 0;
+   OL_Options                    : String_Vectors.Vector;
    --  Object lister options
 
-   Object_Lister_Matcher : String_Access := null;
+   Object_Lister_Matcher         : String_Access := null;
    --  Object lister matcher, the pattern matcher to get the symbols name from
    --  the output of the object lister.
 
-   Library_Symbol_File : String_Access;
+   Library_Symbol_File           : String_Access;
    --  The file containing the symbols to export from the shared library
 
-   Partial_Linker : String_Access := null;
+   Partial_Linker                : String_Access := null;
    --  Name of the library partial linker
 
-   PL_Options     : String_List_Access := new String_List (1 .. 10);
-   Last_PL_Option : Natural := 0;
+   PL_Options                    : String_Vectors.Vector;
    --  Options of the library partial linker
 
-   Partial_Linker_Path : String_Access;
+   Partial_Linker_Path           : String_Access;
    --  The path to the partial linker driver
 
-   Archive_Suffix : String_Access := new String'(".a");
+   Archive_Suffix                : String_Access := new String'(".a");
 
-   Bind_Options     : String_List_Access := new String_List (1 .. 10);
-   Last_Bind_Option : Natural := 0;
+   Bind_Options                  : String_Vectors.Vector;
 
-   Success : Boolean;
+   Relocatable                   : Boolean := False;
 
-   Relocatable : Boolean := False;
+   Library_Name                  : String_Access := null;
 
-   Library_Name : String_Access := null;
+   Library_Directory             : String_Access := null;
 
-   Library_Directory : String_Access := null;
+   Project_Directory             : String_Access := null;
 
-   Project_Directory : String_Access := null;
+   Library_Dependency_Directory  : String_Access := null;
 
-   Library_Dependency_Directory : String_Access := null;
+   Library_Version               : String_Access := new String'("");
+   Library_Version_Path          : String_Access := new String'("");
 
-   Library_Version      : String_Access := new String'("");
-   Library_Version_Path : String_Access := new String'("");
+   Symbolic_Link_Supported       : Boolean := False;
 
-   Symbolic_Link_Supported  : Boolean := False;
+   Major_Minor_Id_Supported      : Boolean := False;
 
-   Major_Minor_Id_Supported : Boolean := False;
+   PIC_Option                    : String_Access := null;
 
-   PIC_Option : String_Access := null;
+   Library_Version_Options       : String_Vectors.Vector;
 
-   package Library_Version_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Shared_Lib_Prefix             : String_Access := new String'("lib");
 
-   Shared_Lib_Prefix : String_Access := new String'("lib");
+   Shared_Lib_Suffix             : String_Access := new String'(".so");
 
-   Shared_Lib_Suffix : String_Access := new String'(".so");
+   Shared_Lib_Minimum_Options    : String_Vectors.Vector;
 
-   package Shared_Lib_Minimum_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 2,
-      Table_Increment      => 100);
+   Copy_Source_Directory         : String_Access := null;
 
-   Copy_Source_Directory : String_Access := null;
+   Driver_Name                   : Name_Id := No_Name;
 
-   Driver_Name : Name_Id := No_Name;
+   Gnatbind_Name                 : String_Access := new String'("gnatbind");
 
-   Gnatbind_Name : String_Access := new String'("gnatbind");
+   Compiler_Name                 : String_Access := new String'("gcc");
 
-   Gnatbind_Path : String_Access;
+   Path_Option                   : String_Access := null;
 
-   Compiler_Name : String_Access := new String'("gcc");
+   Separate_Run_Path_Options     : Boolean := False;
 
-   Compiler_Path : String_Access;
+   Rpath_Origin                  : String_Access := null;
 
-   Path_Option : String_Access := null;
-
-   Separate_Run_Path_Options : Boolean := False;
-
-   Rpath_Origin : String_Access := null;
-
-   Rpath : String_Vectors.Vector;
+   Rpath                         : String_Vectors.Vector;
    --  Allocated only if Path Option is supported
 
-   Install_Name : String_Access := null;
+   Install_Name                  : String_Access := null;
 
-   Arguments : String_List_Access := new String_List (1 .. 20);
-   Last_Arg  : Natural := 0;
-   Argument_Length : Natural := 0;
+   Arguments                     : String_Vectors.Vector;
 
    --  Response Files
 
-   Max_Command_Line_Length : Natural := 0;
+   Max_Command_Line_Length       : Natural := 0;
 
-   Resp_File_Format : GPR.Response_File_Format := GPR.None;
+   Resp_File_Format              : GPR.Response_File_Format := GPR.None;
 
-   Response_File_Switches : String_List_Access := new String_List (1 .. 0);
+   Response_File_Switches        : String_Vectors.Vector;
 
-   Export_File_Format : GPR.Export_File_Format := GPR.None;
+   Export_File_Format            : GPR.Export_File_Format := GPR.None;
 
-   Export_File_Switch : String_Access;
+   Export_File_Switch            : String_Access;
 
-   procedure Add_Arg (Arg : String_Access);
-   --  Add one argument to the Arguments list. Increase the size of the list
-   --  if necessary.
+   Success                       : Boolean;
 
    procedure Add_Rpath
      (Path     : String;
@@ -475,30 +329,6 @@ procedure Gprlib is
    --  Build a shared library
 
    procedure Build_Shared_Lib is separate;
-
-   -------------
-   -- Add_Arg --
-   -------------
-
-   procedure Add_Arg (Arg : String_Access) is
-   begin
-      if Last_Arg = Arguments'Last then
-         --  Double the size of Arguments
-
-         declare
-            New_Args : constant String_List_Access :=
-                         new String_List (1 .. 2 * Last_Arg);
-
-         begin
-            New_Args (Arguments'Range) := Arguments.all;
-            Arguments := New_Args;
-         end;
-      end if;
-
-      Last_Arg := Last_Arg + 1;
-      Arguments (Last_Arg) := Arg;
-      Argument_Length := Argument_Length + Arg'Length + 1;
-   end Add_Arg;
 
    ---------------
    -- Add_Rpath --
@@ -556,6 +386,7 @@ procedure Gprlib is
          if Relative /= Full then
             Rpath.Append (Relative);
          end if;
+
       else
          Rpath.Append (Relative);
       end if;
@@ -577,12 +408,12 @@ procedure Gprlib is
 
    begin
       if Standalone = No then
-         for Index in 1 .. ALIs.Last loop
+         for ALI_File of ALIs loop
             declare
                Destination : constant String :=
                                Library_Dependency_Directory.all &
                                Directory_Separator &
-                               Base_Name (ALIs.Table (Index).all);
+                               Base_Name (ALI_File);
                Disregard   : Boolean;
                pragma Warnings (Off, Disregard);
 
@@ -595,35 +426,32 @@ procedure Gprlib is
 
             if Verbosity_Level > Opt.Low then
                Put ("Copying ");
-               Put (ALIs.Table (Index).all);
+               Put (ALI_File);
                Put_Line (" to library dependency directory");
             end if;
 
-            declare
-               ALI_File : constant String := ALIs.Table (Index).all;
-            begin
-               if Is_Regular_File (ALI_File) then
-                  Script_Copy (ALI_File, Library_Dependency_Directory);
-                  Copy_File
-                    (ALI_File,
-                     Library_Dependency_Directory.all,
-                     Success,
-                     Mode     => Overwrite,
-                     Preserve => Time_Stamps);
+            if Is_Regular_File (ALI_File) then
+               Script_Copy (ALI_File, Library_Dependency_Directory.all);
+               Copy_File
+                 (ALI_File,
+                  Library_Dependency_Directory.all,
+                  Success,
+                  Mode     => Overwrite,
+                  Preserve => Time_Stamps);
 
-               else
-                  Success := False;
-               end if;
-            end;
+            else
+               Success := False;
+            end if;
 
             exit when not Success;
          end loop;
 
       else
-         for Index in 1 .. Interface_ALIs.Last loop
+
+         for ALI_File of Interface_ALIs loop
             declare
                File_Name   : String :=
-                               Base_Name (Interface_ALIs.Table (Index).all);
+                               Base_Name (ALI_File);
                Destination : constant String :=
                                Library_Dependency_Directory.all &
                                Directory_Separator &
@@ -639,7 +467,7 @@ procedure Gprlib is
 
                if Verbosity_Level > Opt.Low then
                   Put ("Copying ");
-                  Put (Interface_ALIs.Table (Index).all);
+                  Put (ALI_File);
                   Put_Line (" to library dependency directory");
                end if;
 
@@ -647,9 +475,8 @@ procedure Gprlib is
 
                --  Open the file
 
-               Name_Len := Interface_ALIs.Table (Index)'Length;
-               Name_Buffer (1 .. Name_Len) :=
-                  Interface_ALIs.Table (Index).all;
+               Name_Len := ALI_File'Length;
+               Name_Buffer (1 .. Name_Len) := ALI_File;
                Name_Len := Name_Len + 1;
                Name_Buffer (Name_Len) := ASCII.NUL;
 
@@ -763,17 +590,17 @@ procedure Gprlib is
          Success : Boolean := False;
 
       begin
-         for Index in 1 .. Sources.Last loop
-            if Base_Name (Sources.Table (Index).all) = Fname then
+         for Source of Sources loop
+            if Base_Name (Source) = Fname then
 
                if Verbosity_Level > Opt.Low then
                   Put ("Copying ");
-                  Put (Sources.Table (Index).all);
+                  Put (Source);
                   Put_Line (" to copy source directory");
                end if;
 
                Copy_File
-                 (Sources.Table (Index).all,
+                 (Source,
                   Copy_Source_Directory.all,
                   Success,
                   Mode     => Overwrite,
@@ -784,12 +611,12 @@ procedure Gprlib is
       end Copy;
 
    begin
-      for Index in 1 .. Interface_ALIs.Last loop
+      for ALI_File of Interface_ALIs loop
 
          --  First, load the ALI file
 
          Name_Len := 0;
-         Add_Str_To_Name_Buffer (Interface_ALIs.Table (Index).all);
+         Add_Str_To_Name_Buffer (ALI_File);
          Lib_File := Name_Find;
          Text := Osint.Read_Library_Info (Lib_File);
          The_ALI :=
@@ -846,8 +673,8 @@ procedure Gprlib is
          end if;
       end loop;
 
-      for Index in 1 .. Other_Interfaces.Last loop
-         Copy (Fname => Other_Interfaces.Table (Index).all);
+      for Fname of Other_Interfaces loop
+         Copy (Fname => Fname);
       end loop;
    end Copy_Sources;
 
@@ -866,7 +693,7 @@ procedure Gprlib is
         and then PIC_Option /= null
         and then PIC_Option.all /= ""
       then
-         Options_Table.Append (new String'(PIC_Option.all));
+         Options_Table.Append (PIC_Option.all);
       end if;
 
       GPR.Initialize (GPR.No_Project_Tree);
@@ -889,15 +716,15 @@ procedure Gprlib is
          G_Trasym_Ads := Name_Find;
       end if;
 
-      for J in 1 .. Imported_Library_Directories.Last loop
-         Library_Switches_Table.Append
-           (new String'("-L" & Imported_Library_Directories.Table (J).all));
-         Library_Switches_Table.Append
-           (new String'("-l" & Imported_Library_Names.Table (J).all));
-
+      for Dir of Imported_Library_Directories loop
+         Library_Switches_Table.Append ("-L" & Dir);
          if Path_Option /= null then
-            Add_Rpath (Imported_Library_Directories.Table (J).all);
+            Add_Rpath (Dir);
          end if;
+      end loop;
+
+      for Libname of Imported_Library_Names loop
+         Library_Switches_Table.Append ("-l" & Libname);
       end loop;
 
       --  If Ada is used and we don't already know yet that libgnarl is needed,
@@ -905,7 +732,7 @@ procedure Gprlib is
       --  then libgnarl is needed.
 
       if Use_GNAT_Lib
-        and then Runtime_Library_Dirs /= null
+        and then not Runtime_Library_Dirs.Is_Empty
         and then not Libgnarl_Needed
       then
          declare
@@ -920,13 +747,13 @@ procedure Gprlib is
             end if;
 
             ALI_Loop :
-            for Index in 1 .. ALIs.Last loop
+            for ALI_File of ALIs loop
                if Verbosity_Level > Opt.Low then
-                  Put_Line ("Reading " & ALIs.Table (Index).all);
+                  Put_Line ("Reading " & ALI_File);
                end if;
 
                Name_Len := 0;
-               Add_Str_To_Name_Buffer (ALIs.Table (Index).all);
+               Add_Str_To_Name_Buffer (ALI_File);
                Lib_File := Name_Find;
                Text := Osint.Read_Library_Info (Lib_File, True);
 
@@ -941,7 +768,7 @@ procedure Gprlib is
                if Id = No_ALI_Id then
                   Put_Line
                     ("warning: reading of " &
-                     ALIs.Table (Index).all & " failed");
+                     ALI_File & " failed");
 
                else
                   --  Look for s-osinte.ads in the dependencies
@@ -963,76 +790,66 @@ procedure Gprlib is
          end;
       end if;
 
-      if Use_GNAT_Lib and then Runtime_Library_Dirs /= null then
+      if Use_GNAT_Lib and then not Runtime_Library_Dirs.Is_Empty then
          if Standalone = Encapsulated then
-            declare
-               Lib_Dirs : Dir_Access;
-            begin
+            --  For encapsulated library we want to link against the static
+            --  GNAT runtime. For sufficiently recent compilers a static
+            --  pic version of the runtime might be present. Fallback on
+            --  the regular static libgnat otherwise.
 
-               --  For encapsulated library we want to link against the static
-               --  GNAT runtime. For sufficiently recent compilers a static
-               --  pic version of the runtime might be present. Fallback on
-               --  the regular static libgnat otherwise.
+            --  First, look for libgnat_pic.a
 
-               --  First, look for libgnat_pic.a
+            Libgnat := null;
 
-               Lib_Dirs := Runtime_Library_Dirs;
-               Libgnat := null;
-               while Lib_Dirs /= null loop
+            for Dir of Runtime_Library_Dirs loop
+               if Is_Regular_File
+                 (Dir & Directory_Separator & "libgnat_pic.a")
+               then
+                  Libgnat  := new String'
+                    (Dir &
+                       Directory_Separator &
+                       "libgnat_pic.a");
+                  Libgnarl := new String'
+                    (Dir &
+                       Directory_Separator &
+                       "libgnarl_pic.a");
+                  exit;
+               end if;
+            end loop;
+
+            --  If libgnat-pic.a was not found, look for libgnat.a
+
+            if Libgnat = null then
+               for Dir of Runtime_Library_Dirs loop
                   if Is_Regular_File
-                    (Lib_Dirs.Path.all & Directory_Separator & "libgnat_pic.a")
+                    (Dir & Directory_Separator & "libgnat.a")
                   then
                      Libgnat  := new String'
-                       (Lib_Dirs.Path.all &
-                          Directory_Separator &
-                          "libgnat_pic.a");
-                     Libgnarl := new String'
-                       (Lib_Dirs.Path.all &
-                          Directory_Separator &
-                          "libgnarl_pic.a");
-                     exit;
-                  end if;
-
-                  Lib_Dirs := Lib_Dirs.Next;
-               end loop;
-
-               --  If libgnat-pic.a was not found, look for libgnat.a
-
-               if Libgnat = null then
-                  Lib_Dirs := Runtime_Library_Dirs;
-                  while Lib_Dirs /= null loop
-                     if Is_Regular_File
-                       (Lib_Dirs.Path.all & Directory_Separator & "libgnat.a")
-                     then
-                        Libgnat  := new String'
-                          (Lib_Dirs.Path.all &
-                             Directory_Separator &
-                             "libgnat.a");
-                        Libgnarl := new String'
-                          (Lib_Dirs.Path.all &
-                             Directory_Separator &
-                             "libgnarl.a");
-                        exit;
-                     end if;
-
-                     Lib_Dirs := Lib_Dirs.Next;
-                  end loop;
-
-                  --  If libgnat.a was not found, assume it should be in the
-                  --  first directory. An error message will be displayed.
-
-                  if Libgnat = null then
-                     Libgnat := new String'
-                       (Runtime_Library_Dirs.Path.all &
+                       (Dir &
                           Directory_Separator &
                           "libgnat.a");
                      Libgnarl := new String'
-                       (Runtime_Library_Dirs.Path.all &
+                       (Dir &
                           Directory_Separator &
                           "libgnarl.a");
+                     exit;
                   end if;
-               end if;
-            end;
+               end loop;
+            end if;
+
+            --  If libgnat.a was not found, assume it should be in the
+            --  first directory. An error message will be displayed.
+
+            if Libgnat = null then
+               Libgnat := new String'
+                 (Runtime_Library_Dirs.First_Element &
+                    Directory_Separator &
+                    "libgnat.a");
+               Libgnarl := new String'
+                 (Runtime_Library_Dirs.First_Element &
+                    Directory_Separator &
+                    "libgnarl.a");
+            end if;
 
             if not Is_Regular_File (Libgnat.all) then
                Fail_Program
@@ -1050,10 +867,10 @@ procedure Gprlib is
             --  libraries must come late in the linker command line.
 
             if Libgnarl_Needed then
-               Library_Options_Table.Append (Libgnarl);
+               Library_Options_Table.Append (Libgnarl.all);
             end if;
 
-            Library_Options_Table.Append (Libgnat);
+            Library_Options_Table.Append (Libgnat.all);
 
             --  Then adds back all libraries already on the command-line after
             --  libgnat to fulfill dependencies on OS libraries that may be
@@ -1061,90 +878,59 @@ procedure Gprlib is
             --  pragma Linker_Options in sources that have already been put
             --  in table Additional_Switches.
 
-            for J in 1 .. Additional_Switches.Last loop
-               Library_Options_Table.Append (Additional_Switches.Table (J));
+            for Switch of Additional_Switches loop
+               Library_Options_Table.Append (Switch);
             end loop;
 
          else
-            declare
-               Lib_Dirs : Dir_Access := Runtime_Library_Dirs;
-            begin
-               while Lib_Dirs /= null loop
-                  Options_Table.Append (new String'("-L" & Lib_Dirs.Path.all));
+            for Dir of Runtime_Library_Dirs loop
+               Options_Table.Append ("-L" & Dir);
 
-                  if Path_Option /= null then
-                     Add_Rpath
-                       (Lib_Dirs.Path.all, Absolute => True);
+               if Path_Option /= null then
+                  Add_Rpath (Dir, Absolute => True);
 
-                     --  Add to the Path Option the directory of the shared
-                     --  version of libgcc.
+                  --  Add to the Path Option the directory of the shared
+                  --  version of libgcc.
 
-                     Add_Rpath
-                       (Shared_Libgcc_Dir (Lib_Dirs.Path.all),
-                        Absolute => True);
-                  end if;
-                  Lib_Dirs := Lib_Dirs.Next;
-               end loop;
-            end;
+                  Add_Rpath
+                    (Shared_Libgcc_Dir (Dir),
+                     Absolute => True);
+               end if;
+            end loop;
 
             if Libgnarl_Needed then
-               Options_Table.Append (Libgnarl);
+               Options_Table.Append (Libgnarl.all);
             end if;
 
-            Options_Table.Append (Libgnat);
+            Options_Table.Append (Libgnat.all);
          end if;
       end if;
 
       if Install_Name /= null then
          Options_Table.Append
-           (new String'
-              (Install_Name.all &
-               Directory_Separator &
-               Shared_Lib_Prefix.all &
-               Library_Name.all &
-               Shared_Lib_Suffix.all));
+           (Install_Name.all &
+              Directory_Separator &
+              Shared_Lib_Prefix.all &
+              Library_Name.all &
+              Shared_Lib_Suffix.all);
       end if;
 
       if Path_Option /= null then
-         for Index in 1 .. Library_Rpath_Options_Table.Last loop
-            Add_Rpath (Library_Rpath_Options_Table.Table (Index).all);
+         for Path of Library_Rpath_Options_Table loop
+            Add_Rpath (Path);
          end loop;
       end if;
 
       if Path_Option /= null and then not Rpath.Is_Empty then
          if Separate_Run_Path_Options then
-            for Path of Rpath loop
+            for J in 1 .. Rpath.Last_Index loop
                Options_Table.Append
-                 (new String'(Path_Option.all & Path));
+                 (Path_Option.all & Rpath (J));
             end loop;
 
          else
-            declare
-               Option   : String_Access;
-               Opt_Size : Natural := Path_Option'Length;
-               Cur      : Natural := 0;
-
-            begin
-               for Path of Rpath loop
-                  Opt_Size := Opt_Size + Path'Length + 1;
-               end loop;
-
-               Opt_Size := Opt_Size - 1;
-               Option := new String (1 .. Opt_Size);
-
-               Option (1 .. Path_Option'Length) := Path_Option.all;
-               Cur := Path_Option'Length + 1;
-               for Path of Rpath loop
-                  Option (Cur .. Cur + Path'Length - 1) := Path;
-                  Cur := Cur + Path'Length;
-                  if Cur in Option'Range then
-                     Option (Cur) := ':';
-                     Cur := Cur + 1;
-                  end if;
-               end loop;
-
-               Options_Table.Append (Option);
-            end;
+            Options_Table.Append
+              (Path_Option.all & Concat_Paths (Rpath, ":"));
          end if;
       end if;
 
@@ -1167,6 +953,9 @@ procedure Gprlib is
       First_ALI               : File_Name_Type;
       T                       : Text_Buffer_Ptr;
       A                       : ALI.ALI_Id;
+      Gnatbind_Path           : String_Access;
+      Compiler_Path           : String_Access;
+
       use ALI;
 
    begin
@@ -1183,19 +972,18 @@ procedure Gprlib is
               (null, "unable to locate binder " & Gnatbind_Name.all);
          end if;
 
-         Last_Bind_Option := 0;
-         Add (No_Main, Bind_Options, Last_Bind_Option);
-         Add (Output_Switch, Bind_Options, Last_Bind_Option);
-         Add
-           ("b__" & Library_Name.all &
-              ".adb", Bind_Options, Last_Bind_Option);
+         Bind_Options := String_Vectors.Empty_Vector;
+
+         Bind_Options.Append (No_Main);
+         Bind_Options.Append (Output_Switch);
+         Bind_Options.Append ("b__" & Library_Name.all & ".adb");
 
          --  Make sure that the init procedure is never "adainit"
 
          if Library_Name.all = "ada" then
-            Add ("-Lada_", Bind_Options, Last_Bind_Option);
+            Bind_Options.Append ("-Lada_");
          else
-            Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
+            Bind_Options.Append ("-L" & Library_Name.all);
          end if;
 
          if Auto_Init and then SALs_Use_Constructors then
@@ -1224,21 +1012,16 @@ procedure Gprlib is
                --  Any other supported GNAT version should support pragma
                --  Linker_Constructor. So, invoke gnatbind with -a.
 
-               Add (Auto_Initialize, Bind_Options, Last_Bind_Option);
+               Bind_Options.Append (Auto_Initialize);
             end if;
          end if;
 
-         for J in 1 .. Binding_Options_Table.Last loop
-            Add
-              (Binding_Options_Table.Table (J).all,
-               Bind_Options,
-               Last_Bind_Option);
-         end loop;
+         Bind_Options.Append (Binding_Options_Table);
 
          --  Get an eventual --RTS from the ALI file
 
          Name_Len := 0;
-         Add_Str_To_Name_Buffer (ALIs.Table (1).all);
+         Add_Str_To_Name_Buffer (ALIs.First_Element);
          First_ALI := Name_Find;
 
          --  Load the ALI file
@@ -1267,22 +1050,17 @@ procedure Gprlib is
                   if Arg'Length >= 6
                     and then Arg (Arg'First + 2 .. Arg'First + 5) = "RTS="
                   then
-                     Add (Arg.all, Bind_Options, Last_Bind_Option);
+                     Bind_Options.Append (Arg.all);
                      exit;
                   end if;
                end;
             end loop;
          end if;
 
-         for J in 1 .. ALIs.Last loop
-            Add (ALIs.Table (J), Bind_Options, Last_Bind_Option);
-         end loop;
+         Bind_Options.Append (ALIs);
 
          if Mapping_File_Name /= null then
-            Add
-              ("-F=" & Mapping_File_Name.all,
-               Bind_Options,
-               Last_Bind_Option);
+            Bind_Options.Append ("-F=" & Mapping_File_Name.all);
          end if;
 
          if not Quiet_Output then
@@ -1291,9 +1069,9 @@ procedure Gprlib is
             if Verbose_Mode then
                Add_Str_To_Name_Buffer (Gnatbind_Path.all);
 
-               for J in 1 .. Last_Bind_Option loop
+               for Arg of Bind_Options loop
                   Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
+                  Add_Str_To_Name_Buffer (Arg);
                end loop;
 
                Put_Line (Name_Buffer (1 .. Name_Len));
@@ -1310,19 +1088,19 @@ procedure Gprlib is
          --  for the additional object libraries, so that gnatbind may find all
          --  the ALI files, including those from imported library projects.
 
-         if Object_Directories.Last > 1 then
+         if Natural (Object_Directories.Length) > 1 then
             declare
                Size : Natural := 0;
             begin
-               for J in 2 .. Object_Directories.Last loop
-                  Size := Size + Object_Directories.Table (J)'Length + 1;
+               for J in 2 .. Object_Directories.Last_Index loop
+                  Size := Size + Object_Directories.Element (J)'Length + 1;
                end loop;
 
                declare
                   Value : String (1 .. Size);
                   Last  : Natural := 0;
                begin
-                  for J in 2 .. Object_Directories.Last loop
+                  for J in 2 .. Object_Directories.Last_Index loop
                      if Last > 0 then
                         Last := Last + 1;
                         Value (Last) := Path_Separator;
@@ -1330,9 +1108,9 @@ procedure Gprlib is
 
                      Value
                        (Last + 1 ..
-                        Last + Object_Directories.Table (J)'Length) :=
-                       Object_Directories.Table (J).all;
-                     Last := Last + Object_Directories.Table (J)'Length;
+                        Last + Object_Directories.Element (J)'Length) :=
+                       Object_Directories (J);
+                     Last := Last + Object_Directories.Element (J)'Length;
                   end loop;
 
                   Setenv ("ADA_OBJECTS_PATH", Value (1 .. Last));
@@ -1344,13 +1122,9 @@ procedure Gprlib is
          declare
             Size         : Natural := 0;
          begin
-            for J in 1 .. Last_Bind_Option loop
-               Size := Size + Bind_Options (J)'Length + 1;
+            for Arg of Bind_Options loop
+               Size := Size + Arg'Length + 1;
             end loop;
-
-            Script_Write
-              (Gnatbind_Path.all,
-               Bind_Options (1 .. Last_Bind_Option));
 
             --  Invoke gnatbind with the arguments if the size is not too
             --  large or if the version of GNAT is not recent enough.
@@ -1369,9 +1143,9 @@ procedure Gprlib is
                         (GNAT_Version'First .. GNAT_Version'First + 1) =
                           "5."))
             then
-               Spawn
+               Spawn_And_Script_Write
                  (Gnatbind_Path.all,
-                  Bind_Options (1 .. Last_Bind_Option),
+                  Bind_Options,
                   Success);
 
             else
@@ -1382,27 +1156,22 @@ procedure Gprlib is
                     (1 => ASCII.LF);
                   FD            : File_Descriptor;
                   Path          : Path_Name_Type;
-                  Args          : Argument_List (1 .. 1);
+                  Args          : String_Vectors.Vector;
                   Status        : Integer;
                   Quotes_Needed : Boolean;
-                  Last_Char     : Natural;
-                  Ch            : Character;
 
                begin
                   Tempdir.Create_Temp_File (FD, Path);
                   Record_Temp_File (null, Path);
-                  Args (1) := new String'("@" & Get_Name_String (Path));
+                  Args.Append ("@" & Get_Name_String (Path));
 
-                  for J in 1 .. Last_Bind_Option loop
+                  for Arg of Bind_Options loop
 
                      --  Check if the argument should be quoted
 
                      Quotes_Needed := False;
-                     Last_Char     := Bind_Options (J)'Length;
 
-                     for K in Bind_Options (J)'Range loop
-                        Ch := Bind_Options (J) (K);
-
+                     for Ch of Arg loop
                         if Ch = ' ' or else
                           Ch = ASCII.HT or else
                           Ch = '"'
@@ -1413,44 +1182,44 @@ procedure Gprlib is
                      end loop;
 
                      if Quotes_Needed then
-
                         --  Quote the argument, doubling '"'
 
                         declare
-                           Arg : String
-                             (1 .. Bind_Options (J)'Length * 2 + 2);
+                           Quoted    : String (1 .. Arg'Length * 2 + 2);
+                           Last_Char : Natural := 1;
 
                         begin
-                           Arg (1) := '"';
-                           Last_Char := 1;
 
-                           for K in Bind_Options (J)'Range loop
-                              Ch := Bind_Options (J) (K);
+                           for Ch of Arg loop
                               Last_Char := Last_Char + 1;
-                              Arg (Last_Char) := Ch;
+                              Quoted (Last_Char) := Ch;
 
                               if Ch = '"' then
                                  Last_Char := Last_Char + 1;
-                                 Arg (Last_Char) := '"';
+                                 Quoted (Last_Char) := '"';
                               end if;
                            end loop;
 
                            Last_Char := Last_Char + 1;
-                           Arg (Last_Char) := '"';
+                           Quoted (Last_Char) := '"';
 
-                           Status := Write (FD, Arg'Address, Last_Char);
+                           Status :=
+                             Write (FD, Quoted (1)'Address, Last_Char);
+
+                           if Status /= Last_Char then
+                              Fail_Program (null, "disk full");
+                           end if;
                         end;
 
                      else
                         Status := Write
                           (FD,
-                           Bind_Options (J)
-                           (Bind_Options (J)'First)'Address,
-                           Last_Char);
-                     end if;
+                           Arg (Arg'First)'Address,
+                           Arg'Length);
 
-                     if Status /= Last_Char then
-                        Fail_Program (null, "disk full");
+                        if Status /= Arg'Length then
+                           Fail_Program (null, "disk full");
+                        end if;
                      end if;
 
                      Status := Write (FD, EOL (1)'Address, 1);
@@ -1464,7 +1233,7 @@ procedure Gprlib is
 
                   --  And invoke gnatbind with this this response file
 
-                  Spawn (Gnatbind_Path.all, Args, Success);
+                  Spawn_And_Script_Write (Gnatbind_Path.all, Args, Success);
                end;
             end if;
          end;
@@ -1474,12 +1243,9 @@ procedure Gprlib is
               (null, "invocation of " & Gnatbind_Name.all & " failed");
          end if;
 
-         Generated_Sources.Append
-           (new String'("b__" & Library_Name.all & ".ads"));
-         Generated_Sources.Append
-           (new String'("b__" & Library_Name.all & ".adb"));
-         Generated_Sources.Append
-           (new String'("b__" & Library_Name.all & ".ali"));
+         Generated_Sources.Append ("b__" & Library_Name.all & ".ads");
+         Generated_Sources.Append ("b__" & Library_Name.all & ".adb");
+         Generated_Sources.Append ("b__" & Library_Name.all & ".ali");
 
          Compiler_Path := Locate_Exec_On_Path (Compiler_Name.all);
 
@@ -1488,22 +1254,16 @@ procedure Gprlib is
               (null, "unable to locate compiler " & Compiler_Name.all);
          end if;
 
-         Last_Bind_Option := 0;
+         Bind_Options := String_Vectors.Empty_Vector;
 
-         for J in 1 .. Ada_Leading_Switches.Last loop
-            Add
-              (Ada_Leading_Switches.Table (J),
-               Bind_Options,
-               Last_Bind_Option);
-         end loop;
-
-         Add (No_Warning, Bind_Options, Last_Bind_Option);
-         Add (Binder_Generated_File, Bind_Options, Last_Bind_Option);
-         Add (Output_Switch, Bind_Options, Last_Bind_Option);
-         Add (Binder_Generated_Object, Bind_Options, Last_Bind_Option);
+         Bind_Options.Append (Ada_Leading_Switches);
+         Bind_Options.Append (No_Warning);
+         Bind_Options.Append (Binder_Generated_File);
+         Bind_Options.Append (Output_Switch);
+         Bind_Options.Append (Binder_Generated_Object);
 
          if Relocatable and then PIC_Option /= null then
-            Add (PIC_Option, Bind_Options, Last_Bind_Option);
+            Bind_Options.Append (PIC_Option.all);
          end if;
 
          --  Get the back-end switches and --RTS from the ALI file
@@ -1539,18 +1299,13 @@ procedure Gprlib is
                     and then
                       (Argv'Last <= 5 or else Argv (1 .. 5) /= "-gnat")
                   then
-                     Add (Arg.all, Bind_Options, Last_Bind_Option);
+                     Bind_Options.Append (Arg.all);
                   end if;
                end;
             end loop;
          end if;
 
-         for J in 1 .. Ada_Trailing_Switches.Last loop
-            Add
-              (Ada_Trailing_Switches.Table (J),
-               Bind_Options,
-               Last_Bind_Option);
-         end loop;
+         Bind_Options.Append (Ada_Trailing_Switches);
 
          if not Quiet_Output then
             Name_Len := 0;
@@ -1558,9 +1313,9 @@ procedure Gprlib is
             if Verbose_Mode then
                Add_Str_To_Name_Buffer (Compiler_Path.all);
 
-               for J in 1 .. Last_Bind_Option loop
+               for Arg of Bind_Options loop
                   Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
+                  Add_Str_To_Name_Buffer (Arg);
                end loop;
 
                Put_Line (Name_Buffer (1 .. Name_Len));
@@ -1574,8 +1329,7 @@ procedure Gprlib is
          end if;
 
          Spawn_And_Script_Write
-           (Compiler_Path.all,
-            Bind_Options (1 .. Last_Bind_Option), Success);
+           (Compiler_Path.all, Bind_Options, Success);
 
          if not Success then
             Fail_Program
@@ -1584,7 +1338,7 @@ procedure Gprlib is
 
       else
          if Is_Regular_File (Binder_Generated_File) then
-            Generated_Sources.Append (new String'(Binder_Generated_File));
+            Generated_Sources.Append (Binder_Generated_File);
          else
             Fail_Program
               (null,
@@ -1593,7 +1347,7 @@ procedure Gprlib is
          end if;
 
          if Is_Regular_File (Binder_Generated_Spec) then
-            Generated_Sources.Append (new String'(Binder_Generated_Spec));
+            Generated_Sources.Append (Binder_Generated_Spec);
          else
             Fail_Program
               (null,
@@ -1602,7 +1356,7 @@ procedure Gprlib is
          end if;
 
          if Is_Regular_File (Binder_Generated_ALI) then
-            Generated_Sources.Append (new String'(Binder_Generated_ALI));
+            Generated_Sources.Append (Binder_Generated_ALI);
          else
             Fail_Program
               (null,
@@ -1618,9 +1372,9 @@ procedure Gprlib is
          end if;
       end if;
 
-      Generated_Objects.Append (new String'(Binder_Generated_Object));
+      Generated_Objects.Append (Binder_Generated_Object);
 
-      Object_Files.Append (new String'(Binder_Generated_Object));
+      Object_Files.Append (Binder_Generated_Object);
 
       --  For shared libraries, check if libgnarl is needed
 
@@ -1643,7 +1397,7 @@ procedure Gprlib is
                exit when Line (1 .. Last) = End_Info;
 
                if Use_GNAT_Lib
-                 and then Runtime_Library_Dirs /= null
+                 and then not Runtime_Library_Dirs.Is_Empty
                  and then Line (9 .. Last) = "-lgnarl"
                then
                   Libgnarl_Needed := True;
@@ -1656,8 +1410,7 @@ procedure Gprlib is
                  and then Line (9 .. Last) /= "-lgnarl"
                  and then Line (9 .. Last) /= "-lgnat"
                then
-                  Additional_Switches.Append
-                    (new String'(Line (9 .. Last)));
+                  Additional_Switches.Append (Line (9 .. Last));
                end if;
             end loop;
          end;
@@ -1668,7 +1421,15 @@ procedure Gprlib is
    -- Process_Static --
    --------------------
 
-   procedure Process_Static is
+   procedure Process_Static
+   is
+      AB_Options          : String_Vectors.Vector;
+      AB_Objects          : String_Vectors.Vector;
+      First_AB_Object_Pos : Natural;
+      Last_AB_Object_Pos  : Natural;
+      --  Various indexes in AB_Options used when building an archive in chunks
+
+      use String_Vectors;
    begin
       if Standalone /= No and then Partial_Linker /= null then
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
@@ -1688,34 +1449,22 @@ procedure Gprlib is
           (Library_Directory.all &
              "lib" & Library_Name.all & Archive_Suffix.all);
 
-      Add (Library_Path_Name, AB_Options, Last_AB_Option);
-
-      First_AB_Object_Pos := Last_AB_Option + 1;
-
-      if Library_Options_Table.Last > 0 then
+      if not Library_Options_Table.Is_Empty then
          --  Add the object files specified in the Library_Options
 
-         for J in 1 .. Library_Options_Table.Last loop
+         for Path of Library_Options_Table loop
             declare
-               Object_Path : String_Access;
+               Object_Path : constant String :=
+                               (if Is_Absolute_Path (Path) then Path
+                                else Project_Directory.all &
+                                  Directory_Separator & Path);
             begin
-               if Is_Absolute_Path
-                    (Name => Library_Options_Table.Table (J).all)
-               then
-                  Object_Path := Library_Options_Table.Table (J);
-               else
-                  Object_Path := new String'
-                    (Project_Directory.all &
-                       Directory_Separator &
-                       Library_Options_Table.Table (J).all);
-               end if;
-
-               if Is_Regular_File (Object_Path.all) then
+               if Is_Regular_File (Object_Path) then
                   Object_Files.Append (Object_Path);
                else
                   Fail_Program
                     (null,
-                     "unknown object file """ & Object_Path.all & """");
+                     "unknown object file """ & Object_Path & """");
                end if;
             end;
          end loop;
@@ -1726,48 +1475,42 @@ procedure Gprlib is
          --  object file in the archive.
 
          Partial_Number := 0;
-         First_Object := 1;
+         First_Object := Object_Files.First_Index;
 
          loop
             declare
-               Partial : constant String_Access :=
-                 new String'
-                   (Partial_Name
-                      (Library_Name.all,
-                       Partial_Number,
-                       Object_Suffix));
+               Partial : constant String :=
+                           Partial_Name
+                             (Library_Name.all,
+                              Partial_Number,
+                              Object_Suffix);
                Size    : Natural := 0;
 
-               Saved_Last_PL_Option : Natural;
+               Saved_PL_Options : String_Vectors.Vector;
             begin
-               Saved_Last_PL_Option := Last_PL_Option;
+               Saved_PL_Options := PL_Options;
 
-               Add (Partial, PL_Options, Last_PL_Option);
+               PL_Options.Append (Partial);
                Size := Size + 1 + Partial'Length;
 
                if Partial_Number > 0 then
-                  Add
+                  PL_Options.Append
                     (Partial_Name
-                       (Library_Name.all, Partial_Number - 1, Object_Suffix),
-                     PL_Options,
-                     Last_PL_Option);
+                       (Library_Name.all, Partial_Number - 1, Object_Suffix));
                end if;
 
-               for J in 1 .. Last_PL_Option loop
-                  Size := Size + 1 + PL_Options (J)'Length;
+               for Option of PL_Options loop
+                  Size := Size + 1 + Option'Length;
                end loop;
 
                loop
-                  Add
-                    (Object_Files.Table (First_Object),
-                     PL_Options,
-                     Last_PL_Option);
-                  Size := Size + 1 + PL_Options (Last_PL_Option)'Length;
+                  PL_Options.Append (Object_Files (First_Object));
+                  Size := Size + 1 + PL_Options.Last_Element'Length;
 
                   First_Object := First_Object + 1;
 
                   exit when
-                    First_Object > Object_Files.Last
+                    First_Object > Object_Files.Last_Index
                     or else Size >= Maximum_Size;
                end loop;
 
@@ -1776,9 +1519,9 @@ procedure Gprlib is
                      Name_Len := 0;
                      Add_Str_To_Name_Buffer (Partial_Linker_Path.all);
 
-                     for J in 1 .. Last_PL_Option loop
+                     for Option of PL_Options loop
                         Add_Str_To_Name_Buffer (" ");
-                        Add_Str_To_Name_Buffer (PL_Options (J).all);
+                        Add_Str_To_Name_Buffer (Option);
                      end loop;
 
                      Put_Line (Name_Buffer (1 .. Name_Len));
@@ -1787,13 +1530,13 @@ procedure Gprlib is
 
                Spawn_And_Script_Write
                  (Partial_Linker_Path.all,
-                  PL_Options (1 .. Last_PL_Option),
+                  PL_Options,
                   Success);
 
                Name_Len := 0;
                Add_Str_To_Name_Buffer
                  (Ada.Directories.Current_Directory &
-                  '/' & Partial.all);
+                  '/' & Partial);
                Record_Temp_File
                  (Shared => null,
                   Path   => Name_Find);
@@ -1805,12 +1548,12 @@ procedure Gprlib is
                        Partial_Linker.all & " failed");
                end if;
 
-               if First_Object > Object_Files.Last then
-                  Add (Partial, AB_Options, Last_AB_Option);
+               if First_Object > Object_Files.Last_Index then
+                  AB_Objects.Append (Partial);
                   exit;
                end if;
 
-               Last_PL_Option := Saved_Last_PL_Option;
+               PL_Options := Saved_PL_Options;
                Partial_Number := Partial_Number + 1;
             end;
          end loop;
@@ -1819,9 +1562,7 @@ procedure Gprlib is
          --  Not a standalone library, or Partial linker is not specified.
          --  Put all objects in the archive.
 
-         for J in 1 .. Object_Files.Last loop
-            Add (Object_Files.Table (J), AB_Options, Last_AB_Option);
-         end loop;
+         AB_Objects.Append (Object_Files);
       end if;
 
       --  Delete the archive if it already exists, to avoid having duplicated
@@ -1831,58 +1572,76 @@ procedure Gprlib is
          Delete_File (Library_Path_Name.all, Success);
       end if;
 
-      if Last_AB_Append_Option = 0 then
-         --  If there is no Archive_Builder_Append_Option, always build the
-         --  archive in one chunk.
+      First_AB_Object_Pos := AB_Objects.First_Index;
 
-         Next_AB_Object_Pos := Last_AB_Option + 1;
+      while First_AB_Object_Pos <= AB_Objects.Last_Index loop
+         if AB_Append_Options.Is_Empty then
+            --  If there is no Archive_Builder_Append_Option, always build the
+            --  archive in one chunk.
 
-      else
-         --  If Archive_Builder_Append_Option is specified, for the creation of
-         --  the archive, only put on the command line a number of character
-         --  lower that Maximum_Size.
+            AB_Options := AB_Create_Options;
+            AB_Options.Append (AB_Objects);
+            First_AB_Object_Pos := AB_Objects.Last_Index + 1;
 
-         Size := 0;
-         for J in 1 .. First_AB_Object_Pos - 1 loop
-            Size := Size + AB_Options (J)'Length + 1;
-         end loop;
-
-         Next_AB_Object_Pos := First_AB_Object_Pos;
-
-         while Next_AB_Object_Pos <= Last_AB_Option loop
-            Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
-            exit when Size > Maximum_Size;
-            Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
-         end loop;
-
-         --  Display the invocation of the archive builder for the creation of
-         --  the archive.
-
-         if not Quiet_Output then
-            Name_Len := 0;
-
-            if Verbose_Mode then
-               Add_Str_To_Name_Buffer (Archive_Builder.all);
-
-               for J in 1 .. Next_AB_Object_Pos - 1 loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (AB_Options (J).all);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
-
+         else
+            --  If Archive_Builder_Append_Option is specified, for the creation
+            --  of the archive, only put on the command line a number of
+            --  character lower that Maximum_Size.
+            if First_AB_Object_Pos > AB_Objects.First_Index then
+               AB_Options := AB_Append_Options;
             else
-               Display
-                 (Section  => Build_Libraries,
-                  Command  => "archive",
-                  Argument =>
-                    "lib" & Library_Name.all & Archive_Suffix.all);
+               AB_Options := AB_Create_Options;
             end if;
+
+            AB_Options.Append (Library_Path_Name.all);
+
+            Size := 0;
+
+            for Option of AB_Options loop
+               Size := Size + Option'Length + 1;
+            end loop;
+
+            for J in First_AB_Object_Pos .. AB_Objects.Last_Index loop
+               Size := Size + AB_Objects.Element (J)'Length;
+               exit when Size > Maximum_Size;
+               Last_AB_Object_Pos := J;
+            end loop;
+
+            AB_Options.Append
+              (Slice (AB_Objects, First_AB_Object_Pos, Last_AB_Object_Pos));
+
+            --  Display the invocation of the archive builder for the creation
+            --  of the archive.
+
+            if not Quiet_Output then
+               Name_Len := 0;
+
+               if Verbose_Mode then
+                  Add_Str_To_Name_Buffer (Archive_Builder.all);
+
+                  for Opt of AB_Options loop
+                     Add_Str_To_Name_Buffer (" ");
+                     Add_Str_To_Name_Buffer (Opt);
+                  end loop;
+
+                  Put_Line (Name_Buffer (1 .. Name_Len));
+
+               elsif First_AB_Object_Pos = AB_Objects.First_Index then
+                  --  Only display this once.
+                  Display
+                    (Section  => Build_Libraries,
+                     Command  => "archive",
+                     Argument =>
+                       "lib" & Library_Name.all & Archive_Suffix.all);
+               end if;
+            end if;
+
+            First_AB_Object_Pos := Last_AB_Object_Pos + 1;
          end if;
 
          Spawn_And_Script_Write
            (Archive_Builder.all,
-            AB_Options (1 .. Next_AB_Object_Pos - 1),
+            AB_Options,
             Success);
 
          if not Success then
@@ -1890,77 +1649,21 @@ procedure Gprlib is
               (null,
                "call to archive builder " & Archive_Builder.all & " failed");
          end if;
-      end if;
-
-      --  If the archive has not been created complete, add the remaining
-      --  chunks.
-
-      if Next_AB_Object_Pos <= Last_AB_Option then
-         First_AB_Object_Pos := Last_AB_Append_Option + 2;
-         AB_Options (1 .. Last_AB_Append_Option) :=
-           AB_Append_Options (1 .. Last_AB_Append_Option);
-         AB_Options (Last_AB_Append_Option + 1) := Library_Path_Name;
-
-         loop
-            Size := 0;
-            for J in 1 .. First_AB_Object_Pos - 1 loop
-               Size := Size + AB_Options (J)'Length + 1;
-            end loop;
-
-            Object_Pos := First_AB_Object_Pos;
-            while Next_AB_Object_Pos <= Last_AB_Option loop
-               Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
-               exit when Size > Maximum_Size;
-               AB_Options (Object_Pos) := AB_Options (Next_AB_Object_Pos);
-               Object_Pos := Object_Pos + 1;
-               Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
-            end loop;
-
-            --  Display the invocation of the Archive Builder for this chunk
-
-            if not Quiet_Output then
-               if Verbose_Mode then
-                  Name_Len := 0;
-                  Add_Str_To_Name_Buffer (Archive_Builder.all);
-
-                  for J in 1 .. Object_Pos loop
-                     Add_Str_To_Name_Buffer (" ");
-                     Add_Str_To_Name_Buffer (AB_Options (J).all);
-                  end loop;
-
-                  Put_Line (Name_Buffer (1 .. Name_Len));
-               end if;
-            end if;
-
-            Spawn_And_Script_Write
-              (Archive_Builder.all,
-               AB_Options (1 .. Object_Pos - 1),
-               Success);
-
-            if not Success then
-               Fail_Program
-                 (null,
-                  "call to archive builder "
-                  & Archive_Builder.all & " failed");
-            end if;
-
-            exit when Next_AB_Object_Pos > Last_AB_Option;
-         end loop;
-      end if;
+      end loop;
 
       --  If there is an Archive Indexer, invoke it
 
       if Archive_Indexer /= null then
-         Add (Library_Path_Name, AI_Options, Last_AI_Option);
+         AI_Options.Append (Library_Path_Name.all);
 
          if not Quiet_Output then
             if Verbose_Mode then
                Name_Len := 0;
                Add_Str_To_Name_Buffer (Archive_Indexer.all);
 
-               for J in 1 .. Last_AI_Option loop
+               for Option of AI_Options loop
                   Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (AI_Options (J).all);
+                  Add_Str_To_Name_Buffer (Option);
                end loop;
 
                Put_Line (Name_Buffer (1 .. Name_Len));
@@ -1975,7 +1678,7 @@ procedure Gprlib is
 
          Spawn_And_Script_Write
            (Archive_Indexer.all,
-            AI_Options (1 .. Last_AI_Option),
+            AI_Options,
             Success);
 
          if not Success then
@@ -2034,18 +1737,17 @@ procedure Gprlib is
 
             when Gprexch.Archive_Builder =>
                Archive_Builder := null;
-               Last_AB_Option  := 0;
 
             when Gprexch.Archive_Builder_Append_Option =>
-               Last_AB_Append_Option := 0;
+               AB_Append_Options.Clear;
 
             when Gprexch.Archive_Indexer =>
                Archive_Indexer := null;
-               Last_AI_Option  := 0;
+               AI_Options.Clear;
 
             when Gprexch.Partial_Linker =>
                Partial_Linker := null;
-               Last_PL_Option := 0;
+               PL_Options.Clear;
 
             when Gprexch.Auto_Init =>
                Auto_Init := True;
@@ -2113,10 +1815,10 @@ procedure Gprlib is
                  (null, "no SAL binding section should be empty");
 
             when Gprexch.Object_Files =>
-               Object_Files.Append (new String'(Line (1 .. Last)));
+               Object_Files.Append (Line (1 .. Last));
 
             when Gprexch.Options =>
-               Options_Table.Append (new String'(Line (1 .. Last)));
+               Options_Table.Append (Line (1 .. Last));
 
             when Gprexch.Object_Directory =>
                --  Make sure that there is no repetitions of the same
@@ -2125,10 +1827,8 @@ procedure Gprlib is
                declare
                   Dir : constant String := Line (1 .. Last);
                begin
-                  if (for all J in 1 .. Object_Directories.Last =>
-                        Object_Directories.Table (J).all /= Dir)
-                  then
-                     Object_Directories.Append (new String'(Dir));
+                  if not Object_Directories.Contains (Dir) then
+                     Object_Directories.Append (Dir);
                   end if;
                end;
 
@@ -2153,26 +1853,23 @@ procedure Gprlib is
                   Use_GNAT_Lib := False;
                end if;
 
-               Leading_Library_Options_Table.Append
-                 (new String'(Line (1 .. Last)));
+               Leading_Library_Options_Table.Append (Line (1 .. Last));
 
             when Gprexch.Library_Options =>
                if Line (1 .. Last) = No_Std_Lib_String then
                   Use_GNAT_Lib := False;
                end if;
 
-               Library_Options_Table.Append (new String'(Line (1 .. Last)));
+               Library_Options_Table.Append (Line (1 .. Last));
 
             when Gprexch.Library_Rpath_Options =>
-               Library_Rpath_Options_Table.Append
-                 (new String'(Line (1 .. Last)));
+               Library_Rpath_Options_Table.Append (Line (1 .. Last));
 
             when Library_Path =>
                Fail_Program (null, "library path should not be specified");
 
             when Gprexch.Library_Version_Options =>
-               Library_Version_Options.Append
-                 (new String'(Line (1 .. Last)));
+               Library_Version_Options.Append (Line (1 .. Last));
 
             when Gprexch.Shared_Lib_Prefix =>
                Shared_Lib_Prefix := new String'(Line (1 .. Last));
@@ -2181,8 +1878,7 @@ procedure Gprlib is
                Shared_Lib_Suffix := new String'(Line (1 .. Last));
 
             when Gprexch.Shared_Lib_Minimum_Options =>
-               Shared_Lib_Minimum_Options.Append
-                 (new String'(Line (1 .. Last)));
+               Shared_Lib_Minimum_Options.Append (Line (1 .. Last));
 
             when Gprexch.Symbolic_Link_Supported =>
                Fail_Program
@@ -2203,11 +1899,9 @@ procedure Gprlib is
                        Line (1 .. Last));
 
                else
-                  Imported_Library_Directories.Append
-                    (new String'(Line (1 .. Last)));
+                  Imported_Library_Directories.Append (Line (1 .. Last));
                   Get_Line (IO_File, Line, Last);
-                  Imported_Library_Names.Append
-                    (new String'(Line (1 .. Last)));
+                  Imported_Library_Names.Append (Line (1 .. Last));
                end if;
 
             when Gprexch.Driver_Name =>
@@ -2264,7 +1958,7 @@ procedure Gprlib is
                   Current_Language := Name_Find;
 
                elsif Current_Language = Snames.Name_Ada then
-                  Ada_Leading_Switches.Append (new String'(Line (1 .. Last)));
+                  Ada_Leading_Switches.Append (Line (1 .. Last));
                end if;
 
             when Gprexch.Compiler_Trailing_Switches =>
@@ -2278,7 +1972,7 @@ procedure Gprlib is
                   Current_Language := Name_Find;
 
                elsif Current_Language = Snames.Name_Ada then
-                  Ada_Trailing_Switches.Append (new String'(Line (1 .. Last)));
+                  Ada_Trailing_Switches.Append (Line (1 .. Last));
                end if;
 
             when Toolchain_Version =>
@@ -2311,38 +2005,27 @@ procedure Gprlib is
                   Archive_Builder := new String'(Line (1 .. Last));
 
                else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     AB_Options,
-                     Last_AB_Option);
+                  AB_Create_Options.Append (Line (1 .. Last));
                end if;
 
             when Gprexch.Archive_Builder_Append_Option =>
-               Add
-                 (new String'(Line (1 .. Last)),
-                  AB_Append_Options,
-                  Last_AB_Append_Option);
+               AB_Append_Options.Append (Line (1 .. Last));
 
             when Gprexch.Archive_Indexer =>
                if Archive_Indexer = null then
                   Archive_Indexer := new String'(Line (1 .. Last));
 
                else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     AI_Options,
-                     Last_AI_Option);
+                  AI_Options.Append (Line (1 .. Last));
                end if;
 
             when Gprexch.Object_Lister =>
                if Object_Lister = null then
                   Object_Lister := new String'(Line (1 .. Last));
+                  OL_Options.Clear;
 
                else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     OL_Options,
-                     Last_OL_Option);
+                  OL_Options.Append (Line (1 .. Last));
                end if;
 
             when Gprexch.Object_Lister_Matcher =>
@@ -2353,10 +2036,7 @@ procedure Gprlib is
                   Partial_Linker := new String'(Line (1 .. Last));
 
                else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     PL_Options,
-                     Last_PL_Option);
+                  PL_Options.Append (Line (1 .. Last));
                end if;
 
             when Gprexch.Archive_Suffix =>
@@ -2387,34 +2067,34 @@ procedure Gprlib is
                Fail_Program (null, "auto init section should be empty");
 
             when Interface_Dep_Files =>
-               Interface_ALIs.Append (new String'(Line (1 .. Last)));
+               Interface_ALIs.Append (Line (1 .. Last));
                Standalone := GPR.Standard;
 
             when Gprexch.Other_Interfaces =>
-               Other_Interfaces.Append (new String'(Line (1 .. Last)));
+               Other_Interfaces.Append (Line (1 .. Last));
 
             when Interface_Obj_Files =>
-               Interface_Objs.Append (new String'(Line (1 .. Last)));
+               Interface_Objs.Append (Line (1 .. Last));
 
             when Gprexch.Standalone_Mode =>
                Standalone := GPR.Standalone'Value (Line (1 .. Last));
 
             when Dependency_Files =>
                if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
-                  ALIs.Append (new String'(Line (1 .. Last)));
+                  ALIs.Append (Line (1 .. Last));
                end if;
 
             when Mapping_File =>
                Mapping_File_Name := new String'(Line (1 .. Last));
 
             when Binding_Options =>
-               Binding_Options_Table.Append (new String'(Line (1 .. Last)));
+               Binding_Options_Table.Append (Line (1 .. Last));
 
             when Copy_Source_Dir =>
                Copy_Source_Directory := new String'(Line (1 .. Last));
 
             when Gprexch.Sources =>
-               Sources.Append (new String'(Line (1 .. Last)));
+               Sources.Append (Line (1 .. Last));
 
             when Gprexch.Runtime_Library_Dir =>
                if End_Of_File (IO_File) then
@@ -2425,10 +2105,7 @@ procedure Gprlib is
 
                elsif Line (1 .. Last) = "ada" then
                   Get_Line (IO_File, Line, Last);
-                  Runtime_Library_Dirs :=
-                    new Dir_Data'
-                      (Path => new String'(Line (1 .. Last)),
-                       Next => Runtime_Library_Dirs);
+                  Runtime_Library_Dirs.Append (Line (1 .. Last));
 
                else
                   Skip_Line (IO_File);
@@ -2468,25 +2145,7 @@ procedure Gprlib is
                end;
 
             when Gprexch.Response_File_Switches =>
-               if Response_File_Switches = null then
-                  Response_File_Switches := new String_List (1 .. 1);
-
-               else
-                  declare
-                     New_Switches : constant String_List_Access :=
-                       new String_List
-                         (1 .. Response_File_Switches'Last + 1);
-
-                  begin
-                     New_Switches (Response_File_Switches'Range) :=
-                       Response_File_Switches.all;
-                     Free (Response_File_Switches);
-                     Response_File_Switches := New_Switches;
-                  end;
-               end if;
-
-               Response_File_Switches (Response_File_Switches'Last) :=
-                 new String'(Line (1 .. Last));
+               Response_File_Switches.Append (Line (1 .. Last));
 
             when Gprexch.Export_File =>
                --  First the format
@@ -2571,11 +2230,11 @@ begin
 
    Read_Exchange_File;
 
-   if Object_Files.Last = 0 then
+   if Object_Files.Is_Empty then
       Fail_Program (null, "no object files specified");
    end if;
 
-   Last_Object_File_Index := Object_Files.Last;
+   Last_Object_File_Index := Object_Files.Last_Index;
 
    if Library_Name = null then
       Fail_Program (null, "no library name specified");
@@ -2589,11 +2248,11 @@ begin
       Fail_Program (null, "no project directory specified");
    end if;
 
-   if Object_Directories.Last = 0 then
+   if Object_Directories.Is_Empty then
       Fail_Program (null, "no object directory specified");
    end if;
 
-   if Library_Directory.all = Object_Directories.Table (1).all then
+   if Library_Directory.all = Object_Directories.First_Element then
       Fail_Program
         (null, "object directory and library directory cannot be the same");
    end if;
@@ -2615,7 +2274,7 @@ begin
       Process_Shared;
    end if;
 
-   if ALIs.Last /= 0 then
+   if not ALIs.Is_Empty then
       Copy_ALI_Files;
    end if;
 
@@ -2641,27 +2300,27 @@ begin
    Put_Line (IO_File, Library_Label (Gprexch.Object_Files));
 
    for Index in 1 .. Last_Object_File_Index loop
-      Put_Line (IO_File, Object_Files.Table (Index).all);
+      Put_Line (IO_File, Object_Files (Index));
 
-      Name_Len := Object_Files.Table (Index)'Length;
-      Name_Buffer (1 .. Name_Len) := Object_Files.Table (Index).all;
+      Name_Len := Object_Files.Element (Index)'Length;
+      Name_Buffer (1 .. Name_Len) := Object_Files (Index);
       Put_Line
         (IO_File, String (Osint.File_Stamp (Path_Name_Type'(Name_Find))));
    end loop;
 
-   if Generated_Sources.Last > 0 then
+   if not Generated_Sources.Is_Empty then
       Put_Line (IO_File, Library_Label (Gprexch.Generated_Source_Files));
 
-      for Index in 1 .. Generated_Sources.Last loop
-         Put_Line (IO_File, Generated_Sources.Table (Index).all);
+      for Source of Generated_Sources loop
+         Put_Line (IO_File, Source);
       end loop;
    end if;
 
-   if Generated_Objects.Last > 0 then
+   if not Generated_Objects.Is_Empty then
       Put_Line (IO_File, Library_Label (Gprexch.Generated_Object_Files));
 
-      for Index in 1 .. Generated_Objects.Last loop
-         Put_Line (IO_File, Generated_Objects.Table (Index).all);
+      for Object of Generated_Objects loop
+         Put_Line (IO_File, Object);
       end loop;
    end if;
 

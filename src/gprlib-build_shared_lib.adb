@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2017, AdaCore                     --
+--                     Copyright (C) 2006-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -23,12 +23,6 @@ with GPR.Util.Aux;
 
 separate (Gprlib)
 procedure Build_Shared_Lib is
-
-   Ofiles : constant Argument_List :=
-               Argument_List (Object_Files.Table (1 .. Object_Files.Last));
-
-   Options : constant Argument_List :=
-               Argument_List (Options_Table.Table (1 .. Options_Table.Last));
 
    Lib_File : constant String :=
                 Shared_Lib_Prefix.all &
@@ -79,9 +73,9 @@ procedure Build_Shared_Lib is
 
                Add_Str_To_Name_Buffer (Driver.all);
 
-               for J in 1 .. Last_Arg loop
+               for Arg of Arguments loop
                   Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Arguments (J).all);
+                  Add_Str_To_Name_Buffer (Arg);
                end loop;
 
                Put_Line (Name_Buffer (1 .. Name_Len));
@@ -114,39 +108,33 @@ procedure Build_Shared_Lib is
          end if;
       end if;
 
-      Last_Arg := 0;
-      Argument_Length := Driver'Length;
+      Arguments := String_Vectors.Empty_Vector;
+      --  Argument_Length := Driver'Length;
 
       --  The minimum arguments
-
-      for J in 1 .. Shared_Lib_Minimum_Options.Last loop
-         Add_Arg (Shared_Lib_Minimum_Options.Table (J));
-      end loop;
+      Arguments.Append (Shared_Lib_Minimum_Options);
 
       --  The leading library options, if any
-
-      for J in 1 .. Leading_Library_Options_Table.Last loop
-         Add_Arg (Leading_Library_Options_Table.Table (J));
-      end loop;
+      Arguments.Append (Leading_Library_Options_Table);
 
       --  -o <library file name>
 
-      Add_Arg (Out_Opt);
-      Add_Arg (Out_V);
+      Arguments.Append (Out_Opt.all);
+      Arguments.Append (Out_V.all);
 
       --  The options
 
-      for J in Options'Range loop
-         if Options (J) /= null and then Options (J).all /= "" then
-            Add_Arg (Options (J));
+      for Option of Options_Table loop
+         if Option /= "" then
+            Arguments.Append (Option);
          end if;
       end loop;
 
       --  Other options
 
-      for J in 1 .. Library_Version_Options.Last loop
-         if Library_Version_Options.Table (J).all /= "" then
-            Add_Arg (Library_Version_Options.Table (J));
+      for Option of Library_Version_Options loop
+         if Option /= "" then
+            Arguments.Append (Option);
          end if;
       end loop;
 
@@ -167,49 +155,43 @@ procedure Build_Shared_Lib is
          --  If partial linker is used, do a partial link first
 
          Partial_Number := 0;
-         First_Object := Ofiles'First;
+         First_Object := Object_Files.First_Index;
 
          loop
             declare
-               Partial : constant String_Access :=
-                           new String'
-                             (Partial_Name
-                                (Library_Name.all,
-                                 Partial_Number,
-                                 Object_Suffix));
+               Partial : constant String :=
+                           Partial_Name
+                             (Library_Name.all,
+                              Partial_Number,
+                              Object_Suffix);
                Size    : Natural := 0;
 
-               Saved_Last_PL_Option : Natural;
+               Saved_PL_Options : String_Vectors.Vector;
             begin
-               Saved_Last_PL_Option := Last_PL_Option;
+               Saved_PL_Options := PL_Options;
 
-               Add (Partial, PL_Options, Last_PL_Option);
+               PL_Options.Append (Partial);
                Size := Size + 1 + Partial'Length;
 
                if Partial_Number > 0 then
-                  Add
+                  PL_Options.Append
                     (Partial_Name
                        (Library_Name.all,
                         Partial_Number - 1,
-                        Object_Suffix),
-                     PL_Options,
-                     Last_PL_Option);
+                        Object_Suffix));
                end if;
 
-               for J in 1 .. Last_PL_Option loop
-                  Size := Size + 1 + PL_Options (J)'Length;
+               for Option of PL_Options loop
+                  Size := Size + 1 + Option'Length;
                end loop;
 
                loop
-                  Add
-                    (Ofiles (First_Object),
-                     PL_Options,
-                     Last_PL_Option);
-                  Size := Size + 1 + PL_Options (Last_PL_Option)'Length;
+                  PL_Options.Append (Object_Files (First_Object));
+                  Size := Size + 1 + PL_Options.Last_Element'Length;
 
                   First_Object := First_Object + 1;
                   exit when
-                    First_Object > Ofiles'Last or else
+                    First_Object > Object_Files.Last_Index or else
                     Size >= Maximum_Size;
                end loop;
 
@@ -217,9 +199,9 @@ procedure Build_Shared_Lib is
                   if Verbose_Mode then
                      Add_Str_To_Name_Buffer (Partial_Linker_Path.all);
 
-                     for J in 1 .. Last_PL_Option loop
+                     for Option of PL_Options loop
                         Add_Str_To_Name_Buffer (" ");
-                        Add_Str_To_Name_Buffer (PL_Options (J).all);
+                        Add_Str_To_Name_Buffer (Option);
                      end loop;
 
                      Put_Line (Name_Buffer (1 .. Name_Len));
@@ -228,13 +210,13 @@ procedure Build_Shared_Lib is
 
                Spawn_And_Script_Write
                  (Partial_Linker_Path.all,
-                  PL_Options (1 .. Last_PL_Option),
+                  PL_Options,
                   Success);
 
                Name_Len := 0;
                Add_Str_To_Name_Buffer
                  (Ada.Directories.Current_Directory &
-                  '/' & Partial.all);
+                  '/' & Partial);
                Record_Temp_File
                  (Shared => null,
                   Path   => Name_Find);
@@ -246,25 +228,25 @@ procedure Build_Shared_Lib is
                      Partial_Linker.all & " failed");
                end if;
 
-               if First_Object > Ofiles'Last then
-                  Add_Arg (Partial);
+               if First_Object > Object_Files.Last_Index then
+                  Arguments.Append (Partial);
                   exit;
                end if;
 
-               Last_PL_Option := Saved_Last_PL_Option;
+               PL_Options := Saved_PL_Options;
                Partial_Number := Partial_Number + 1;
             end;
          end loop;
 
       else
-         First_Object := Last_Arg + 1;
+         First_Object := Arguments.Last_Index + 1;
 
-         for J in Ofiles'Range loop
-            Add_Arg (Ofiles (J));
+         for Obj of Object_Files loop
+            Arguments.Append (Obj);
          end loop;
       end if;
 
-      Last_Object := Last_Arg;
+      Last_Object := Arguments.Last_Index;
 
       --  In Ofiles we can have at the end some libraries -lname, so ensure
       --  that the object are only taken up to Last_Object_File_Index.
@@ -278,82 +260,78 @@ procedure Build_Shared_Lib is
       --  Finally the additional switches, the library switches and the library
       --  options.
 
-      for J in 1 .. Additional_Switches.Last loop
-         Add_Arg (Additional_Switches.Table (J));
-      end loop;
+      Arguments.Append (Additional_Switches);
 
-      for J in 1 .. Library_Switches_Table.Last loop
-         Add_Arg (Library_Switches_Table.Table (J));
-      end loop;
+      Arguments.Append (Library_Switches_Table);
 
-      for J in 1 .. Library_Options_Table.Last loop
-         Add_Arg (Library_Options_Table.Table (J));
-      end loop;
+      Arguments.Append (Library_Options_Table);
 
       --  Check if a response file is needed
-
       if Max_Command_Line_Length > 0
-        and then Argument_Length > Max_Command_Line_Length
         and then Resp_File_Format /= GPR.None
       then
+
          declare
-            --  Preserve the options, if any
-
-            Options : constant String_List :=
-                        Arguments (Last_Object + 1 .. Last_Arg);
-
+            Arg_Length : Natural := Driver'Length;
+            Options    : String_Vectors.Vector;
+            Objects    : String_Vectors.Vector;
          begin
-            Aux.Create_Response_File
-              (Format            => Resp_File_Format,
-               Objects           => Arguments (First_Object .. Last_Object),
-               Other_Arguments   => Options,
-               Resp_File_Options => Response_File_Switches.all,
-               Name_1            => Response_File_Name,
-               Name_2            => Response_2);
+            Arg_Length := Arg_Length + Natural (Arguments.Length);
 
-            Record_Temp_File
-              (Shared => null,
-               Path   => Response_File_Name);
+            for Arg of Arguments loop
+               Arg_Length := Arg_Length + Arg'Length;
+            end loop;
 
-            if Response_2 /= No_Path then
+            if Arg_Length > Max_Command_Line_Length then
+               Options :=
+                 Slice (Arguments, Last_Object + 1, Arguments.Last_Index);
+               Objects :=
+                 Slice (Arguments, First_Object, Last_Object);
+
+               Aux.Create_Response_File
+                 (Format            => Resp_File_Format,
+                  Objects           => Objects,
+                  Other_Arguments   => Options,
+                  Resp_File_Options => Response_File_Switches,
+                  Name_1            => Response_File_Name,
+                  Name_2            => Response_2);
+
                Record_Temp_File
                  (Shared => null,
-                  Path   => Response_2);
-            end if;
+                  Path   => Response_File_Name);
 
-            Last_Arg := First_Object - 1;
-
-            if Resp_File_Format = GCC
-              or else Resp_File_Format = GCC_GNU
-              or else Resp_File_Format = GCC_Object_List
-              or else Resp_File_Format = GCC_Option_List
-            then
-               Add_Arg
-                 (new String'("@" & Get_Name_String (Response_File_Name)));
-            else
-               if Response_File_Switches'Length /= 0 then
-                  for J in Response_File_Switches'First ..
-                    Response_File_Switches'Last - 1
-                  loop
-                     Add_Arg (Response_File_Switches (J));
-                  end loop;
-
-                  Add_Arg
-                    (new String'
-                       (Response_File_Switches
-                          (Response_File_Switches'Last).all &
-                        Get_Name_String (Response_File_Name)));
-
-               else
-                  Add_Arg
-                    (new String'(Get_Name_String (Response_File_Name)));
+               if Response_2 /= No_Path then
+                  Record_Temp_File
+                    (Shared => null,
+                     Path   => Response_2);
                end if;
 
-               --  Put back the options
-
-               for J in Options'Range loop
-                  Add_Arg (Options (J));
+               --  Remove objects and tail options from Arguments
+               while Arguments.Last_Index > First_Object - 1 loop
+                  Arguments.Delete_Last;
                end loop;
+
+               if Resp_File_Format = GCC
+                 or else Resp_File_Format = GCC_GNU
+                 or else Resp_File_Format = GCC_Object_List
+                 or else Resp_File_Format = GCC_Option_List
+               then
+                  Arguments.Append
+                    ("@" & Get_Name_String (Response_File_Name));
+               else
+                  if Response_File_Switches.Is_Empty then
+                     Arguments.Append (Get_Name_String (Response_File_Name));
+                  else
+                     Response_File_Switches.Replace_Element
+                       (Response_File_Switches.Last_Index,
+                        Response_File_Switches.Last_Element &
+                          Get_Name_String (Response_File_Name));
+                     Arguments.Append (Response_File_Switches);
+                  end if;
+
+                  --  Put back the options
+                  Arguments.Append (Options);
+               end if;
             end if;
          end;
       end if;
@@ -371,7 +349,7 @@ procedure Build_Shared_Lib is
 
             Aux.Create_Export_Symbols_File
               (Driver_Path         => "",
-               Options             => OL_Options (1 .. Last_OL_Option),
+               Options             => To_Argument_List (OL_Options),
                Sym_Matcher         => "",
                Format              => Export_File_Format,
                Objects             => String_List'(1 .. 0 => null),
@@ -385,30 +363,23 @@ procedure Build_Shared_Lib is
             --  of the library interface.
 
             declare
-               List : String_List
-                 (1 .. Interface_Objs.Last + Generated_Objects.Last);
+               List : String_Vectors.Vector;
             begin
                --  Ada unit interfaces
 
-               for K in 1 .. Interface_Objs.Last loop
-                  List (K) := Interface_Objs.Table (K);
-               end loop;
+               List := Interface_Objs;
 
                --  We need to add the binder generated object file which
                --  contains the library initilization code to be explicitely
                --  called by the main application.
-
-               for K in 1 .. Generated_Objects.Last loop
-                  List (Interface_Objs.Last + K) :=
-                    Generated_Objects.Table (K);
-               end loop;
+               List.Append (Generated_Objects);
 
                Aux.Create_Export_Symbols_File
                  (Driver_Path         => Object_Lister.all,
-                  Options             => OL_Options (1 .. Last_OL_Option),
+                  Options             => To_Argument_List (OL_Options),
                   Sym_Matcher         => Object_Lister_Matcher.all,
                   Format              => Export_File_Format,
-                  Objects             => List,
+                  Objects             => To_Argument_List (List),
                   Library_Symbol_File => "",
                   Export_File_Name    => Export_File);
             end;
@@ -417,9 +388,8 @@ procedure Build_Shared_Lib is
          --  If the export file has been created properly pass it to the linker
 
          if Export_File /= No_Path then
-            Add_Arg
-              (new String'(Export_File_Switch.all
-               & Get_Name_String (Export_File)));
+            Arguments.Append
+              (Export_File_Switch.all & Get_Name_String (Export_File));
          end if;
       end if;
 
@@ -434,14 +404,15 @@ procedure Build_Shared_Lib is
          --  linker change from export-all to export only the symbols specified
          --  as dllexport.
 
-         Add_Arg (new String'("-Wl,--export-all-symbols"));
+         Arguments.Append ("-Wl,--export-all-symbols");
       end if;
 
       Display_Linking_Command;
 
       --  Finally spawn the library builder driver
 
-      Spawn_And_Script_Write (Driver.all, Arguments (1 .. Last_Arg), Success);
+      Spawn_And_Script_Write
+        (Driver.all, Arguments, Success);
 
       if not Success then
          if Driver_Name = No_Name then
@@ -466,7 +437,7 @@ begin
       --  If no Library_Version specified, make sure the table is empty and
       --  call Build.
 
-      Library_Version_Options.Set_Last (0);
+      Library_Version_Options.Clear;
       Build (Lib_Path);
 
    else
@@ -478,19 +449,16 @@ begin
            new String'(Major_Id_Name (Lib_File, Library_Version.all));
       end if;
 
-      if Library_Version_Options.Last > 0 then
+      if not Library_Version_Options.Is_Empty then
          if Maj_Version.all /= "" then
-            Library_Version_Options.Table (Library_Version_Options.Last)  :=
-              new String'
-                (Library_Version_Options.Table
-                     (Library_Version_Options.Last).all & Maj_Version.all);
+            Library_Version_Options.Replace_Element
+              (Library_Version_Options.Last_Index,
+               Library_Version_Options.Last_Element & Maj_Version.all);
 
          else
-            Library_Version_Options.Table (Library_Version_Options.Last)  :=
-              new String'
-                (Library_Version_Options.Table
-                     (Library_Version_Options.Last).all &
-                 Library_Version.all);
+            Library_Version_Options.Replace_Element
+              (Library_Version_Options.Last_Index,
+               Library_Version_Options.Last_Element & Library_Version.all);
          end if;
       end if;
 

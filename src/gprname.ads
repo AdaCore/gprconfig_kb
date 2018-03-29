@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                      Copyright (C) 2001-2016, AdaCore                    --
+--                      Copyright (C) 2001-2018, AdaCore                    --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -19,10 +19,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Containers.Vectors;
+
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.Regexp; use GNAT.Regexp;
 
-with GPR; use GPR;
+with GPR;         use GPR;
+with GPR.Util;    use GPR.Util;
 
 package GPRName is
 
@@ -32,7 +35,7 @@ package GPRName is
 
    procedure Initialize
      (File_Path         : String;
-      Preproc_Switches  : Argument_List;
+      Preproc_Switches  : String_Vectors.Vector;
       Very_Verbose      : Boolean;
       Flags             : Processing_Flags);
    --  Start the creation or modification of a project file, for gprname.
@@ -46,16 +49,23 @@ package GPRName is
    --  Very_Verbose controls the verbosity of the output, in conjunction with
    --  GPR.Opt.Verbose_Mode.
 
-   type Regexp_List is array (Positive range <>) of Regexp;
+   package Regexp_Vectors is new Ada.Containers.Vectors
+     (Positive, Regexp);
+
+   subtype Regexp_List is Regexp_Vectors.Vector;
 
    type Foreign_Regexp is record
       Language : Name_Id;
       Pattern  : Regexp;
    end record;
-   type Foreign_Regexp_List is array (Positive range <>) of Foreign_Regexp;
+
+   package Frgn_Regexp_Vectors is new Ada.Containers.Vectors
+     (Positive, Foreign_Regexp);
+
+   subtype Foreign_Regexp_List is Frgn_Regexp_Vectors.Vector;
 
    procedure Process
-     (Directories       : Argument_List;
+     (Directories       : String_Vectors.Vector;
       Name_Patterns     : Regexp_List;
       Excluded_Patterns : Regexp_List;
       Foreign_Patterns  : Foreign_Regexp_List);

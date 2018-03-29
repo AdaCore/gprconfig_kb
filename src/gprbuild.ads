@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2017, AdaCore                     --
+--                     Copyright (C) 2004-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -19,19 +19,19 @@
 --  The following package implements the facilities to compile, bind and/or
 --  link a set of Ada and non Ada sources, specified in Project Files.
 
+private with Ada.Containers.Indefinite_Vectors;
+private with Ada.Containers.Vectors;
+
 with GPR;       use GPR;
 with GPR.Osint; use GPR.Osint;
 
-private with Ada.Unchecked_Deallocation;
-
-private with GNAT.Dynamic_Tables;
 private with GNAT.HTable;
 private with GNAT.OS_Lib;
-private with GNAT.Table;
 
 private with Gpr_Build_Util;
 private with GPR.ALI;
 private with GPR.Opt;
+private with GPR.Util;
 
 package Gprbuild is
 
@@ -43,7 +43,10 @@ package Gprbuild is
 
 private
 
+   use Ada.Containers;
+   use Gpr_Build_Util;
    use GNAT.OS_Lib;
+   use GPR.Util;
 
    pragma Warnings (Off); -- Used by children
    use type ALI.ALI_Id, Opt.Verbosity_Level_Type, Opt.Warning_Mode_Type;
@@ -55,7 +58,7 @@ private
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
 
-   Dash_L : Name_Id;
+   Dash_L    : Name_Id;
    --  "-L", initialized in procedure Initialize
 
    Main_Project_Dir : String_Access;
@@ -126,84 +129,63 @@ private
    No_SAL_Binding : Boolean := False;
    --  Set to True with gprbuild switch --no-sal-binding
 
-   package All_Language_Builder_Compiling_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   All_Language_Builder_Compiling_Options : String_Vectors.Vector;
    --  Table to store the options for all compilers, that is those that
    --  follow the switch "-cargs" without any mention of language in the
    --  Builder switches.
 
-   package All_Language_Compiling_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   All_Language_Compiling_Options         : String_Vectors.Vector;
    --  Table to store the options for all compilers, that is those that
    --  follow the switch "-cargs" without any mention of language on the
    --  command line.
 
-   package Builder_Compiling_Options is new GNAT.Dynamic_Tables
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Builder_Compiling_Options              : String_Vectors.Vector;
    --  Tables to store the options for the compilers of the different
    --  languages, that is those after switch "-cargs:<lang>", in the Builder
    --  switches.
 
-   package Compiling_Options is new GNAT.Dynamic_Tables
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Compiling_Options                      : String_Vectors.Vector;
    --  Tables to store the options for the compilers of the different
    --  languages, that is those after switch "-cargs:<lang>", on the command
    --  line.
 
-   type Boolean_Array is array (Positive range <>) of Boolean;
-   type Booleans is access Boolean_Array;
-
-   procedure Free is new Ada.Unchecked_Deallocation (Boolean_Array, Booleans);
-
    Initial_Number_Of_Options : constant Natural := 10;
 
-   type Options_Data is record
-      Options     : String_List_Access :=
-                      new String_List (1 .. Initial_Number_Of_Options);
-      Visible     : Booleans :=
-                      new Boolean_Array (1 .. Initial_Number_Of_Options);
-      Simple_Name : Booleans :=
-                      new Boolean_Array (1 .. Initial_Number_Of_Options);
-      Last        : Natural := 0;
+   type Option_Type (Name_Len : Natural) is record
+      Name : String (1 .. Name_Len);
+      --  Used to store the argument to be used when spawning a process
+
+      Displayed : Boolean;
+      --  Indicate if the argument should be displayed when procedure
+      --  Display_Command is called.
+
+      Simple_Name : Boolean;
+      --  Indicate that the argument is a path name and that only the simple
+      --  name should be displayed.
    end record;
-   --  A record type to keep different options with a boolean for each that
+
+   package Option_Vectors is new Ada.Containers.Indefinite_Vectors
+     (Positive, Option_Type);
+
+   subtype Options_Data is Option_Vectors.Vector;
+   --  Keeps the options of a tool with a boolean for each that
    --  indicates if it should be displayed.
 
-   All_Options : Options_Data;
-   --  A cache for all options, to avoid too many allocations
+   function Options_List (Options : Options_Data) return String_Vectors.Vector;
+   --  Extract all Switches from Option data and return them as a list
 
    Compilation_Options : Options_Data;
    --  The compilation options coming from package Compiler
 
-   type Comp_Option_Table_Ref is access Compiling_Options.Instance;
-   No_Comp_Option_Table : constant Comp_Option_Table_Ref := null;
+   No_Comp_Option_Table : constant String_Vector_Access := null;
 
-   Current_Comp_Option_Table : Comp_Option_Table_Ref := No_Comp_Option_Table;
+   Current_Comp_Option_Table : String_Vector_Access := No_Comp_Option_Table;
 
-   type Builder_Comp_Option_Table_Ref is
-     access Builder_Compiling_Options.Instance;
-   No_Builder_Comp_Option_Table : constant Builder_Comp_Option_Table_Ref :=
-                                    null;
+   No_Builder_Comp_Option_Table : constant String_Vector_Access := null;
 
    package Compiling_Options_HTable is new GNAT.HTable.Simple_HTable
      (Header_Num => GPR.Header_Num,
-      Element    => Comp_Option_Table_Ref,
+      Element    => String_Vector_Access,
       No_Element => No_Comp_Option_Table,
       Key        => Name_Id,
       Hash       => GPR.Hash,
@@ -213,7 +195,7 @@ private
 
    package Builder_Compiling_Options_HTable is new GNAT.HTable.Simple_HTable
      (Header_Num => GPR.Header_Num,
-      Element    => Builder_Comp_Option_Table_Ref,
+      Element    => String_Vector_Access,
       No_Element => No_Builder_Comp_Option_Table,
       Key        => Name_Id,
       Hash       => GPR.Hash,
@@ -221,25 +203,15 @@ private
    --  A hash table to get the builder compilation option table from the
    --  language name.
 
-   package All_Language_Binder_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   All_Language_Binder_Options : String_Vectors.Vector;
    --  Table to store the options for all binders, that is those that
    --  follow the switch "-bargs" without any mention of language.
 
-   package Binder_Options is new GNAT.Dynamic_Tables
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Binder_Options : String_Vectors.Vector;
    --  Tables to store the options for the binders of the different
    --  languages, that is those after switch "-bargs:<lang>".
 
-   type Bind_Option_Table_Ref is access Binder_Options.Instance;
+   type Bind_Option_Table_Ref is access String_Vectors.Vector;
    No_Bind_Option_Table : constant Bind_Option_Table_Ref := null;
 
    Current_Bind_Option_Table : Bind_Option_Table_Ref := No_Bind_Option_Table;
@@ -253,34 +225,8 @@ private
       Equal      => "=");
    --  A hash table to get the compilation option table from the language name
 
-   package Binding_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 20,
-      Table_Increment      => 100);
-   --  Table to store the linking options coming from the binder
-
-   package Command_Line_Linker_Options is new GNAT.Table
-     (Table_Component_Type => String_Access,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 20,
-      Table_Increment      => 100);
+   Command_Line_Linker_Options : String_Vectors.Vector;
    --  Table to store the linking options
-
-   type Linker_Options_Data is record
-      Project : Project_Id;
-      Options : String_List_Id;
-   end record;
-
-   package Linker_Opts is new GNAT.Table
-     (Table_Component_Type => Linker_Options_Data,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 20,
-      Table_Increment      => 100);
-   --  Table to store the Linker'Linker_Options in the project files
 
    Project_Of_Current_Object_Directory : Project_Id := No_Project;
    --  The object directory of the project for the last binding. Avoid
@@ -320,20 +266,13 @@ private
       Is_Aggregated : Boolean;
    end record;
 
-   package Library_Projs is new GNAT.Table (
-     Table_Component_Type => Library_Project,
-     Table_Index_Type     => Integer,
-     Table_Low_Bound      => 1,
-     Table_Initial        => 10,
-     Table_Increment      => 10);
+   package Library_Proj_Vectors is new Ada.Containers.Vectors
+     (Positive, Library_Project);
+
+   Library_Projs     : Library_Proj_Vectors.Vector;
    --  Library projects imported directly or indirectly
 
-   package Non_Library_Projs is new GNAT.Table (
-     Table_Component_Type => Project_Id,
-     Table_Index_Type     => Integer,
-     Table_Low_Bound      => 1,
-     Table_Initial        => 10,
-     Table_Increment      => 10);
+   Non_Library_Projs : Project_Vectors.Vector;
    --  Non library projects imported directly or indirectly
 
    procedure Add_Option
@@ -355,7 +294,7 @@ private
    --  Add one or several options to a list of options. Increase the size
    --  of the list, if necessary.
 
-   function Get_Option (Option : Name_Id) return String_Access;
+   function Get_Option (Option : Name_Id) return String;
    --  Get a string access corresponding to Option. Either find the string
    --  access in the All_Options cache, or create a new entry in All_Options.
 
@@ -374,14 +313,14 @@ private
    --  Whenever Switch is modified, its previous value is deallocated.
 
    procedure Add_Option_Internal
-     (Value       : String_Access;
+     (Value       : String;
       To          : in out Options_Data;
       Display     : Boolean;
       Simple_Name : Boolean := False);
    --  Add an option in a specific list of options
 
    procedure Add_Option_Internal_Codepeer
-     (Value       : String_Access;
+     (Value       : String;
       To          : in out Options_Data;
       Display     : Boolean;
       Simple_Name : Boolean := False);
@@ -424,14 +363,7 @@ private
    --  already the current working directory. If Must_Be_Writable is True and
    --  the object directory is not writable, fail with an error message.
 
-   use Gpr_Build_Util;
-
-   package Bad_Processes is new GNAT.Table
-     (Table_Component_Type => Main_Info,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
+   Bad_Processes : Main_Info_Vectors.Vector;
    --  Info for all the mains where binding fails
 
    Outstanding_Processes : Natural := 0;
@@ -453,7 +385,7 @@ private
    end record;
 
    No_Process_Data : constant Process_Data :=
-     (None, Invalid_Pid, No_Main_Info);
+                       (None, Invalid_Pid, No_Main_Info);
 
    type Header_Num is range 0 .. 2047;
 

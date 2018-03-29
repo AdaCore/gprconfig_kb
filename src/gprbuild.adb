@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2017, AdaCore                     --
+--                     Copyright (C) 2004-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -36,6 +36,21 @@ package body Gprbuild is
       Equal      => "=");
    --  Projects that have already been processed
 
+   ------------------
+   -- Options_List --
+   ------------------
+
+   function Options_List (Options : Options_Data) return String_Vectors.Vector
+   is
+      Ret : String_Vectors.Vector;
+   begin
+      for Opt of Options loop
+         Ret.Append (Opt.Name);
+      end loop;
+
+      return Ret;
+   end Options_List;
+
    ----------------
    -- Add_Option --
    ----------------
@@ -67,7 +82,7 @@ package body Gprbuild is
    -------------------------
 
    procedure Add_Option_Internal
-     (Value       : String_Access;
+     (Value       : String;
       To          : in out Options_Data;
       Display     : Boolean;
       Simple_Name : Boolean := False)
@@ -79,34 +94,12 @@ package body Gprbuild is
          return;
       end if;
 
-      To.Last := To.Last + 1;
-
-      if To.Last > To.Options'Last then
-         declare
-            New_Options     : constant String_List_Access :=
-                                new String_List (1 .. 2 * To.Options'Last);
-            New_Visible     : constant Booleans :=
-                                new Boolean_Array (1 .. 2 * To.Visible'Last);
-            New_Simple_Name : constant Booleans :=
-                                new Boolean_Array (1 .. 2 * To.Visible'Last);
-
-         begin
-            New_Options (To.Options'Range) := To.Options.all;
-            To.Options.all := (others => null);
-            Free (To.Options);
-            To.Options := New_Options;
-            New_Visible (To.Visible'Range) := To.Visible.all;
-            Free (To.Visible);
-            To.Visible := New_Visible;
-            New_Simple_Name (To.Simple_Name'Range) := To.Simple_Name.all;
-            Free (To.Simple_Name);
-            To.Simple_Name := New_Simple_Name;
-         end;
-      end if;
-
-      To.Options (To.Last)     := Value;
-      To.Visible (To.Last)     := Display;
-      To.Simple_Name (To.Last) := Simple_Name;
+      To.Append
+        (Option_Type'
+           (Name_Len    => Value'Length,
+            Name        => Value,
+            Displayed   => Display,
+            Simple_Name => Simple_Name));
    end Add_Option_Internal;
 
    ----------------------------------
@@ -114,7 +107,7 @@ package body Gprbuild is
    ----------------------------------
 
    procedure Add_Option_Internal_Codepeer
-     (Value       : String_Access;
+     (Value       : String;
       To          : in out Options_Data;
       Display     : Boolean;
       Simple_Name : Boolean := False)
@@ -141,8 +134,8 @@ package body Gprbuild is
    is
       List            : String_List_Id := Value;
       Element         : String_Element;
-      Option          : String_Access;
       First_Display   : Boolean := Display_First;
+
    begin
       while List /= Nil_String loop
          Element := Project_Tree.Shared.String_Elements.Table (List);
@@ -150,10 +143,9 @@ package body Gprbuild is
          --  Ignore empty options
 
          if Element.Value /= Empty_String then
-            Option := Get_Option (Element.Value);
 
             Add_Option_Internal
-              (Value       => Option,
+              (Value       => Get_Option (Element.Value),
                To          => To,
                Display     => Display_All or First_Display,
                Simple_Name => Simple_Name);
@@ -519,27 +511,8 @@ package body Gprbuild is
    -- Get_Option --
    ----------------
 
-   function Get_Option (Option : Name_Id) return String_Access is
-      Option_Name : constant String := Get_Name_String (Option);
-   begin
-      --  Look in All_Options if this option is already cached
-
-      for Index in 1 .. All_Options.Last loop
-         if All_Options.Options (Index).all = Option_Name then
-            return All_Options.Options (Index);
-         end if;
-      end loop;
-
-      --  Add the option to the All_Options cache, so that it will be found
-      --  next time.
-
-      Add_Option_Internal
-        (new String'(Option_Name),
-         To      => All_Options,
-         Display => False);
-
-      return All_Options.Options (All_Options.Last);
-   end Get_Option;
+   function Get_Option
+     (Option : Name_Id) return String renames Get_Name_String;
 
    ----------
    -- Hash --
@@ -628,7 +601,7 @@ package body Gprbuild is
 
    begin
       Processed_Projects.Reset;
-      Library_Projs.Init;
+      Library_Projs.Clear;
       There_Are_SALs := False;
 
       Process_Project (For_Project, Aggregated => False);
@@ -690,7 +663,7 @@ package body Gprbuild is
 
    begin
       Processed_Projects.Reset;
-      Non_Library_Projs.Init;
+      Non_Library_Projs.Clear;
 
       Process_Project (For_Project);
    end Process_Imported_Non_Libraries;
@@ -730,6 +703,9 @@ package body Gprbuild is
    -- Test_If_Relative_Path --
    ---------------------------
 
+   --  ??? TODO: this is so wrong: procedure with a name Test_Something that
+   --  changes the value of what it tests... Shroedinger, please help me, the
+   --  cat doesn't have to die!
    procedure Test_If_Relative_Path
      (Switch           : in out String_Access;
       Parent           : String;

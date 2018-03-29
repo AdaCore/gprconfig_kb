@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -26,6 +26,8 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with GNAT.OS_Lib;  use GNAT;
 with GNAT.Sockets; use GNAT.Sockets;
+
+with GPR.Util;     use GPR.Util;
 
 private with Ada.Finalization;
 
@@ -152,7 +154,7 @@ package GPR.Compilation.Protocol is
       Project  : String;
       Dir      : String;
       Language : String;
-      Options  : GNAT.OS_Lib.Argument_List;
+      Options  : String_Vectors.Vector;
       Obj_Name : String;
       Dep_Name : String;
       Env      : String;

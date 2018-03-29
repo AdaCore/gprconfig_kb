@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2016-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2016-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -26,6 +26,8 @@
 
 with Ada.Text_IO; use Ada.Text_IO;
 
+with GPR.Util;    use GPR.Util;
+
 package GPR.Script is
 
    Build_Script_Option : constant String := "--build-script=";
@@ -39,7 +41,7 @@ package GPR.Script is
 
    procedure Script_Write
      (Program_Name : String;
-      Args         : Argument_List);
+      Args         : String_Vectors.Vector);
    --  If a build script is being built, append a line to invoke the
    --  program with its arguments.
 
@@ -49,13 +51,13 @@ package GPR.Script is
 
    procedure Script_Copy
      (File_Name   : String;
-      Destination : String_Access);
+      Destination : String);
    --  If a build script is being built, append a line to copy file File_Name
    --  to directory Destination.
 
    procedure Spawn_And_Script_Write
      (Program_Name : String;
-      Args         : Argument_List;
+      Args         : String_Vectors.Vector;
       Success      : out Boolean);
    --  If a build script is being built, append a line to invoke the program
    --  with its arguments, then spawn the process.
