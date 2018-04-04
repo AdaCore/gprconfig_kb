@@ -72,7 +72,7 @@ project Gprbuild is
       for Executable ("gprls-main.adb")      use "gprls";
       for Executable ("gprname-main.adb")    use "gprname";
 
-      for Default_Switches ("Ada") use ("-m", "-j" & Processors);
+      for Default_Switches ("Ada") use ("-s", "-m", "-j" & Processors);
    end Builder;
 
    --------------
