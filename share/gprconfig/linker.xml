@@ -306,6 +306,18 @@
 
   <configuration>
     <targets>
+      <target name="^riscv32-elf$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("riscv32-elf-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("riscv32-elf-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^powerpc-elf$" />
     </targets>
     <config>
@@ -685,6 +697,7 @@
       <target name="^.*-wrs-vxworks.*$" />
       <target name="^visium-elf$"/>
       <target name="^riscv64-elf$"/>
+      <target name="^riscv32-elf$"/>
       <target name="^powerpc-elf$"/>
       <target name="^powerpc-elf-lynxos$" />
       <target name="^powerpc-xcoff-lynxos178$" />
@@ -769,6 +782,7 @@
        <target name="^.*lynxos.*$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
+       <target name="^riscv32-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1393,6 +1407,7 @@
        <target name="^.*-elf-lynx.*$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
+       <target name="^riscv32-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1442,6 +1457,7 @@
        <target name="^.*-elf-lynx.*$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
+       <target name="^riscv32-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1474,6 +1490,7 @@
        <target name="^.*-elf-lynx.*$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
+       <target name="^riscv32-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
