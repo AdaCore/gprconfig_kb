@@ -31,6 +31,7 @@
      <targets>
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
+       <target name="^riscv32-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-elf-lynxos5$" />
        <target name="^powerpc-elf-lynxos178e$" />
