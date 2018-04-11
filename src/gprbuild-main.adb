@@ -1208,6 +1208,13 @@ procedure Gprbuild.Main is
                end if;
             end if;
 
+         elsif Arg = "--gnatprove" then
+            Forbidden_In_Package_Builder;
+
+            if not GnatProve_Mode then
+               GnatProve_Mode := True;
+            end if;
+
          elsif Arg = Create_Map_File_Switch then
             Forbidden_With_Subst;
             Map_File := new String'("");

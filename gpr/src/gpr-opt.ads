@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -124,6 +124,10 @@ package GPR.Opt is
    --  When True, in Brief_Output mode, each error message line will start with
    --  the full path name of the source. When False, only the file name without
    --  directory information is used.
+
+   GnatProve_Mode : Boolean := False;
+   --  Enable GnatProve mode: the .ali files are copied to the lib dir even
+   --  when only compilation is performed.
 
    Ignore_Predefined_Units : Boolean := False;
    --  Ignore predefined Ada units in gprname.

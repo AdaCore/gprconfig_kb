@@ -24,6 +24,7 @@ with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT, GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
+with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gpr_Build_Util;               use Gpr_Build_Util;
 with GPR.Compilation;              use GPR.Compilation;
@@ -3619,6 +3620,29 @@ package body Gprbuild.Compile is
                        (Get_Name_String (Source_Identity.Id.Switches_Path),
                         No_Check);
                   end if;
+
+               elsif Current_Project.Library and then Opt.GnatProve_Mode
+                 and then Current_Project.Library_Dir.Display_Name /=
+                   Current_Project.Object_Directory.Display_Name
+                 and then Name_Id
+                   (Current_Project.Library_Dir.Display_Name) /= No_Name
+               then
+                  declare
+                     Success : Boolean;
+                     Str_Ali_File : constant String := Get_Name_String
+                       (Source_Identity.Id.Dep_Path);
+                     Str_Lib_Dir : constant String := Get_Name_String
+                       (Current_Project.Library_Dir.Display_Name);
+                  begin
+                     if Is_Regular_File (Str_Ali_File) then
+                        Copy_File
+                          (Str_Ali_File,
+                           Str_Lib_Dir,
+                           Success,
+                           Mode     => Overwrite,
+                           Preserve => Time_Stamps);
+                     end if;
+                  end;
                end if;
             end if;
 
