@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2004-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -87,5 +87,14 @@ package body GPR.Attr.PM is
          Package_Attributes.Set_Last (Last_Known_Package);
       end if;
    end Remove_Unknown_Packages;
+
+   -----------------------------
+   -- Remove_All_Packages --
+   -----------------------------
+
+   procedure Remove_All_Packages is
+   begin
+      Package_Attributes.Init;
+   end Remove_All_Packages;
 
 end GPR.Attr.PM;

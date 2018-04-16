@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2005-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2005-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -38,6 +38,8 @@ package GPR.Attr.PM is
    procedure Remove_Unknown_Packages;
    --  Remove from the package table all packages that have been added using
    --  procedure Add_Unknown_Package above.
+
+   procedure Remove_All_Packages;
 
    procedure Add_Attribute
      (To_Package     : Package_Node_Id;

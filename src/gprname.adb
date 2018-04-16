@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                      Copyright (C) 2001-2017, AdaCore                    --
+--                      Copyright (C) 2001-2018, AdaCore                    --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1158,7 +1158,10 @@ package body GPRName is
          end;
       end if;
 
-      GPR.Attr.PM.Remove_Unknown_Packages;
+      --  Clear the package table so that all the project's packages are marked
+      --  "ignored". This avoids missing attributes in the AST (see R404-033).
+
+      GPR.Attr.PM.Remove_All_Packages;
 
       Part.Parse
         (In_Tree                => Tree,
