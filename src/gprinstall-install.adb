@@ -1425,8 +1425,7 @@ package body Gprinstall.Install is
                Rollback_Manifests;
                Fail_Program
                  (Project_Tree,
-                  "error: path does not exist '"
-                  & Get_Directory (Pathname) & ''',
+                  "error: file does not exist '" & Pathname & ''',
                   Flush_Messages => False);
             end if;
          exception
@@ -1435,13 +1434,11 @@ package body Gprinstall.Install is
                   Rollback_Manifests;
                   Fail_Program
                     (Project_Tree,
-                     "warning: path does not exist '"
-                     & Get_Directory (Pathname) & ''',
+                     "warning: file does not exist '" & Pathname & ''',
                      Flush_Messages => False);
                else
                   Put_Line
-                    ("warning: path does not exist '"
-                     & Get_Directory (Pathname) & ''');
+                    ("warning: file does not exist '" & Pathname & ''');
                end if;
          end Copy_Artifacts;
 

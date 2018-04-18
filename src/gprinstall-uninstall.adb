@@ -121,7 +121,7 @@ package body Gprinstall.Uninstall is
 
       if not Exists (Name) then
          if not Opt.Quiet_Output then
-            Fail_Program (Project_Tree, "Project " & Name & " not found.");
+            Fail_Program (Project_Tree, "Manifest " & Name & " not found.");
          end if;
 
          Finish_Program (Project_Tree, Exit_Code => Osint.E_Errors);
