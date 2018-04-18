@@ -756,6 +756,9 @@ package GPR.Util is
    function Ensure_Directory (Path : String) return String;
    --  Returns Path with an ending directory separator
 
+   function Common_Prefix (Pathname1, Pathname2 : String) return String;
+   --  Returns the longest common prefix for Pathname1 and Pathname2
+
    function File_MD5 (Pathname : String) return Message_Digest;
    --  Returns the file MD5 signature. Raises Name_Error if Pathname does not
    --  exists.

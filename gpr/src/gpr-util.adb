@@ -417,6 +417,33 @@ package body GPR.Util is
       return Name_Find;
    end Create_Name;
 
+   -------------------
+   -- Common_Prefix --
+   -------------------
+
+   function Common_Prefix (Pathname1, Pathname2 : String) return String is
+      P1 : constant String := Normalize_Pathname (Pathname1);
+      P2 : constant String := Normalize_Pathname (Pathname2);
+      I1 : Positive := P1'First;
+      I2 : Positive := P2'First;
+   begin
+      while I1 <= P1'Last
+        and then I2 <= P2'Last
+        and then P1 (I1) = P2 (I2)
+      loop
+         I1 := I1 + 1;
+         I2 := I2 + 1;
+      end loop;
+
+      if I1 <= P1'Last or else I2 <= P2'Last then
+         return P1 (P1'First .. I1 - 1);
+      elsif I1 > P1'Last then
+         return P2;
+      else
+         return P1;
+      end if;
+   end Common_Prefix;
+
    ---------------
    -- Duplicate --
    ---------------
