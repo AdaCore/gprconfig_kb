@@ -18,6 +18,7 @@
 
 with Ada.Containers.Indefinite_Ordered_Sets; use Ada;
 with Ada.Directories;                        use Ada.Directories;
+with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.MD5; use GNAT.MD5;
@@ -90,15 +91,27 @@ package body Gprinstall.Uninstall is
 
       function Project_Dir return String is
       begin
-         if Is_Absolute_Path (Global_Project_Subdir.V.all) then
-            return Global_Project_Subdir.V.all;
+         if Is_Absolute_Path (Install_Name) then
+            return Containing_Directory (Containing_Directory (Install_Name));
+
          else
-            return Global_Prefix_Dir.V.all & Global_Project_Subdir.V.all;
+            if Is_Absolute_Path (Global_Project_Subdir.V.all) then
+               return Global_Project_Subdir.V.all;
+            else
+               return Global_Prefix_Dir.V.all & Global_Project_Subdir.V.all;
+            end if;
          end if;
       end Project_Dir;
 
-      Dir  : constant String := Project_Dir & "manifests";
-      Name : constant String := Dir & DS & Install_Name;
+      Dir  : constant String :=
+               (if Is_Absolute_Path (Install_Name)
+                then Containing_Directory (Install_Name)
+                else Project_Dir & "manifests");
+
+      Name : constant String :=
+               (if Is_Absolute_Path (Install_Name)
+                then Install_Name
+                else Dir & DS & Install_Name);
 
       Man     : File_Type;
       Buffer  : String (1 .. 4096);
@@ -115,6 +128,7 @@ package body Gprinstall.Uninstall is
       File_Digest     : Message_Digest;
       Expected_Digest : Message_Digest;
       Removed         : Boolean;
+      Prefix          : Unbounded_String;
 
    begin
       --  Check if manifest for this project exists
@@ -161,6 +175,16 @@ package body Gprinstall.Uninstall is
                   Removed := True;
                end if;
 
+               if Global_Prefix_Dir.Default then
+                  if Prefix = Null_Unbounded_String then
+                     Prefix := To_Unbounded_String
+                       (Normalize_Pathname (Pathname));
+                  else
+                     Prefix := To_Unbounded_String
+                       (Common_Prefix (To_String (Prefix), Pathname));
+                  end if;
+               end if;
+
                --  Unconditionally add a file to the remove list if digest is
                --  ok, if we are running in force mode or the file has already
                --  been removed.
@@ -179,6 +203,12 @@ package body Gprinstall.Uninstall is
       end loop;
 
       Close (Man);
+
+      if Prefix /= Null_Unbounded_String then
+         Global_Prefix_Dir :=
+           (new String'(Ensure_Directory (To_String (Prefix))),
+            False);
+      end if;
 
       --  Delete files
 

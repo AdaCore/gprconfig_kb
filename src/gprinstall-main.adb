@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2017, AdaCore                     --
+--                     Copyright (C) 2012-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -996,7 +996,10 @@ begin
 
    else
       if Global_Install_Name.Default then
-         Uninstall.Process (Ada.Directories.Base_Name (Project_File_Name.all));
+         Uninstall.Process
+           (Ada.Directories.Compose
+              (Ada.Directories.Containing_Directory (Project_File_Name.all),
+               Ada.Directories.Base_Name (Project_File_Name.all)));
       else
          Uninstall.Process (Global_Install_Name.V.all);
       end if;

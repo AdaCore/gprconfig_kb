@@ -1993,7 +1993,8 @@ Projects that won't be installed are:
 
 At a minimum, to invoke GPRinstall you must specify a main project file
 in a command such as `gprinstall proj.gpr` or
-`gprinstall -P proj.gpr`.
+`gprinstall -P proj.gpr` (in installing mode) or the install name (in
+uninstalling mode) `gprinstall --uninstall proj`.
 
 Examples of invocation of GPRinstall:
 
@@ -2040,7 +2041,12 @@ And both `lib.gpr` and `tools.gpr` above will be uninstalled with:
      gprinstall --uninstall myapp
 
 
-Note that GPRinstall does not deal with dependencies between projects.
+Note that GPRinstall does not deal with dependencies between projects. Also
+GPRinstall in uninstall mode does not need nor use information in the
+installed project. This is because the project may not be present anymore
+and many different project scenario may have been installed. So when
+uninstalling GPRinstall just use the manifest file (whose name is the install
+name) information.
 
 
 .. _Switches_for_GPRinstall:
@@ -2271,11 +2277,12 @@ The switches for GPRinstall are:
 
 * :samp:`--uninstall`
 
-  Uninstall mode, files installed for a
-  given project or install name will be removed. A check is done that
-  no manual changes have been applied to the files before removing.
-  Deletion of the files can be forced in this case by using the
-  :samp:`-f` option.
+  Uninstall mode, files installed for a given project or install name
+  will be removed. A check is done that no manual changes have been
+  applied to the files before removing.  Deletion of the files can be
+  forced in this case by using the :samp:`-f` option. Note that the
+  paramater in this case is not the project name but the install name which
+  corresponds to the manifest file.
 
 * :samp:`--list`
 
