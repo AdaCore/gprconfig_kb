@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2017, AdaCore                     --
+--                     Copyright (C) 2006-2018, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -480,8 +480,6 @@ begin
    Get_Targets_Set
      (Base, To_String (Selected_Target), Selected_Targets_Set);
 
---     Put_Line (Normalized_Target (Base, Selected_Targets_Set));
-
    if Batch then
       Complete_Command_Line_Compilers
         (Base,
@@ -520,6 +518,8 @@ begin
                                     Get_Name_String (Target (Element (C).all));
                      T          : String_Lists.Cursor := First (All_Target);
                      Dup        : Boolean := False;
+
+                     TS_Id      : Targets_Set_Id;
                   begin
                      while Has_Element (T) loop
                         if Element (T) = Cur_Target then
@@ -530,7 +530,8 @@ begin
                      end loop;
 
                      if not Dup then
-                        Put (Cur_Target);
+                        Get_Targets_Set (Base, Cur_Target, TS_Id);
+                        Put (Normalized_Target (Base, TS_Id));
                         if Cur_Target = Sdefault.Hostname then
                            Put (" (native target)");
                         end if;
