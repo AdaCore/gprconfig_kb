@@ -39,7 +39,7 @@ with Gpr_Build_Util; use Gpr_Build_Util;
 
 with GPR.Sdefault;
 
-with System.Case_Util; use System.Case_Util;
+with GNAT.Case_Util; use GNAT.Case_Util;
 with System.CRTL;
 with System.HTable;
 

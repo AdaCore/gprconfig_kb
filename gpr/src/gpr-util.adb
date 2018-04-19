@@ -58,7 +58,6 @@ with GPR.Output;     use GPR.Output;
 with GPR.Sdefault;
 with GPR.Sinput;
 with GPR.Snames;      use GPR.Snames;
-with GPR.Util;        use GPR.Util;
 with GPR.Version;     use GPR.Version;
 with Gpr_Build_Util;  use Gpr_Build_Util;
 
@@ -706,7 +705,7 @@ package body GPR.Util is
 
       begin
          for J in reverse Exec'Range loop
-            if Exec (J) = Directory_Separator then
+            if Is_Directory_Separator (Exec (J)) then
                Path_Last := J - 1;
                exit;
             end if;
@@ -719,7 +718,7 @@ package body GPR.Util is
          if Path_Last < Exec'First + 2
            or else Exec (Path_Last - 2 .. Path_Last) /= "bin"
            or else (Path_Last - 3 >= Exec'First
-                     and then Exec (Path_Last - 3) /= Directory_Separator)
+                    and then not Is_Directory_Separator (Exec (Path_Last - 3)))
          then
             return "";
          end if;
@@ -737,7 +736,7 @@ package body GPR.Util is
       --  executable name.
 
       for J in reverse Exec_Name'Range loop
-         if Exec_Name (J) = Directory_Separator then
+         if Is_Directory_Separator (Exec_Name (J)) then
             return Get_Install_Dir (Exec_Name);
          end if;
       end loop;
@@ -2562,9 +2561,7 @@ package body GPR.Util is
          if Path'Length = 0 then
             return "./";
 
-         elsif Path (Path'Last) = Directory_Separator
-           or else Path (Path'Last) = '/' -- on Windows check also for /
-         then
+         elsif Is_Directory_Separator (Path (Path'Last)) then
             return Path;
 
          else
@@ -3380,8 +3377,7 @@ package body GPR.Util is
    function Ensure_Directory (Path : String) return String is
    begin
       if Path'Length = 0
-        or else Path (Path'Last) = Directory_Separator
-        or else Path (Path'Last) = '/' -- on Windows check also for /
+        or else Is_Directory_Separator (Path (Path'Last))
       then
          return Path;
       else
@@ -3820,7 +3816,7 @@ package body GPR.Util is
       function Is_Base_Name (Path : String) return Boolean is
       begin
          for I in Path'Range loop
-            if Path (I) = Directory_Separator or else Path (I) = '/' then
+            if Is_Directory_Separator (Path (I)) then
                return False;
             end if;
          end loop;
@@ -4778,14 +4774,15 @@ package body GPR.Util is
                         end Get_Path;
 
                      begin
-                        --  No need to search if we have an absolute path
-                        if Is_Absolute_Path (File) then
+                        if Conf_Paths'Length > 0
+                          or else Is_Absolute_Path (File)
+                        then
                            Path := Path_Name_Type (Sfile);
                            Stamp := File_Stamp (Path);
 
                            if Conf_Paths'Length > 0 then
-                           --  This may be a config file. Check if it is one of
-                           --  the config files expected.
+                              --  This may be a config file. Check if it is one
+                              --  of the config files expected.
 
                               declare
                                  Norm_Path : constant String :=

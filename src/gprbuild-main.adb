@@ -23,7 +23,7 @@ with Ada.Text_IO;      use Ada.Text_IO;
 
 pragma Warnings (Off);
 with System;
-with System.Case_Util;       use System.Case_Util;
+with GNAT.Case_Util;         use GNAT.Case_Util;
 with System.Multiprocessors; use System.Multiprocessors;
 pragma Warnings (On);
 
