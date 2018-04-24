@@ -2302,7 +2302,7 @@ package body Gprbuild.Link is
                   then
                      declare
                         Img : String := Opt.Maximum_Processes'Img;
-                        Arg : Option_Type renames Other_Arguments (J);
+                        Arg : Option_Type renames Other_Arguments.Element (J);
                      begin
                         Img (1) := '=';
                         Other_Arguments.Replace_Element
