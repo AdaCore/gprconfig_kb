@@ -1019,6 +1019,9 @@ package body GPRName is
          W_Str                  => Write_A_String'Access,
          Backward_Compatibility => False);
       Close (Output_FD);
+
+      --  The args are now unused: let's free the list
+      Free (Args);
    end Finalize;
 
    ----------------
@@ -1789,9 +1792,6 @@ package body GPRName is
          end;
 
       end loop;
-
-      --  The args are now unused: let's free the list
-      Free (Args);
    end Process;
 
 end GPRName;
