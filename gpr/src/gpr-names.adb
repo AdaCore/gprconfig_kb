@@ -24,9 +24,11 @@
 
 with GNAT.Table;
 with Interfaces; use Interfaces;
+with Ada.Text_IO; use Ada.Text_IO;
 
 with GPR.Cset;   use GPR.Cset;
 with GPR.Output; use GPR.Output;
+with GPR.Debug;
 
 package body GPR.Names is
 
@@ -171,6 +173,11 @@ package body GPR.Names is
       S : Int;
 
    begin
+      if Debug.Debug_Flag_A then
+         Put ("<<<< Accessing index" & Id'Image &
+                " (procedure Get_Name_String)");
+      end if;
+
       pragma Assert (Id in Name_Entries.First .. Name_Entries.Last);
 
       S := Name_Entries.Table (Id).Name_Chars_Index;
@@ -179,6 +186,10 @@ package body GPR.Names is
       for J in 1 .. Name_Len loop
          Name_Buffer (J) := Name_Chars.Table (S + Int (J));
       end loop;
+
+      if Debug.Debug_Flag_A then
+         Put_Line (" Found: '" & Name_Buffer (1 .. Name_Len) & "' >>>>");
+      end if;
    end Get_Name_String;
 
    procedure Get_Name_String (Id : Unit_Name_Type) is
@@ -206,6 +217,11 @@ package body GPR.Names is
       S : Int;
 
    begin
+      if Debug.Debug_Flag_A then
+         Put ("<<<< Accessing index" & Id'Image &
+                " (function Get_Name_String)");
+      end if;
+
       pragma Assert (Id in Name_Entries.First .. Name_Entries.Last);
       S := Name_Entries.Table (Id).Name_Chars_Index;
 
@@ -216,6 +232,10 @@ package body GPR.Names is
          for J in R'Range loop
             R (J) := Name_Chars.Table (S + Int (J));
          end loop;
+
+         if Debug.Debug_Flag_A then
+            Put_Line (" Found: '" & R & "' >>>>");
+         end if;
 
          return R;
       end;
@@ -244,6 +264,11 @@ package body GPR.Names is
       S : Int;
 
    begin
+      if Debug.Debug_Flag_A then
+         Put ("<<<< Accessing index" & Id'Image &
+                " (Get_Name_String_And_Append)");
+      end if;
+
       pragma Assert (Id in Name_Entries.First .. Name_Entries.Last);
 
       S := Name_Entries.Table (Id).Name_Chars_Index;
@@ -252,6 +277,11 @@ package body GPR.Names is
          Name_Len := Name_Len + 1;
          Name_Buffer (Name_Len) := Name_Chars.Table (S + Int (J));
       end loop;
+
+      if Debug.Debug_Flag_A then
+         Put_Line (" Found: '" & Name_Buffer (1 + Name_Len -
+                     Name_Entries.Table (Id).Name_Len .. Name_Len) & "' >>>>");
+      end if;
    end Get_Name_String_And_Append;
 
    -------------------------
@@ -354,6 +384,12 @@ package body GPR.Names is
 
       Name_Chars.Append (ASCII.NUL);
 
+      if Debug.Debug_Flag_A then
+         Put_Line ("<<<< Appending: '" & Name_Buffer (1 .. Name_Len) &
+                     "' with index" & Name_Entries.Last'Image &
+                     " (Name_Enter) >>>>");
+      end if;
+
       return Name_Entries.Last;
    end Name_Enter;
 
@@ -372,6 +408,7 @@ package body GPR.Names is
       --  Computed hash index
 
    begin
+
       Hash_Index := Hash;
       New_Id := Hash_Table (Hash_Index);
 
@@ -393,6 +430,11 @@ package body GPR.Names is
                   goto No_Match;
                end if;
             end loop;
+
+            if Debug.Debug_Flag_A then
+               Put_Line ("<<<< Found index" & New_Id'Image & " for: '"
+                         & Name_Buffer (1 .. Name_Len) & "' (Name_Find) >>>>");
+            end if;
 
             return New_Id;
 
@@ -426,6 +468,12 @@ package body GPR.Names is
       end loop;
 
       Name_Chars.Append (ASCII.NUL);
+
+      if Debug.Debug_Flag_A then
+         Put_Line ("<<<< Appending: '" & Name_Buffer (1 .. Name_Len) &
+                     "' with index" & Name_Entries.Last'Image &
+                     " (Name_Find) >>>>");
+      end if;
 
       return Name_Entries.Last;
    end Name_Find;
