@@ -39,8 +39,6 @@ package GPR.Attr.PM is
    --  Remove from the package table all packages that have been added using
    --  procedure Add_Unknown_Package above.
 
-   procedure Remove_All_Packages;
-
    procedure Add_Attribute
      (To_Package     : Package_Node_Id;
       Attribute_Name : Name_Id;

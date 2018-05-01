@@ -24,7 +24,6 @@ with Ada.Text_IO;               use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with GPR.Attr.PM;
 with GPR.Com;
 with GPR.Env;
 with GPR.Names;      use GPR.Names;
@@ -1128,11 +1127,6 @@ package body GPRName is
             Opt.No_Backup := True;
          end;
       end if;
-
-      --  Clear the package table so that all the project's packages are marked
-      --  "ignored". This avoids missing attributes in the AST (see R404-033).
-
-      GPR.Attr.PM.Remove_All_Packages;
 
       Part.Parse
         (In_Tree                => Tree,

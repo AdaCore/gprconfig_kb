@@ -88,13 +88,4 @@ package body GPR.Attr.PM is
       end if;
    end Remove_Unknown_Packages;
 
-   -----------------------------
-   -- Remove_All_Packages --
-   -----------------------------
-
-   procedure Remove_All_Packages is
-   begin
-      Package_Attributes.Init;
-   end Remove_All_Packages;
-
 end GPR.Attr.PM;
