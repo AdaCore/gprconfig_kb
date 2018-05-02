@@ -1175,7 +1175,8 @@
        <target name="codepeer" />
     </targets>
     <config>
-    for Library_Support use "full";
+   for Library_Support use "full";
+   for Library_Builder use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
     </config>
   </configuration>
 
