@@ -2685,14 +2685,14 @@ package body Gprbuild.Post_Compile is
             Get_Name_String (For_Project.Display_Name));
       end if;
 
-      --  Check consistentcy and build environment
+      --  Check consistency and build environment
 
       if For_Project.Config.Lib_Support = None then
          Fail_Program (Project_Tree,
                        "library projects not supported on this platform");
 
       elsif not Is_Static (For_Project)
-            and then For_Project.Config.Lib_Support /= Full
+        and then For_Project.Config.Lib_Support /= Full
       then
          Fail_Program
            (Project_Tree,
@@ -2728,7 +2728,9 @@ package body Gprbuild.Post_Compile is
          end if;
       end if;
 
-      if Is_Static (For_Project) then
+      if Opt.CodePeer_Mode then
+         null;
+      elsif Is_Static (For_Project) then
          Check_Archive_Builder;
 
       elsif For_Project.Standalone_Library /= No then
@@ -3228,7 +3230,10 @@ package body Gprbuild.Post_Compile is
             Put_Line (Exchange_File, Library_Label (Gprexch.No_Create));
          end if;
 
-         if Is_Static (For_Project) then
+         if Opt.CodePeer_Mode then
+            Put_Line (Exchange_File, Library_Label (Gprexch.CodePeer_Mode));
+
+         elsif Is_Static (For_Project) then
             Put_Line (Exchange_File, Library_Label (Static));
 
             Put_Line (Exchange_File, Library_Label (Archive_Builder));
@@ -4893,50 +4898,48 @@ package body Gprbuild.Post_Compile is
 
       --  First, get the libraries in building order in table Library_Projs
 
-      if not Opt.CodePeer_Mode then
-         Process_Imported_Libraries
-           (Main_Project,
-            There_Are_SALs     => There_Are_Stand_Alone_Libraries,
-            And_Project_Itself => True);
+      Process_Imported_Libraries
+        (Main_Project,
+         There_Are_SALs     => There_Are_Stand_Alone_Libraries,
+         And_Project_Itself => True);
 
-         if not Library_Projs.Is_Empty then
-            declare
-               Lib_Projs : array (1 .. Library_Projs.Last_Index) of
-                             Library_Project;
-               Proj      : Library_Project;
+      if not Library_Projs.Is_Empty then
+         declare
+            Lib_Projs : array (1 .. Library_Projs.Last_Index) of
+                          Library_Project;
+            Proj      : Library_Project;
 
-            begin
-               --  Copy the list of library projects in local array Lib_Projs,
-               --  as procedure Build_Library uses table Library_Projs.
-               for J in Lib_Projs'Range loop
-                  Lib_Projs (J) := Library_Projs (J);
-               end loop;
+         begin
+            --  Copy the list of library projects in local array Lib_Projs,
+            --  as procedure Build_Library uses table Library_Projs.
+            for J in Lib_Projs'Range loop
+               Lib_Projs (J) := Library_Projs (J);
+            end loop;
 
-               for J in Lib_Projs'Range loop
-                  Proj := Lib_Projs (J);
+            for J in Lib_Projs'Range loop
+               Proj := Lib_Projs (J);
 
-                  if not Proj.Is_Aggregated then
-                     --  Try building a library only if no errors occured in
-                     --  library project and projects it depends on.
+               if not Proj.Is_Aggregated then
+                  --  Try building a library only if no errors occured in
+                  --  library project and projects it depends on.
 
-                     if not Project_Compilation_Failed (Proj.Proj) then
-                        if Proj.Proj.Extended_By = No_Project then
-                           if not Proj.Proj.Externally_Built then
-                              Build_Library
-                                (Proj.Proj, Project_Tree,
-                                 No_Create => Proj.Is_Aggregated);
-                           end if;
-
-                           if not Is_Static (Proj.Proj) then
-                              Shared_Libs := True;
-                           end if;
-
+                  if not Project_Compilation_Failed (Proj.Proj) then
+                     if Proj.Proj.Extended_By = No_Project then
+                        if not Proj.Proj.Externally_Built then
+                           Build_Library
+                             (Proj.Proj, Project_Tree,
+                              No_Create => Proj.Is_Aggregated);
                         end if;
+
+                        if not Is_Static (Proj.Proj) then
+                           Shared_Libs := True;
+                        end if;
+
                      end if;
                   end if;
-               end loop;
-            end;
-         end if;
+               end if;
+            end loop;
+         end;
       end if;
 
       --  If no main is specified, there is nothing else to do

@@ -125,7 +125,8 @@ package Gprexch is
       Script_Path,
       No_SAL_Binding,
       Mapping_File,
-      Project_Directory);
+      Project_Directory,
+      CodePeer_Mode);
 
    function Library_Label (Section : Library_Section) return String;
    --  Return the label for a section in a library exchange file

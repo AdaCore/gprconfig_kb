@@ -292,6 +292,8 @@ procedure Gprlib is
 
    Export_File_Switch            : String_Access;
 
+   CodePeer_Mode                 : Boolean := False;
+
    Success                       : Boolean;
 
    procedure Add_Rpath
@@ -1774,6 +1776,9 @@ procedure Gprlib is
             when Gprexch.No_SAL_Binding =>
                No_SAL_Binding := True;
 
+            when Gprexch.CodePeer_Mode =>
+               CodePeer_Mode := True;
+
             when others =>
                null;
             end case;
@@ -1789,6 +1794,9 @@ procedure Gprlib is
 
             when Gprexch.No_Create =>
                Fail_Program (null, "no create section should be empty");
+
+            when Gprexch.CodePeer_Mode =>
+               Fail_Program (null, "codepeer section should be empty");
 
             when Quiet =>
                Fail_Program (null, "quiet section should be empty");
@@ -2267,7 +2275,10 @@ begin
 
    --  Archives
 
-   if Static and then not No_Create then
+   if CodePeer_Mode then
+      null;
+
+   elsif Static and then not No_Create then
       Process_Static;
 
    elsif not No_Create then
