@@ -2616,6 +2616,8 @@ However, you can use aggregate projects to obtain an equivalent effect:
            for Project_Files use ("myproject.gpr");
        end Agg;
 
+  .. code-block:: gpr
+
        with "prj.gpr";  --  searched on Agg'Project_Path
        project MyProject is
           ...
