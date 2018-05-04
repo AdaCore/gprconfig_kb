@@ -922,7 +922,7 @@ package body GPR.Knowledge is
          function Compile_And_Check (Name : String) return Pattern_Matcher
          is
          begin
-            return Compile (Name, Case_Insensitive);
+            return Compile (Name, GNAT.Regpat.Case_Insensitive);
          exception
             when Expression_Error =>
                Put_Line
@@ -3259,12 +3259,12 @@ package body GPR.Knowledge is
                  Compile
                    (To_String
                       (Double_String_Lists.Element (Target).Positive_Regexp),
-                    Case_Insensitive);
+                    GNAT.Regpat.Case_Insensitive);
                Negative_Pattern : constant Pattern_Matcher :=
                  Compile
                    (To_String
                       (Double_String_Lists.Element (Target).Negative_Regexp),
-                    Case_Insensitive);
+                    GNAT.Regpat.Case_Insensitive);
 
                Ignore_Negative : constant Boolean :=
                  Double_String_Lists.Element (Target).Negative_Regexp = "";
