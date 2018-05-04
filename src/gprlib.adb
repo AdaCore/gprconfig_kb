@@ -2238,7 +2238,11 @@ begin
 
    Read_Exchange_File;
 
-   if Object_Files.Is_Empty then
+   --  In codepeer mode, we might end up with no object files for project
+   --  files with no Ada sources (e.g. C only). Do not consider this as
+   --  an error in this case.
+
+   if Object_Files.Is_Empty and not CodePeer_Mode then
       Fail_Program (null, "no object files specified");
    end if;
 

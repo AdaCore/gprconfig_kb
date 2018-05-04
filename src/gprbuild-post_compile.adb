@@ -3161,6 +3161,10 @@ package body Gprbuild.Post_Compile is
                   Exchange_File_Name.all);
          end;
 
+         if Opt.CodePeer_Mode then
+            Put_Line (Exchange_File, Library_Label (CodePeer_Mode));
+         end if;
+
          if Opt.Quiet_Output then
             Put_Line (Exchange_File, Library_Label (Quiet));
 
