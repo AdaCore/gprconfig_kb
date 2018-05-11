@@ -35,6 +35,7 @@ with Ada.Strings.Fixed;                      use Ada.Strings.Fixed;
 with Ada.Strings.Maps;                       use Ada.Strings.Maps;
 with Ada.Text_IO;               use Ada.Text_IO;
 with Ada.Streams.Stream_IO;     use Ada.Streams;
+with Ada.Exceptions;
 
 with GNAT.Calendar.Time_IO;     use GNAT.Calendar.Time_IO;
 with GNAT.Case_Util;            use GNAT.Case_Util;
@@ -1401,7 +1402,10 @@ package body GPR.Util is
                                           Iter : Source_Iterator;
                                           Src : Source_Id;
                                        begin
-                                          if Subunit_Name
+                                          if
+                                            Subunit_Name'Length >=
+                                              Uname'Length - 2
+                                              and then Subunit_Name
                                                (Subunit_Name'First ..
                                                 Subunit_Name'First +
                                                 Uname'Length - 3) =
@@ -1557,7 +1561,8 @@ package body GPR.Util is
       Cleanup;
 
    exception
-      when others =>
+      when Ex : others =>
+         Debug_Output (Ada.Exceptions.Exception_Information (Ex));
          Result.Clear;
          Status := Unknown_Error;
    end Get_Closures;
