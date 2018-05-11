@@ -1065,6 +1065,10 @@ procedure Gprlib is
             Bind_Options.Append ("-F=" & Mapping_File_Name.all);
          end if;
 
+         if CodePeer_Mode then
+            Bind_Options.Append ("-P");
+         end if;
+
          if not Quiet_Output then
             Name_Len := 0;
 

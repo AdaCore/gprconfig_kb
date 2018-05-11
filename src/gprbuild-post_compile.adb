@@ -52,6 +52,11 @@ package body Gprbuild.Post_Compile is
    --  is True then the actual static or shared library is not built, yet
    --  the exchange file with dependencies is created.
 
+   procedure Emit_Compiler_Switches
+     (Exchange_File : Text_IO.File_Type; Index : Name_List_Index);
+   --  Helper subprogram to emit and filter compiler switches given by
+   --  Index, one per line in the givenfile Exchange_File.
+
    procedure Post_Compilation_Phase
      (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref);
 
@@ -1330,7 +1335,6 @@ package body Gprbuild.Post_Compile is
             pragma Unreferenced (Tree, Dummy);
             Lang : Language_Ptr := Project.Languages;
             Indx : Name_List_Index;
-            Node : Name_Node;
 
          begin
             while Lang /= No_Language_Index loop
@@ -1342,12 +1346,11 @@ package body Gprbuild.Post_Compile is
                      Put_Line
                        (Exchange_File,
                         "language=" & Get_Name_String (Lang.Name));
+                     Emit_Compiler_Switches (Exchange_File, Indx);
 
-                     while Indx /= No_Name_List loop
-                        Node := Project_Tree.Shared.Name_Lists.Table (Indx);
-                        Put_Line (Exchange_File, Get_Name_String (Node.Name));
-                        Indx := Node.Next;
-                     end loop;
+                     if Opt.CodePeer_Mode then
+                        Put_Line (Exchange_File, "-gnatcC");
+                     end if;
                   end if;
                end if;
 
@@ -3487,6 +3490,44 @@ package body Gprbuild.Post_Compile is
       Change_Dir (Current_Dir);
    end Build_Library;
 
+   ----------------------------
+   -- Emit_Compiler_Switches --
+   ----------------------------
+
+   procedure Emit_Compiler_Switches
+     (Exchange_File : Text_IO.File_Type; Index : Name_List_Index)
+   is
+      Node           : Name_Node;
+      List           : Name_List_Index := Index;
+      Previous_Was_X : Boolean := False;
+
+   begin
+      while List /= No_Name_List loop
+         Node := Project_Tree.Shared.Name_Lists.Table (List);
+
+         declare
+            Arg : constant String := Get_Name_String (Node.Name);
+         begin
+            if Opt.CodePeer_Mode then
+               if Previous_Was_X then
+                  Put_Line (Exchange_File, "adascil");
+
+               --  Strip target specific -m switches in CodePeer mode.
+
+               elsif Arg'Length <= 2 or else Arg (1 .. 2) /= "-m" then
+                  Put_Line (Exchange_File, Arg);
+               end if;
+            else
+               Put_Line (Exchange_File, Arg);
+            end if;
+
+            Previous_Was_X := Arg = "-x";
+         end;
+
+         List := Node.Next;
+      end loop;
+   end Emit_Compiler_Switches;
+
    -----------------------------------
    -- Is_Included_In_Global_Archive --
    -----------------------------------
@@ -4372,10 +4413,10 @@ package body Gprbuild.Post_Compile is
             --  Then, the compiler path and required switches
 
             declare
-               Config         : Language_Config renames B_Data.Language.Config;
-               List           : Name_List_Index;
-               Nam_Nod        : Name_Node;
-               Previous_Was_X : Boolean := False;
+               Config  : Language_Config renames B_Data.Language.Config;
+               List    : Name_List_Index;
+               Nam_Nod : Name_Node;
+
             begin
                --  Compiler path
 
@@ -4393,34 +4434,7 @@ package body Gprbuild.Post_Compile is
                   Put_Line
                     (Exchange_File,
                      Binding_Label (Gprexch.Compiler_Leading_Switches));
-
-                  while List /= No_Name_List loop
-                     Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
-
-                     declare
-                        Arg : constant String :=
-                          Get_Name_String (Nam_Nod.Name);
-                     begin
-                        if Opt.CodePeer_Mode then
-                           if Previous_Was_X then
-                              Put_Line (Exchange_File, "adascil");
-
-                           --  Strip target specific -m switches in CodePeer
-                           --  mode.
-
-                           elsif Arg'Length <= 2 or else Arg (1 .. 2) /= "-m"
-                           then
-                              Put_Line (Exchange_File, Arg);
-                           end if;
-                        else
-                           Put_Line (Exchange_File, Arg);
-                        end if;
-
-                        Previous_Was_X := Arg = "-x";
-                     end;
-
-                     List := Nam_Nod.Next;
-                  end loop;
+                  Emit_Compiler_Switches (Exchange_File, List);
 
                   if Opt.CodePeer_Mode then
                      Put_Line (Exchange_File, "-gnatcC");
