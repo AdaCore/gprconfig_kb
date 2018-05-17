@@ -1781,7 +1781,13 @@ package body GPR.Proc is
             end;
          end if;
 
-         if Value.Kind /= Undefined and then Reset_Value then
+         if Value.Kind /= Undefined and then Reset_Value
+           and then not Env.Flags.Incomplete_Withs
+         then
+            --  The type we are looking for might be from a missing with
+            --  project, in that case we cannot search for the first value.
+            --  We supress corresponding error/warning messages in this case
+            --  as well anyway.
             Current_String :=
               First_Literal_String
                 (String_Type_Of (Declaration, Node_Tree), Node_Tree);
