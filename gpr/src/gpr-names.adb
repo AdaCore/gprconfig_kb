@@ -174,7 +174,7 @@ package body GPR.Names is
 
    begin
       if Debug.Debug_Flag_A then
-         Put ("<<<< Accessing index" & Id'Image &
+         Put ("<<<< Accessing index" & Id'Img &
                 " (procedure Get_Name_String)");
       end if;
 
@@ -218,7 +218,7 @@ package body GPR.Names is
 
    begin
       if Debug.Debug_Flag_A then
-         Put ("<<<< Accessing index" & Id'Image &
+         Put ("<<<< Accessing index" & Id'Img &
                 " (function Get_Name_String)");
       end if;
 
@@ -265,7 +265,7 @@ package body GPR.Names is
 
    begin
       if Debug.Debug_Flag_A then
-         Put ("<<<< Accessing index" & Id'Image &
+         Put ("<<<< Accessing index" & Id'Img &
                 " (Get_Name_String_And_Append)");
       end if;
 
@@ -386,7 +386,7 @@ package body GPR.Names is
 
       if Debug.Debug_Flag_A then
          Put_Line ("<<<< Appending: '" & Name_Buffer (1 .. Name_Len) &
-                     "' with index" & Name_Entries.Last'Image &
+                     "' with index" & Name_Entries.Last'Img &
                      " (Name_Enter) >>>>");
       end if;
 
@@ -432,7 +432,7 @@ package body GPR.Names is
             end loop;
 
             if Debug.Debug_Flag_A then
-               Put_Line ("<<<< Found index" & New_Id'Image & " for: '"
+               Put_Line ("<<<< Found index" & New_Id'Img & " for: '"
                          & Name_Buffer (1 .. Name_Len) & "' (Name_Find) >>>>");
             end if;
 
@@ -471,7 +471,7 @@ package body GPR.Names is
 
       if Debug.Debug_Flag_A then
          Put_Line ("<<<< Appending: '" & Name_Buffer (1 .. Name_Len) &
-                     "' with index" & Name_Entries.Last'Image &
+                     "' with index" & Name_Entries.Last'Img &
                      " (Name_Find) >>>>");
       end if;
 
