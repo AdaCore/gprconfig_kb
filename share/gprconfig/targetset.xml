@@ -252,6 +252,12 @@
     <target>powerpc-xcoff-lynxos178.*</target>
   </targetset>
 
+  <!-- x86-lynx178elf -->
+  <targetset canonical="x86-lynx178elf">
+    <target>x86-lynx178elf</target>
+    <target>i586-elf-lynxos178e</target>
+  </targetset>
+
   <!-- x86-lynx5-.* -->
   <targetset canonical="x86-lynx5">
     <target>x86-lynx5</target>
