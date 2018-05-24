@@ -26,6 +26,7 @@ with Ada.Unchecked_Deallocation;
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
+with Ada.Strings.Hash;
 with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
@@ -4415,7 +4416,159 @@ package body GPR.Knowledge is
    is
       Map : String_Lists.List;
       C   : String_Lists.Cursor;
+
+      Comma_Counter : Natural := 0;
+
+      function Positional_Parameters return Boolean;
+      --  Returns True if configuration parameters are given in a positional
+      --  form, --  i.e. --config=language:ada,runtime:sjlj
+      --  Also checks that the two modes are not mixed up and raises
+      --  Invalid_Config otherwise.
+
+      procedure Process_Positional_Parameters;
+      --  Puts named parameters in proper order into Map list, also checks for
+      --  duplicate parameter names.
+
+      function Positional_Parameters return Boolean is
+         Cur : String_Lists.Cursor;
+
+         Positional_Present     : Boolean := False;
+         Not_Positional_Present : Boolean := False;
+      begin
+         Cur := First (Map);
+         while Cur /= String_Lists.No_Element loop
+            declare
+               S : constant String := To_Lower (String_Lists.Element (Cur));
+            begin
+               if S /= "" then
+                  if Index (S, ":") = 0 then
+                     if Positional_Present then
+                        Put_Line
+                          (Standard_Error,
+                           "Mixing positional and not "
+                           & "positional parameters in """
+                           & Config & """");
+                        raise Invalid_Config;
+                     end if;
+
+                     Not_Positional_Present := True;
+                  else
+                     if Not_Positional_Present then
+                        Put_Line
+                          (Standard_Error,
+                           "Mixing positional and not "
+                           & "positional parameters in """
+                           & Config & """");
+                        raise Invalid_Config;
+                     end if;
+
+                     Positional_Present := True;
+                  end if;
+               end if;
+            end;
+            Next (Cur);
+         end loop;
+
+         return Positional_Present;
+      end Positional_Parameters;
+
+      procedure Process_Positional_Parameters is
+         Cur    : String_Lists.Cursor := Map.First;
+
+         package Parameter_Maps is new
+           Ada.Containers.Indefinite_Hashed_Maps
+             (String, String, Ada.Strings.Hash, "=");
+         Parameter_Map : Parameter_Maps.Map;
+
+      begin
+         Parameter_Map.Include ("language", "");
+         Parameter_Map.Include ("version", "");
+         Parameter_Map.Include ("runtime", "");
+         Parameter_Map.Include ("path", "");
+         Parameter_Map.Include ("name", "");
+
+         while Cur /= String_Lists.No_Element loop
+
+            if String_Lists.Element (Cur) = "" then
+               goto Next_Element;
+            end if;
+
+            declare
+               S   : constant String := String_Lists.Element (Cur);
+               Idx : Integer;
+            begin
+               Idx := Index (S, ":");
+
+               if Idx = S'First then
+                  Put_Line
+                    (Standard_Error,
+                     "Parameter name not specified in """ & Config & """");
+                  raise Invalid_Config;
+               end if;
+               if Idx = S'Last then
+                  Put_Line
+                    (Standard_Error,
+                     "Parameter value not specified in """ & Config & """");
+                  raise Invalid_Config;
+               end if;
+
+               declare
+                  P_Name : constant String :=
+                    To_Lower (S (S'First .. Idx - 1));
+                  P_Val  : constant String := S (Idx + 1 .. S'Last);
+               begin
+
+                  if not Parameter_Map.Contains (P_Name) then
+                     Put_Line
+                       (Standard_Error,
+                        "Unknown configuration parameter """
+                        & S (S'First .. Idx - 1)
+                        & """");
+                     raise Invalid_Config;
+                  end if;
+
+                  if Parameter_Map.Element (P_Name) /= "" then
+                     Put_Line
+                       (Standard_Error,
+                        "Configuration parameter """
+                        & P_Name
+                        & """ specified twice");
+                     raise Invalid_Config;
+                  end if;
+
+                  Parameter_Map.Replace (P_Name, P_Val);
+               end;
+            end;
+
+            <<Next_Element>>
+            Next (Cur);
+         end loop;
+
+         Map.Clear;
+
+         Map.Append (Parameter_Map.Element ("language"));
+         Map.Append (Parameter_Map.Element ("version"));
+         Map.Append (Parameter_Map.Element ("runtime"));
+         Map.Append (Parameter_Map.Element ("path"));
+         Map.Append (Parameter_Map.Element ("name"));
+
+         Parameter_Map.Clear;
+      end Process_Positional_Parameters;
    begin
+      --  Not more than 4 commas can be in valid configuration.
+      for I in Config'Range loop
+         if Config (I) = ',' then
+            Comma_Counter := Comma_Counter + 1;
+         end if;
+      end loop;
+
+      if Comma_Counter > 4 then
+         Put_Line
+           (Standard_Error,
+            "Too many arguments in configuration """ & Config & """");
+         raise Invalid_Config;
+      end if;
+
       --  Only valid separator is ',', not spaces
       Get_Words
         (Config, Filter       => No_Name,
@@ -4423,6 +4576,10 @@ package body GPR.Knowledge is
          Separator1           => ',',
          Separator2           => ',',
          Allow_Empty_Elements => True);
+
+      if Positional_Parameters then
+         Process_Positional_Parameters;
+      end if;
 
       Compiler := new Knowledge.Compiler;
 
