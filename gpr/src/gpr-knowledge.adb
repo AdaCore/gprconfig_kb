@@ -4441,7 +4441,12 @@ package body GPR.Knowledge is
                S : constant String := To_Lower (String_Lists.Element (Cur));
             begin
                if S /= "" then
-                  if Index (S, ":") = 0 then
+                  if Index (S, "language:") = 0
+                    and then Index (S, "version:") = 0
+                    and then Index (S, "runtime:") = 0
+                    and then Index (S, "path:") = 0
+                    and then Index (S, "name:") = 0
+                  then
                      if Positional_Present then
                         Put_Line
                           (Standard_Error,
