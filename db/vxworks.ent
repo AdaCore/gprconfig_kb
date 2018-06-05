@@ -338,6 +338,7 @@
      <!-- vx6, vx7 and vx6cert -->
 
      &config_ada_linker;
+     &config_ada_partial_link;
   </configuration>
 
    <configuration>
@@ -347,6 +348,15 @@
      <!-- vx6, vx7 and vx6cert -->
 
      &config_cpp_linker;
+     &config_cpp_partial_link;
+   </configuration>
+
+   <configuration>
+     &if_c_only;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_c_partial_link;
    </configuration>'
 
   >

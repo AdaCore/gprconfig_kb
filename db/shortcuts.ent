@@ -56,3 +56,23 @@
      </configuration>'
    >
 
+   <!ENTITY config_ada_partial_link
+    '<config>
+   for Library_Partial_Linker use
+         (PATH_ADA &amp; PREFIX_ADA &amp; "gcc", "-nostdlib", "-Wl,-r", "-o");
+     </config>'
+   >
+
+   <!ENTITY config_cpp_partial_link
+    '<config>
+   for Library_Partial_Linker use
+         (PATH_CPP &amp; EXEC_CPP, "-nostdlib", "-Wl,-r", "-o");
+     </config>'
+   >
+
+   <!ENTITY config_c_partial_link
+    '<config>
+   for Library_Partial_Linker use
+         (PATH_C &amp; EXEC_C, "-nostdlib", "-Wl,-r", "-o");
+     </config>'
+   >
