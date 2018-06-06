@@ -6220,7 +6220,52 @@ package body GPR.Nmsc is
                Source_Files.Location, Project);
          end if;
 
-      elsif Source_Dirs.Default then
+         --  No source dirs: nothing further to do
+
+         return;
+      end if;
+
+      if Src_Subdirs /= null then
+
+         --  If found, add <object dir>/<src-subdirs> in front of the source
+         --  directories so that files found in this directory will override
+         --  original source files.
+
+         declare
+            N         : String :=
+                          Get_Name_String (Project.Object_Directory.Name)
+                          & Src_Subdirs.all & Directory_Separator;
+            Display_N : constant String :=
+              Get_Name_String (Project.Object_Directory.Display_Name)
+              & Src_Subdirs.all & Directory_Separator;
+
+            Name         : Path_Name_Type;
+            Display_Name : Path_Name_Type;
+
+         begin
+            if Is_Directory (N) then
+               Canonical_Case_File_Name (N);
+               Name_Len := N'Length;
+               Name_Buffer (1 .. Name_Len) := N;
+               Name := Name_Find;
+
+               Name_Len := Display_N'Length;
+               Name_Buffer (1 .. Name_Len) := Display_N;
+               Display_Name := Name_Find;
+
+               --  Set Rank to 0 so that duplicate units are silently accepted.
+
+               Remove_Source_Dirs := False;
+               Add_To_Or_Remove_From_Source_Dirs
+                 (Path =>
+                    (Name         => Name,
+                     Display_Name => Display_Name),
+                  Rank => 0);
+            end if;
+         end;
+      end if;
+
+      if Source_Dirs.Default then
 
          --  No Source_Dirs specified: the single source directory is the one
          --  containing the project file.

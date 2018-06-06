@@ -343,6 +343,10 @@ package GPR is
    --  The value after the equal sign in switch --subdirs=...
    --  Contains the relative subdirectory.
 
+   Src_Subdirs : String_Access := null;
+   --  The value after the equal sign in switch --src-subdirs=...
+   --  Contains the relative subdirectory.
+
    Build_Tree_Dir : String_Access := null;
    --  A root directory for building out-of-tree projects. All relative object
    --  directories will be rooted at this location.

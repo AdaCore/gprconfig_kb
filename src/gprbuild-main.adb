@@ -1086,6 +1086,13 @@ procedure Gprbuild.Main is
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
+         elsif Arg'Length > Src_Subdirs_Option'Length
+           and then Arg (1 .. Src_Subdirs_Option'Length) = Src_Subdirs_Option
+         then
+            Forbidden_In_Package_Builder;
+            Src_Subdirs :=
+              new String'(Arg (Src_Subdirs_Option'Length + 1 .. Arg'Last));
+
          elsif Arg'Length >= Relocate_Build_Tree_Option'Length
            and then Arg (1 .. Relocate_Build_Tree_Option'Length)
                     = Relocate_Build_Tree_Option
@@ -1981,6 +1988,14 @@ procedure Gprbuild.Main is
          Put ("  --root-dir=dir");
          New_Line;
          Put ("           Root directory of obj/lib/exec to relocate");
+         New_Line;
+
+         --  Line for --src-subdirs=
+
+         Put ("  --src-subdirs=dir");
+         New_Line;
+         Put ("           Prepend <obj>/dir to the list of source dirs" &
+              " for each project");
          New_Line;
 
          --  Line for --subdirs=

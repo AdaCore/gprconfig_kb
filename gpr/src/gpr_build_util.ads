@@ -60,6 +60,10 @@ package Gpr_Build_Util is
    --  Switch used to indicate that the real directories (object, exec,
    --  library, ...) are subdirectories of those in the project file.
 
+   Src_Subdirs_Option : constant String := "--src-subdirs=";
+   --  Switch used to indicate that there may be subdirectories of source
+   --  directories specified in the project file, overriding source files.
+
    Relocate_Build_Tree_Option : constant String := "--relocate-build-tree";
    --  Switch to build out-of-tree. In this context the object, exec and
    --  library directories are relocated to the current working directory

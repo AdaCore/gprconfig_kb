@@ -45,10 +45,11 @@ package body Gprclean is
    procedure Clean_Archive (Project : Project_Id);
    --  Delete a global archive and its dependency file, if they exist
 
-   procedure Clean_Interface_Copy_Directory
-     (Project : Project_Id; Project_Tree : Project_Tree_Ref);
-   --  Delete files in an interface copy directory: any file that is a copy of
-   --  a source of the project.
+   procedure Clean_Temp_Source_Directory
+     (Project : Project_Id; Project_Tree : Project_Tree_Ref; Dir : String);
+   --  Delete files in a given temporary source directory (e.g. interface copy
+   --  directory or specified via --src-subdirs): any file that is a copy of
+   --  a source of the project is delete.
 
    procedure Clean_Library_Directory
      (Project      : Project_Id;
@@ -102,12 +103,12 @@ package body Gprclean is
       end if;
    end Clean_Archive;
 
-   ------------------------------------
-   -- Clean_Interface_Copy_Directory --
-   ------------------------------------
+   ---------------------------------
+   -- Clean_Temp_Source_Directory --
+   ---------------------------------
 
-   procedure Clean_Interface_Copy_Directory
-     (Project : Project_Id; Project_Tree : Project_Tree_Ref)
+   procedure Clean_Temp_Source_Directory
+     (Project : Project_Id; Project_Tree : Project_Tree_Ref; Dir : String)
    is
       Current : constant String := Get_Current_Dir;
 
@@ -118,76 +119,67 @@ package body Gprclean is
 
       Delete_File : Boolean;
 
-      Source      : GPR.Source_Id;
-
-      File_Name   : File_Name_Type;
+      Source    : GPR.Source_Id;
+      File_Name : File_Name_Type;
+      Iter      : Source_Iterator;
 
    begin
-      if Project.Library
-        and then Project.Library_Src_Dir /= No_Path_Information
-      then
-         declare
-            Directory : constant String :=
-                          Get_Name_String (Project.Library_Src_Dir.Name);
-            Iter      : Source_Iterator;
-
-         begin
-            if Is_Directory (Directory) then
-               Change_Dir (Directory);
-               Open (Direc, ".");
-
-               --  For each regular file in the directory, if switch -n has not
-               --  been specified, make it writable and delete the file if it
-               --  is a copy of a source of the project.
-
-               loop
-                  Read (Direc, Name, Last);
-                  exit when Last = 0;
-
-                  if Is_Regular_File (Name (1 .. Last)) then
-                     Osint.Canonical_Case_File_Name (Name (1 .. Last));
-
-                     Name_Len := Last;
-                     Name_Buffer (1 .. Name_Len) := Name (1 .. Last);
-                     File_Name := Name_Find;
-
-                     Delete_File := False;
-
-                     Iter := For_Each_Source (Project_Tree);
-
-                     loop
-                        Source := GPR.Element (Iter);
-                        exit when Source = No_Source;
-
-                        if Ultimate_Extension_Of (Source.Project) = Project
-                          and then Source.File = File_Name
-                        then
-                           Delete_File := True;
-                           exit;
-                        end if;
-
-                        Next (Iter);
-                     end loop;
-
-                     if Delete_File then
-                        if not Do_Nothing then
-                           Set_Writable (Name (1 .. Last));
-                        end if;
-
-                        Delete (Directory, Name (1 .. Last));
-                     end if;
-                  end if;
-               end loop;
-
-               Close (Direc);
-
-               --  Restore the initial working directory
-
-               Change_Dir (Current);
-            end if;
-         end;
+      if not Is_Directory (Dir) then
+         return;
       end if;
-   end Clean_Interface_Copy_Directory;
+
+      Change_Dir (Dir);
+      Open (Direc, ".");
+
+      --  For each regular file in the directory, if switch -n has not
+      --  been specified, make it writable and delete the file if it
+      --  is a copy of a source of the project.
+
+      loop
+         Read (Direc, Name, Last);
+         exit when Last = 0;
+
+         if Is_Regular_File (Name (1 .. Last)) then
+            Osint.Canonical_Case_File_Name (Name (1 .. Last));
+
+            Name_Len := Last;
+            Name_Buffer (1 .. Name_Len) := Name (1 .. Last);
+            File_Name := Name_Find;
+
+            Delete_File := False;
+
+            Iter := For_Each_Source (Project_Tree);
+
+            loop
+               Source := GPR.Element (Iter);
+               exit when Source = No_Source;
+
+               if Ultimate_Extension_Of (Source.Project) = Project
+                 and then Source.File = File_Name
+               then
+                  Delete_File := True;
+                  exit;
+               end if;
+
+               Next (Iter);
+            end loop;
+
+            if Delete_File then
+               if not Do_Nothing then
+                  Set_Writable (Name (1 .. Last));
+               end if;
+
+               Delete (Dir, Name (1 .. Last));
+            end if;
+         end if;
+      end loop;
+
+      Close (Direc);
+
+      --  Restore the initial working directory
+
+      Change_Dir (Current);
+   end Clean_Temp_Source_Directory;
 
    -----------------------------
    -- Clean_Library_Directory --
@@ -853,7 +845,15 @@ package body Gprclean is
                --  object file when the artifacts are given as a regexp.
 
                Clean_Artifacts
-                    (Obj_Dir, Project.Config.Artifacts_In_Object_Dir);
+                 (Obj_Dir, Project.Config.Artifacts_In_Object_Dir);
+
+               --  Also clean source files under Src_Subdirs if set, unless
+               --  -c was specified.
+
+               if Src_Subdirs /= null and then not Compile_Only then
+                  Clean_Temp_Source_Directory
+                    (Project, Project_Tree, Obj_Dir & Src_Subdirs.all);
+               end if;
             end;
          end if;
 
@@ -863,13 +863,14 @@ package body Gprclean is
 
          --  The directories are cleaned only if switch -c is not specified
 
-         if Project.Library then
-            if not Compile_Only then
-               Clean_Library_Directory (Project, Project_Tree);
+         if Project.Library and then not Compile_Only then
+            Clean_Library_Directory (Project, Project_Tree);
 
-               if Project.Library_Src_Dir /= No_Path_Information then
-                  Clean_Interface_Copy_Directory (Project, Project_Tree);
-               end if;
+            if Project.Library_Src_Dir /= No_Path_Information then
+               Clean_Temp_Source_Directory
+                 (Project,
+                  Project_Tree,
+                  Get_Name_String (Project.Library_Src_Dir.Name));
             end if;
          end if;
 

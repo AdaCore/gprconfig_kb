@@ -1848,6 +1848,13 @@ The switches for GPRclean are:
 
   Real object, library or exec directories are subdirectories `dir` of the specified ones.
 
+* :samp:`--src-subdirs={subdir}`
+
+  This adds the given subdirectory (relative to each object directory of the
+  project tree) to the list of source directories of the project, one directory
+  per object directory. GPRclean will remove the project source files found
+  in these subdirectories. This option may be combined with :samp:`--subdirs`.
+
 * :samp:`--relocate-build-tree[={dir}]`
 
   With this option it is possible to achieve out-of-tree build. That

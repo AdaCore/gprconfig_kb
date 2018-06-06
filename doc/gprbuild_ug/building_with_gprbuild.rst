@@ -297,6 +297,14 @@ package Builder of the main project:
   subdirectory exists, it is used, otherwise the directory without --subdirs=
   is used in externally built projects.
 
+* :samp:`--src-subdirs={subdir}`
+
+  This adds the given subdirectory (relative to each object directory of the
+  project tree) to the list of source directories of the project, one directory
+  per object directory. This is useful for overriding temporarily some source
+  files for the purpose of e.g. source instrumentation such as source coverage
+  or preprocessing. This option may be combined with :samp:`--subdirs`.
+
 * :samp:`--relocate-build-tree[={dir}]`
 
   With this option it is possible to achieve out-of-tree build. That

@@ -491,6 +491,14 @@ procedure Gprclean.Main is
                  new String'
                    (Switch (Subdirs_Option'Length + 1 .. Switch'Last));
 
+            elsif Switch'Length > Src_Subdirs_Option'Length
+              and then
+                Switch (1 .. Src_Subdirs_Option'Length) = Src_Subdirs_Option
+            then
+               Src_Subdirs :=
+                 new String'
+                   (Switch (Src_Subdirs_Option'Length + 1 .. Switch'Last));
+
             elsif Switch'Length >= Relocate_Build_Tree_Option'Length
               and then Switch (1 .. Relocate_Build_Tree_Option'Length)
               = Relocate_Build_Tree_Option
@@ -764,6 +772,9 @@ procedure Gprclean.Main is
          Put_Line ("  --root-dir=dir");
          Put_Line ("           Root directory of obj/lib/exec to relocate");
 
+         Put_Line ("  --src-subdirs=dir");
+         Put_Line ("           Prepend <obj>/dir to the list of source dirs" &
+                   " for each project");
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
          Put_Line ("  " & Gpr_Build_Util.Unchecked_Shared_Lib_Imports);
