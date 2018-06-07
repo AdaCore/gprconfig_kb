@@ -3631,7 +3631,9 @@ package body GPR.Util is
             end if;
 
             declare
-               Compiler_Name : constant String := Get_Name_String (Compiler);
+               Compiler_Name : constant String :=
+                 (if CodePeer_Mode then "codepeer-gcc"
+                  else Get_Name_String (Compiler));
             begin
                if Compiler_Name = "" then
                   return null;
