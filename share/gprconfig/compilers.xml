@@ -214,6 +214,54 @@
     <target>codepeer</target>
   </compiler_description>
 
+  <!--  Generic GNAT LLVM Target -->
+
+  <compiler_description>
+    <name>GNAT_LLVM</name>
+    <executable prefix="1">(llvm-)gnatls</executable>
+    <version>
+      <external>${PREFIX}gnatls -v</external>
+      <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <variable name="gcc_version">
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+    </variable>
+    <runtimes default="default,native">
+       <directory group="default" >\.\./lib/rts-native/adalib/</directory>
+    </runtimes>
+    <target>llvm</target>
+  </compiler_description>
+
+  <!--  Generic C compiler for LLVM  -->
+  <compiler_description>
+    <name>C_LLVM</name>
+    <executable>clang</executable>
+    <version>
+      <external>clang --version</external>
+
+      <!--  'clang version 6.0.0 ...'  -->
+      <grep regexp="^clang version (\S+) " group="1"></grep>
+    </version>
+    <languages>C</languages>
+    <target>llvm</target>
+  </compiler_description>
+
+  <!--  Generic C++ compiler for LLVM  -->
+  <compiler_description>
+    <name>C++_LLVM</name>
+    <executable>clang\+\+</executable>
+    <version>
+      <external>clang++ --version</external>
+
+      <!--  'clang version 6.0.0 ...'  -->
+      <grep regexp="^clang version (\S+) " group="1"></grep>
+    </version>
+    <languages>C++</languages>
+    <target>llvm</target>
+  </compiler_description>
+
   <!--  C Target -->
 
   <compiler_description>

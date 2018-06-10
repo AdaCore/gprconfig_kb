@@ -204,6 +204,7 @@
        <compiler name="^GNAT_DOTNET$" />
        <compiler name="^GNAT_C$" />
        <compiler name="^GNAT_CODEPEER$" />
+       <compiler name="^GNAT_LLVM$" />
      </compilers>
      <config>
    package Binder is

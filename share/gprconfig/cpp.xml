@@ -51,6 +51,17 @@
 
    <configuration>
      <compilers>
+       <compiler name="LLVM" language="C++" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver              ("C++") use "${PATH(c++)}clang++";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
         <compiler name="^G\+\+$" language="C++" />
         <compiler name="^G\+\+_Pro$" language="C++" />
         <compiler name="^G\+\+-WRS653-PPC$" language="C++" />
@@ -64,7 +75,7 @@
         <compiler name="^G\+\+-WRS7PPC$" language="C++" />
         <compiler name="^G\+\+-WRS7X86$" language="C++" />
         <compiler name="^GCC-CYGMING$" language="C++" />
-       <compiler name="^GCC-MINGW32$" language="C++" />
+        <compiler name="^GCC-MINGW32$" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -73,6 +84,22 @@
         Compiler'Leading_Required_Switches ("C++");
       for Dependency_Switches ("C++") use ("-MMD", "-MF", "");
       for Include_Switches_Via_Spec ("C++") use ("cc1plus", "-I");
+      for Max_Command_Line_Length use "8192";
+      for Response_File_Format    ("C++") use "GCC_GNU";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+        <compiler name="LLVM" language="C++" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C++") use
+        ("-c", "-x", "c++") &amp;
+        Compiler'Leading_Required_Switches ("C++");
+      for Dependency_Switches ("C++") use ("-MMD", "-MF", "");
       for Max_Command_Line_Length use "8192";
       for Response_File_Format    ("C++") use "GCC_GNU";
    end Compiler;
@@ -103,7 +130,6 @@
    end Compiler;
      </config>
    </configuration>
-
 
    <!-- G++-WRS5 does not support -MF switch -->
    <configuration>
