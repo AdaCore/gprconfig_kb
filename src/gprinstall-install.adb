@@ -1313,7 +1313,7 @@ package body Gprinstall.Install is
                                  then Prep_Filename
                                  else Get_Name_String (Sid.Path.Display_Name)),
                         To   => Sources_Dir,
-                        File => Get_Name_String (Sid.File));
+                        File => Get_Name_String (Sid.Display_File));
                   end if;
                end;
             end if;
