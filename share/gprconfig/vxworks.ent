@@ -330,16 +330,15 @@
      &config_mlongcall_cpp;
    </configuration>
 
-  <!-- For VxWorks use Ada driver as default for linking, since cc*
-       and c++* do not recognize the -crtbe switch needed for ZCX -->
-  <configuration>
+   <!-- For VxWorks use Ada driver as default for linking, since cc*
+        and c++* do not recognize the -crtbe switch needed for ZCX -->
+   <configuration>
      &if_ada;
      &if_this_target;
      <!-- vx6, vx7 and vx6cert -->
 
      &config_ada_linker;
-     &config_ada_partial_link;
-  </configuration>
+   </configuration>
 
    <configuration>
      &if_no_ada;
@@ -348,6 +347,24 @@
      <!-- vx6, vx7 and vx6cert -->
 
      &config_cpp_linker;
+   </configuration>
+
+   <!-- Partial link enabled when generating static libraries -->
+
+   <configuration>
+     &if_ada;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_ada_partial_link;
+   </configuration>
+
+   <configuration>
+     &if_no_ada;
+     &if_cpp;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
      &config_cpp_partial_link;
    </configuration>
 
@@ -357,6 +374,5 @@
      <!-- vx6, vx7 and vx6cert -->
 
      &config_c_partial_link;
-   </configuration>'
-
-  >
+   </configuration>
+  '>
