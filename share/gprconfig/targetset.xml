@@ -364,6 +364,12 @@
     <target>aarch64-nto-qnx</target>
   </targetset>
 
+  <!-- aarch64-vx7 (vxworks 7) -->
+  <targetset canonical="aarch64-vx7">
+    <target>aarch64-vx7</target>
+    <target>aarch64-wrs-vxworks7</target>
+  </targetset>
+
   <!-- ppc-elf-.*  -->
   <targetset canonical="ppc-elf">
     <target>ppc-elf</target>
