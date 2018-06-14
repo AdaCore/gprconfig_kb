@@ -225,3 +225,7 @@ examples: force
 	make -C $(MAKEPREFIX)examples
 
 force:
+
+# Let gprbuild handle parallelization. In general, we don't support parallel
+# runs in this Makefile, as concurrent gprinstall processes may crash.
+.NOTPARALLEL:
