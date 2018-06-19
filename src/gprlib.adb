@@ -296,6 +296,10 @@ procedure Gprlib is
 
    Success                       : Boolean;
 
+   Linker_Option_Object_File     : String_Access := null;
+   --  For SALs: object file receiving the .GPR.linker_options section.
+   --  The file used depends on whether a partial link is done or not.
+
    procedure Add_Rpath
      (Path     : String;
       Absolute : Boolean := False);
@@ -967,6 +971,9 @@ procedure Gprlib is
       Osint.Canonical_Case_File_Name (Binder_Generated_Object);
 
       if not No_SAL_Binding then
+         Linker_Option_Object_File := new String'(Binder_Generated_Object);
+         --  We will add the Linker Opt section to b__<lib>.o
+
          Gnatbind_Path := Locate_Exec_On_Path (Gnatbind_Name.all);
 
          if Gnatbind_Path = null then
@@ -1435,7 +1442,6 @@ procedure Gprlib is
       Last_AB_Object_Pos  : Natural;
       --  Various indexes in AB_Options used when building an archive in chunks
 
-      use String_Vectors;
    begin
       if Standalone /= No and then Partial_Linker /= null then
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
@@ -1564,11 +1570,108 @@ procedure Gprlib is
             end;
          end loop;
 
+         Linker_Option_Object_File := new String'
+           (Partial_Name (Library_Name.all, 0, Object_Suffix));
+         --  We will add the Linker Opt section to p__<lib>_0.o
+
       else
          --  Not a standalone library, or Partial linker is not specified.
          --  Put all objects in the archive.
 
          AB_Objects.Append (Object_Files);
+
+      end if;
+
+      --  Add the .GPR.linker_options section to Linker_Option_Object_File
+      if Linker_Option_Object_File /= null then
+
+         --  Retrieve the relevant options in the binder-generated file.
+         --  ??? This is a duplicated code from Process_Standalone!
+         --  A refactoring would be nice.
+         declare
+            BG_File          : File_Type;
+            Line             : String (1 .. 1_000);
+            Last             : Natural;
+            Start_Retrieving : Boolean := False;
+            Options_File     : constant String := Library_Name.all &
+              ".linker_options";
+
+            Objcopy_Path : constant String := Compiler_Name
+              (Compiler_Name'First .. Compiler_Name'Last - 3) & "objcopy";
+            Objcopy_Exec : constant String_Access := Locate_Exec_On_Path
+              (Objcopy_Path);
+            Objcopy_Args : String_Vectors.Vector;
+
+         begin
+            Open (BG_File, In_File, "b__" & Library_Name.all & ".adb");
+            Create (IO_File, Out_File, Options_File);
+
+            while not End_Of_File (BG_File) loop
+               Get_Line (BG_File, Line, Last);
+               exit when Line (1 .. Last) = Begin_Info;
+            end loop;
+
+            while not End_Of_File (BG_File) loop
+               Get_Line (BG_File, Line, Last);
+               exit when Line (1 .. Last) = End_Info;
+
+               if not Start_Retrieving and then Line (9 .. 10) = "-L" then
+                  Start_Retrieving := True;
+               end if;
+
+               if Start_Retrieving then
+                  Put_Line (IO_File, Line (9 .. Last));
+               end if;
+            end loop;
+
+            Close (BG_File);
+            Close (IO_File);
+
+            Objcopy_Args.Append ("--add-section");
+            Objcopy_Args.Append (".GPR.linker_options=" & Options_File);
+            Objcopy_Args.Append (Linker_Option_Object_File.all);
+
+            if not Quiet_Output then
+               Name_Len := 0;
+
+               if Verbose_Mode then
+                  Add_Str_To_Name_Buffer (Objcopy_Path);
+
+                  for Arg of Objcopy_Args loop
+                     Add_Str_To_Name_Buffer (" ");
+                     Add_Str_To_Name_Buffer (Arg);
+                  end loop;
+
+                  Put_Line (Name_Buffer (1 .. Name_Len));
+
+               else
+                  Display
+                    (Section  => Build_Libraries,
+                     Command  => "objcopy",
+                     Argument => Linker_Option_Object_File.all);
+               end if;
+            end if;
+
+            if Objcopy_Exec = null and then not Quiet_Output then
+               Put ("Warning: unable to locate objcopy " &
+                           Objcopy_Path & ".");
+               Success := False;
+
+            else
+               Spawn_And_Script_Write (Objcopy_Path,
+                                       Objcopy_Args,
+                                       Success);
+
+               if not Success and then not Quiet_Output then
+                  Put ("Warning: invocation of " &
+                              Objcopy_Path & " failed.");
+               end if;
+            end if;
+
+            if not Success and then not Quiet_Output then
+               Put_Line (" Linker options for SAL will not be stored.");
+            end if;
+         end;
       end if;
 
       --  Delete the archive if it already exists, to avoid having duplicated
