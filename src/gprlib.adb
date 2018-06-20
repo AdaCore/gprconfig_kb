@@ -1548,7 +1548,7 @@ procedure Gprlib is
                Name_Len := 0;
                Add_Str_To_Name_Buffer
                  (Ada.Directories.Current_Directory &
-                  '/' & Partial);
+                  Dir_Separator & Partial);
                Record_Temp_File
                  (Shared => null,
                   Path   => Name_Find);
@@ -1671,6 +1671,13 @@ procedure Gprlib is
             if not Success and then not Quiet_Output then
                Put_Line (" Linker options for SAL will not be stored.");
             end if;
+
+            --  Same code as for recording the p__<lib>_N.o files.
+            Name_Len := 0;
+            Add_Str_To_Name_Buffer
+              (Ada.Directories.Current_Directory &
+                 Dir_Separator & Options_File);
+            Record_Temp_File (Shared => null, Path => Name_Find);
          end;
       end if;
 
