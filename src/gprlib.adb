@@ -1654,13 +1654,17 @@ procedure Gprlib is
 
             if Objcopy_Exec = null and then not Quiet_Output then
                Put ("Warning: unable to locate objcopy " &
-                           Objcopy_Name.all & ".");
+                      Objcopy_Name.all & ".");
                Success := False;
 
             else
-               Spawn_And_Script_Write (Objcopy_Name.all,
-                                       Objcopy_Args,
-                                       Success);
+               declare
+                  Arg_List : String_List_Access :=
+                    new String_List'(To_Argument_List (Objcopy_Args));
+               begin
+                  Spawn (Objcopy_Name.all, Arg_List.all, Success);
+                  Free (Arg_List);
+               end;
 
                if not Success and then not Quiet_Output then
                   Put ("Warning: invocation of " &
