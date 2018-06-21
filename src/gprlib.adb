@@ -267,6 +267,8 @@ procedure Gprlib is
 
    Compiler_Name                 : String_Access := new String'("gcc");
 
+   Objcopy_Name                  : String_Access := new String'("objcopy");
+
    Path_Option                   : String_Access := null;
 
    Separate_Run_Path_Options     : Boolean := False;
@@ -1596,10 +1598,8 @@ procedure Gprlib is
             Options_File     : constant String := Library_Name.all &
               ".linker_options";
 
-            Objcopy_Path : constant String := Compiler_Name
-              (Compiler_Name'First .. Compiler_Name'Last - 3) & "objcopy";
             Objcopy_Exec : constant String_Access := Locate_Exec_On_Path
-              (Objcopy_Path);
+              (Objcopy_Name.all);
             Objcopy_Args : String_Vectors.Vector;
 
          begin
@@ -1635,7 +1635,7 @@ procedure Gprlib is
                Name_Len := 0;
 
                if Verbose_Mode then
-                  Add_Str_To_Name_Buffer (Objcopy_Path);
+                  Add_Str_To_Name_Buffer (Objcopy_Name.all);
 
                   for Arg of Objcopy_Args loop
                      Add_Str_To_Name_Buffer (" ");
@@ -1654,17 +1654,17 @@ procedure Gprlib is
 
             if Objcopy_Exec = null and then not Quiet_Output then
                Put ("Warning: unable to locate objcopy " &
-                           Objcopy_Path & ".");
+                           Objcopy_Name.all & ".");
                Success := False;
 
             else
-               Spawn_And_Script_Write (Objcopy_Path,
+               Spawn_And_Script_Write (Objcopy_Name.all,
                                        Objcopy_Args,
                                        Success);
 
                if not Success and then not Quiet_Output then
                   Put ("Warning: invocation of " &
-                              Objcopy_Path & " failed.");
+                              Objcopy_Name.all & " failed.");
                end if;
             end if;
 
@@ -2055,12 +2055,16 @@ procedure Gprlib is
                         then
                            Gnatbind_Name :=
                              new String'(Line (1 .. Last - 3) & "gnatbind");
+                           Objcopy_Name :=
+                             new String'(Line (1 .. Last - 3) & "objcopy");
 
                         elsif Last > 7
                           and then Line (Last - 6 .. Last) = "gcc.exe"
                         then
                            Gnatbind_Name :=
                              new String'(Line (1 .. Last - 7) & "gnatbind");
+                           Objcopy_Name :=
+                             new String'(Line (1 .. Last - 7) & "objcopy");
                         end if;
                      end if;
 
