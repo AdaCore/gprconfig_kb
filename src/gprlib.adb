@@ -338,6 +338,9 @@ procedure Gprlib is
 
    procedure Build_Shared_Lib is separate;
 
+   procedure Display_Command (Cmd : String; Args : String_Vectors.Vector);
+   --  Print a command and its arguments on stdout.
+
    ---------------
    -- Add_Rpath --
    ---------------
@@ -685,6 +688,21 @@ procedure Gprlib is
          Copy (Fname => Fname);
       end loop;
    end Copy_Sources;
+
+   ---------------------
+   -- Display_Command --
+   ---------------------
+
+   procedure Display_Command (Cmd : String; Args : String_Vectors.Vector) is
+   begin
+      Name_Len := 0;
+      Add_Str_To_Name_Buffer (Cmd);
+      for Arg of Args loop
+         Add_Str_To_Name_Buffer (" ");
+         Add_Str_To_Name_Buffer (Arg);
+      end loop;
+      Put_Line (Name_Buffer (1 .. Name_Len));
+   end Display_Command;
 
    --------------------
    -- Process_Shared --
@@ -1082,14 +1100,7 @@ procedure Gprlib is
             Name_Len := 0;
 
             if Verbose_Mode then
-               Add_Str_To_Name_Buffer (Gnatbind_Path.all);
-
-               for Arg of Bind_Options loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Arg);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
+               Display_Command (Gnatbind_Path.all, Bind_Options);
 
             else
                Display
@@ -1326,14 +1337,7 @@ procedure Gprlib is
             Name_Len := 0;
 
             if Verbose_Mode then
-               Add_Str_To_Name_Buffer (Compiler_Path.all);
-
-               for Arg of Bind_Options loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Arg);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
+               Display_Command (Compiler_Path.all, Bind_Options);
 
             else
                Display
@@ -1530,15 +1534,7 @@ procedure Gprlib is
 
                if not Quiet_Output then
                   if Verbose_Mode then
-                     Name_Len := 0;
-                     Add_Str_To_Name_Buffer (Partial_Linker_Path.all);
-
-                     for Option of PL_Options loop
-                        Add_Str_To_Name_Buffer (" ");
-                        Add_Str_To_Name_Buffer (Option);
-                     end loop;
-
-                     Put_Line (Name_Buffer (1 .. Name_Len));
+                     Display_Command (Partial_Linker_Path.all, PL_Options);
                   end if;
                end if;
 
@@ -1635,14 +1631,7 @@ procedure Gprlib is
                Name_Len := 0;
 
                if Verbose_Mode then
-                  Add_Str_To_Name_Buffer (Objcopy_Name.all);
-
-                  for Arg of Objcopy_Args loop
-                     Add_Str_To_Name_Buffer (" ");
-                     Add_Str_To_Name_Buffer (Arg);
-                  end loop;
-
-                  Put_Line (Name_Buffer (1 .. Name_Len));
+                  Display_Command (Objcopy_Name.all, Objcopy_Args);
 
                else
                   Display
@@ -1737,14 +1726,7 @@ procedure Gprlib is
                Name_Len := 0;
 
                if Verbose_Mode then
-                  Add_Str_To_Name_Buffer (Archive_Builder.all);
-
-                  for Opt of AB_Options loop
-                     Add_Str_To_Name_Buffer (" ");
-                     Add_Str_To_Name_Buffer (Opt);
-                  end loop;
-
-                  Put_Line (Name_Buffer (1 .. Name_Len));
+                  Display_Command (Archive_Builder.all, AB_Options);
 
                elsif First_AB_Object_Pos = AB_Objects.First_Index then
                   --  Only display this once.
@@ -1778,15 +1760,7 @@ procedure Gprlib is
 
          if not Quiet_Output then
             if Verbose_Mode then
-               Name_Len := 0;
-               Add_Str_To_Name_Buffer (Archive_Indexer.all);
-
-               for Option of AI_Options loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Option);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
+               Display_Command (Archive_Indexer.all, AI_Options);
 
             else
                Display
