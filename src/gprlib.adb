@@ -1594,7 +1594,7 @@ procedure Gprlib is
             Options_File     : constant String := Library_Name.all &
               ".linker_options";
 
-            Objcopy_Exec : constant String_Access := Locate_Exec_On_Path
+            Objcopy_Exec : String_Access := Locate_Exec_On_Path
               (Objcopy_Name.all);
             Objcopy_Args : String_Vectors.Vector;
 
@@ -1641,10 +1641,13 @@ procedure Gprlib is
                end if;
             end if;
 
-            if Objcopy_Exec = null and then not Quiet_Output then
-               Put ("Warning: unable to locate objcopy " &
-                      Objcopy_Name.all & ".");
-               Success := False;
+            if Objcopy_Exec = null then
+               Objcopy_Exec := Locate_Exec_On_Path ("objcopy");
+               if Objcopy_Exec = null and then not Quiet_Output then
+                  Put ("Warning: unable to locate objcopy " &
+                         Objcopy_Name.all & ".");
+                  Success := False;
+               end if;
 
             else
                declare
