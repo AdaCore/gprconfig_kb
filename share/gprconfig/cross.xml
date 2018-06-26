@@ -2,7 +2,7 @@
 <gprconfig>
    <!--  This package provides adjustments for cross compilers -->
 
-   <!-- AAMP executable have extension .axe -->
+   <!-- AAMP executables have extension .axe -->
    <configuration>
      <targets>
        <target name="aamp" />
@@ -14,10 +14,11 @@
      </config>
    </configuration>
 
+   <!-- Windows executables have extension .exe -->
    <configuration>
      <targets>
        <target name="dotnet" />
-       <target name="^.*-pc-mingw32$" />
+       <target name="mingw" />
      </targets>
      <config>
    package Builder is
