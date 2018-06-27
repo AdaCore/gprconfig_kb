@@ -1616,7 +1616,13 @@ procedure Gprlib is
                end if;
 
                if Start_Retrieving then
-                  Put_Line (IO_File, Line (9 .. Last));
+                  --  Don't store -static and -shared flags, they may cause
+                  --  issues when linking with the library.
+                  if Line (9 .. Last) /= "-static" and then
+                    Line (9 .. Last) /= "-shared"
+                  then
+                     Put_Line (IO_File, Line (9 .. Last));
+                  end if;
                end if;
             end loop;
 
