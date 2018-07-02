@@ -1981,7 +1981,7 @@ package body Gprbuild.Link is
                      if Proj.Standalone_Library = GPR.Standard then
 
                         Arg_List := Argument_String_To_List
-                          (" -t " & Lib_Path);
+                          ("-t " & Lib_Path);
                         --  Arguments for the archive builder, to list the
                         --  archive content.
 
@@ -2080,7 +2080,7 @@ package body Gprbuild.Link is
 
                               else
                                  Arg_List := Argument_String_To_List
-                                   (" -x " & Lib_Path & " " & Obj.all);
+                                   ("-x " & Lib_Path & " " & Obj.all);
                                  --  Arguments for the archive builder, to
                                  --  extract the relevant object.
 
