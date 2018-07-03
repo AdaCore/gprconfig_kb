@@ -2007,13 +2007,11 @@ package body Gprbuild.Link is
                            Obj_Found : Boolean := False;
                            Obj       : String_Access;
 
-                           Objcopy_Path : constant String_Access := new String'
-                             (Archive_Builder_Path
-                                (Archive_Builder_Path'First ..
-                                     Archive_Builder_Path'Last - 2)
-                              & "objcopy");
-                           Objcopy_Exec : String_Access := Locate_Exec_On_Path
-                             (Objcopy_Path.all);
+                           Objcopy_Path : String_Access;
+                           Objcopy_Exec : String_Access;
+                           AB_Path      : constant String :=
+                             Archive_Builder_Path.all;
+                           AB_Path_Len  : constant Natural := AB_Path'Length;
 
                            Options_File           : constant String :=
                              Lib_Name & ".linker_options";
@@ -2025,6 +2023,23 @@ package body Gprbuild.Link is
                            Success : Boolean := True;
 
                         begin
+
+                           if AB_Path_Len > 2 and then AB_Path
+                             (AB_Path_Len - 1 .. AB_Path_Len) = "ar"
+                           then
+                              Objcopy_Path := new String'
+                                (AB_Path (1 .. AB_Path_Len - 2) & "objcopy");
+
+                           elsif AB_Path_Len > 6 and then AB_Path
+                             (AB_Path_Len - 5 .. AB_Path_Len) = "ar.exe"
+                           then
+                              Objcopy_Path := new String'
+                                (AB_Path (1 .. AB_Path_Len - 6) & "objcopy");
+                           end if;
+
+                           Objcopy_Exec := Locate_Exec_On_Path
+                             (Objcopy_Path.all);
+
                            Free (Arg_List);
 
                            if Status /= 0 then
