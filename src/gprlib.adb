@@ -791,7 +791,7 @@ procedure Gprlib is
                   Read_Lines => "D");
                Free (Text);
 
-               if Id = No_ALI_Id then
+               if Id = No_ALI_Id and then Verbose_Mode then
                   Put_Line
                     ("warning: reading of " &
                      ALI_File & " failed");
@@ -1580,7 +1580,8 @@ procedure Gprlib is
 
       end if;
 
-      --  Add the .GPR.linker_options section to Linker_Option_Object_File
+      --  Add the .GPR.linker_options section to Linker_Option_Object_File.
+
       if Linker_Option_Object_File /= null then
 
          --  Retrieve the relevant options in the binder-generated file.
@@ -1599,6 +1600,9 @@ procedure Gprlib is
             Objcopy_Args : String_Vectors.Vector;
 
          begin
+
+            --  Read the linker options from the binder-generated file.
+
             Open (BG_File, In_File, "b__" & Library_Name.all & ".adb");
             Create (IO_File, Out_File, Options_File);
 
@@ -1629,6 +1633,9 @@ procedure Gprlib is
             Close (BG_File);
             Close (IO_File);
 
+            --  Call objcopy to add a section to Linker_Option_Object_File,
+            --  containing those linker options.
+
             Objcopy_Args.Append ("--add-section");
             Objcopy_Args.Append (".GPR.linker_options=" & Options_File);
             Objcopy_Args.Append (Linker_Option_Object_File.all);
@@ -1649,9 +1656,11 @@ procedure Gprlib is
 
             if Objcopy_Exec = null then
                Objcopy_Exec := Locate_Exec_On_Path ("objcopy");
-               if Objcopy_Exec = null and then not Quiet_Output then
-                  Put ("Warning: unable to locate objcopy " &
-                         Objcopy_Name.all & ".");
+               if Objcopy_Exec = null then
+                  if Verbose_Mode then
+                     Put ("Warning: unable to locate objcopy " &
+                            Objcopy_Name.all & ".");
+                  end if;
                   Success := False;
                end if;
 
@@ -1659,18 +1668,39 @@ procedure Gprlib is
                declare
                   Arg_List : String_List_Access :=
                     new String_List'(To_Argument_List (Objcopy_Args));
+                  FD             : File_Descriptor;
+                  Tmp_File       : Path_Name_Type;
+                  Temp_File_Name : String_Access;
+                  Status         : aliased Integer;
+
                begin
-                  Spawn (Objcopy_Name.all, Arg_List.all, Success);
+                  --  Create the temporary file to receive (and
+                  --  discard) the output from spawned processes.
+                  Tempdir.Create_Temp_File (FD, Tmp_File);
+
+                  if FD = Invalid_FD then
+                     Fail_Program
+                       (null, "could not create temporary file");
+                  else
+                     Temp_File_Name :=
+                       new String'(Get_Name_String (Tmp_File));
+                  end if;
+
+                  Spawn (Objcopy_Name.all, Arg_List.all, FD, Status);
+
+                  Success := Status = 0;
                   Free (Arg_List);
+                  Close (FD);
+                  Delete_File (Temp_File_Name.all, Success);
                end;
 
-               if not Success and then not Quiet_Output then
+               if not Success and then Verbose_Mode then
                   Put ("Warning: invocation of " &
-                              Objcopy_Name.all & " failed.");
+                         Objcopy_Name.all & " failed.");
                end if;
             end if;
 
-            if not Success and then not Quiet_Output then
+            if not Success and then Verbose_Mode then
                Put_Line (" Linker options for SAL will not be stored.");
             end if;
 

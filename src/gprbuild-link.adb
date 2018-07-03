@@ -32,6 +32,7 @@ with GPR.Names;      use GPR.Names;
 with GPR.Script;     use GPR.Script;
 with GPR.Snames;     use GPR.Snames;
 with GPR.Util.Aux;   use GPR.Util;
+with GPR.Tempdir;
 
 package body Gprbuild.Link is
 
@@ -1980,30 +1981,12 @@ package body Gprbuild.Link is
 
                      if Proj.Standalone_Library = GPR.Standard then
 
-                        Arg_List := Argument_String_To_List
-                          ("-t " & Lib_Path);
-                        --  Arguments for the archive builder, to list the
-                        --  archive content.
-
-                        Fill_Options_Data_From_Arg_List_Access
-                          (Arg_List, Arg_Disp);
-                        Display_Command (Arg_Disp, Archive_Builder_Path);
-
                         declare
                            Status : aliased Integer;
-                           Output : constant String :=
-                             GNAT.Expect.Get_Command_Output
-                               (Command    => Archive_Builder_Path.all,
-                                Arguments  => Arg_List.all,
-                                Input      => "",
-                                Status     => Status'Access,
-                                Err_To_Out => True);
-                           --  List the archive content.
+                           Output : String_Access;
 
                            EOL       : constant String (1 .. 1) :=
                              (1 => ASCII.LF);
-                           Lines     : constant Name_Array_Type :=
-                             Split (Output, EOL);
                            Obj_Found : Boolean := False;
                            Obj       : String_Access;
 
@@ -2020,9 +2003,30 @@ package body Gprbuild.Link is
 
                            Lib_Dir_Name : Path_Name_Type;
 
-                           Success : Boolean := True;
+                           FD             : File_Descriptor;
+                           Tmp_File       : Path_Name_Type;
+                           Temp_File_Name : String_Access;
+
+                           Success     : Boolean := True;
+                           Warning_Msg : String_Access;
 
                         begin
+
+                           --  Create the temporary file to receive (and
+                           --  discard) the output from spawned processes.
+
+                           Tempdir.Create_Temp_File (FD, Tmp_File);
+
+                           if FD = Invalid_FD then
+                              Fail_Program
+                                (null, "could not create temporary file");
+                           else
+                              Temp_File_Name :=
+                                new String'(Get_Name_String (Tmp_File));
+                           end if;
+
+                           --  Use the archive builder path to compute the
+                           --  path to objcopy.
 
                            if AB_Path_Len > 2 and then AB_Path
                              (AB_Path_Len - 1 .. AB_Path_Len) = "ar"
@@ -2040,33 +2044,55 @@ package body Gprbuild.Link is
                            Objcopy_Exec := Locate_Exec_On_Path
                              (Objcopy_Path.all);
 
-                           Free (Arg_List);
+                           if Objcopy_Exec = null then
+                              --  If objcopy is not found this way, try with
+                              --  the one from the system.
 
-                           if Status /= 0 then
-                              --  Error if the archive builder failed.
-                              Fail_Program
-                                (null,
-                                 "call to archive builder " &
-                                   Archive_Builder_Path.all & " failed");
-
-                           elsif Objcopy_Exec = null then
                               Objcopy_Exec := Locate_Exec_On_Path ("objcopy");
 
                               if Objcopy_Exec = null then
-                                 if not Opt.Quiet_Output then
-                                    --  Issue a warning if objcopy is not found
-                                    --  on the archive builder path, nor on the
-                                    --  system path.
-                                    Put ("Warning: unable to locate objcopy.");
-                                 end if;
-                                 Success := False;
+                                 --  Warning if we didn't find any objcopy.
+                                 Warning_Msg := new String'
+                                   ("Warning: unable to locate objcopy.");
+                                 goto Linker_Options_Incomplete;
                               end if;
                            end if;
 
-                           if Success then
-                              --  Search through the object files list for the
-                              --  expected binder-generated ones.
+                           --  List the archive content.
 
+                           Arg_List := Argument_String_To_List
+                             ("-t " & Lib_Path);
+
+                           Fill_Options_Data_From_Arg_List_Access
+                             (Arg_List, Arg_Disp);
+                           Display_Command (Arg_Disp, Archive_Builder_Path);
+
+                           Output := new String'
+                             (GNAT.Expect.Get_Command_Output
+                                (Command    => Archive_Builder_Path.all,
+                                 Arguments  => Arg_List.all,
+                                 Input      => "",
+                                 Status     => Status'Access,
+                                 Err_To_Out => True));
+
+                           Free (Arg_List);
+
+                           if Status /= 0 then
+                              --  Warning if the archive builder failed.
+                              Warning_Msg := new String'
+                                ("Warning: invocation of "
+                                 & Archive_Builder_Path.all & " failed.");
+                              goto Linker_Options_Incomplete;
+                           end if;
+
+                           --  Search through the object files list for the
+                           --  expected binder-generated ones.
+
+                           declare
+                              Lines : constant Name_Array_Type := Split
+                                (Output.all, EOL);
+
+                           begin
                               for L of Lines loop
                                  Get_Name_String (L);
                                  if On_Windows then
@@ -2082,142 +2108,144 @@ package body Gprbuild.Link is
                                     exit;
                                  end if;
                               end loop;
+                           end;
 
-                              if not Obj_Found then
-                                 --  Warning if no such object file is found.
-                                 if not Opt.Quiet_Output then
-                                    Put ("Warning: linker options section "
-                                         & "not found in "
-                                         & Lib_Name
-                                         & ".a, using defaults.");
-                                 end if;
-                                 Success := False;
-
-                              else
-                                 Arg_List := Argument_String_To_List
-                                   ("-x " & Lib_Path & " " & Obj.all);
-                                 --  Arguments for the archive builder, to
-                                 --  extract the relevant object.
-
-                                 Fill_Options_Data_From_Arg_List_Access
-                                   (Arg_List, Arg_Disp);
-                                 Display_Command (Arg_Disp,
-                                                  Archive_Builder_Path);
-
-                                 Spawn (Archive_Builder_Path.all,
-                                        Arg_List.all,
-                                        Success);
-
-                                 if not Success then
-                                    --  Error if the archive builder failed.
-                                    Fail_Program
-                                      (null,
-                                       "call to archive builder " &
-                                         Archive_Builder_Path.all & " failed");
-                                 end if;
-
-                                 Free (Arg_List);
-
-                                 Arg_List := Argument_String_To_List
-                                   ("--dump-section .GPR.linker_options="
-                                    & Lib_Name & ".linker_options"
-                                    & " " & Obj.all);
-                                 --  Arguments for objcopy, to extract the
-                                 --  linker options section.
-
-                                 --  Make sure we start from scratch.
-                                 Delete_File (Options_File, Success);
-
-                                 Fill_Options_Data_From_Arg_List_Access
-                                   (Arg_List, Arg_Disp);
-                                 Display_Command (Arg_Disp,
-                                                  Objcopy_Exec);
-
-                                 Spawn (Objcopy_Exec.all,
-                                        Arg_List.all,
-                                        Success);
-
-                                 Free (Arg_List);
-                                 Free (Obj);
-
-                                 if Success then
-                                    --  Read the .linker_options file.
-
-                                    Open (File, Options_File);
-
-                                    --  Record the linker options file as temp.
-                                    Name_Len := 0;
-                                    Add_Str_To_Name_Buffer
-                                      (Ada.Directories.Current_Directory &
-                                         Dir_Separator & Options_File);
-                                    Options_File_Path_Name := Name_Find;
-                                    Record_Temp_File
-                                      (Shared => null,
-                                       Path => Options_File_Path_Name);
-
-                                    if not Is_Valid (File) then
-                                       --  Objcopy may return 0 even if there
-                                       --  was a problem reading the section!
-                                       --  So, the definitive check is that the
-                                       --  linker_options file was generated.
-
-                                       if not Opt.Quiet_Output then
-                                          Put ("Warning: invocation of "
-                                               & Objcopy_Exec.all
-                                               & " failed.");
-                                       end if;
-                                       Success := False;
-
-                                    else
-                                       while not End_Of_File (File) loop
-                                          Get_Line (File,
-                                                    Name_Buffer,
-                                                    Name_Len);
-
-                                          --  Add the linker option.
-                                          --  Avoid duplicates for -L.
-
-                                          Lib_Dir_Name := Name_Find;
-                                          if Name_Buffer (1 .. 2) = "-L" then
-                                             if not Library_Dirs.Get
-                                               (Lib_Dir_Name)
-                                             then
-                                                Add_Argument
-                                                  (Other_Arguments,
-                                                   Name_Buffer (1 .. Name_Len),
-                                                   Opt.Verbose_Mode);
-                                                Library_Dirs.Set (Lib_Dir_Name,
-                                                                  True);
-                                             end if;
-                                          else
-                                             Add_Argument
-                                               (Other_Arguments,
-                                                Name_Buffer (1 .. Name_Len),
-                                                Opt.Verbose_Mode);
-                                          end if;
-                                       end loop;
-                                       Close (File);
-                                    end if;
-
-                                    --  Delete the linker_options file.
-                                    if not Debug_Flag_N then
-                                       Delete_Temporary_File
-                                         (null, Options_File_Path_Name);
-                                    end if;
-
-                                 elsif not Opt.Quiet_Output then
-                                    --  Warning if objcopy failed.
-                                    Put ("Warning: invocation of objcopy "
-                                         & Objcopy_Exec.all & " failed.");
-                                 end if;
-                              end if;
+                           if not Obj_Found then
+                              --  Warning if no such object file is found.
+                              Warning_Msg := new String'
+                                ("Warning: linker options section "
+                                 & "not found in " & Lib_Name
+                                 & ".a, using defaults.");
+                              goto Linker_Options_Incomplete;
                            end if;
 
-                           if not Success and then not Opt.Quiet_Output then
-                              --  We get here if anything went wrong in the
-                              --  process (except archive builder failure which
-                              --  raises an exception).
-                              Put_Line (" Linker options may be incomplete.");
+                           --  Extract the object file.
+
+                           Arg_List := Argument_String_To_List
+                             ("-x " & Lib_Path & " " & Obj.all);
+
+                           Fill_Options_Data_From_Arg_List_Access
+                             (Arg_List, Arg_Disp);
+                           Display_Command (Arg_Disp, Archive_Builder_Path);
+
+                           Spawn (Archive_Builder_Path.all,
+                                  Arg_List.all,
+                                  FD,
+                                  Status);
+
+                           Free (Arg_List);
+
+                           if Status /= 0 then
+                              --  Warning if the archive builder failed.
+                              Warning_Msg := new String'
+                                ("Warning: invocation of "
+                                 & Archive_Builder_Path.all
+                                 & " failed.");
+                              goto Linker_Options_Incomplete;
+                           end if;
+
+                           --  Extract the linker options section.
+
+                           Arg_List := Argument_String_To_List
+                             ("--dump-section .GPR.linker_options="
+                              & Lib_Name & ".linker_options"
+                              & " " & Obj.all);
+
+                           --  Delete any existing linker option file.
+                           Delete_File (Options_File, Success);
+
+                           Fill_Options_Data_From_Arg_List_Access
+                             (Arg_List, Arg_Disp);
+                           Display_Command (Arg_Disp, Objcopy_Exec);
+
+                           Spawn (Objcopy_Exec.all,
+                                  Arg_List.all,
+                                  FD,
+                                  Status);
+
+                           Free (Arg_List);
+                           Free (Obj);
+
+                           if Status /= 0 then
+                              --  Warning if objcopy failed.
+                              Warning_Msg := new String'
+                                ("Warning: invocation of objcopy "
+                                 & Objcopy_Exec.all & " failed.");
+                              goto Linker_Options_Incomplete;
+                           end if;
+
+                           --  Read the .linker_options file.
+
+                           Open (File, Options_File);
+
+                           --  Record the linker options file as temporary.
+                           Name_Len := 0;
+                           Add_Str_To_Name_Buffer
+                             (Ada.Directories.Current_Directory
+                              & Dir_Separator & Options_File);
+                           Options_File_Path_Name := Name_Find;
+                           Record_Temp_File
+                             (Shared => null,
+                              Path => Options_File_Path_Name);
+
+                           if not Is_Valid (File) then
+                              --  Objcopy may return 0 even if there was a
+                              --  problem reading the section!
+                              --  So, the definitive check is that the
+                              --  linker_options file was generated.
+                              Warning_Msg := new String'
+                                ("Warning: invocation of "
+                                 & Objcopy_Exec.all & " failed.");
+                              goto Linker_Options_Incomplete;
+                           end if;
+
+                           --  Read the linker options.
+
+                           while not End_Of_File (File) loop
+                              Get_Line (File, Name_Buffer, Name_Len);
+
+                              --  Add the linker option.
+                              --  Avoid duplicates for -L.
+
+                              Lib_Dir_Name := Name_Find;
+                              if Name_Buffer (1 .. 2) = "-L" then
+                                 if not Library_Dirs.Get (Lib_Dir_Name) then
+                                    Add_Argument
+                                      (Other_Arguments,
+                                       Name_Buffer (1 .. Name_Len),
+                                       Opt.Verbose_Mode);
+                                    Library_Dirs.Set (Lib_Dir_Name, True);
+                                 end if;
+                              else
+                                 Add_Argument
+                                   (Other_Arguments,
+                                    Name_Buffer (1 .. Name_Len),
+                                    Opt.Verbose_Mode);
+                              end if;
+                           end loop;
+
+                           Close (File);
+
+                           --  Delete the linker_options file.
+                           if not Debug_Flag_N then
+                              Delete_Temporary_File
+                                (null, Options_File_Path_Name);
+                           end if;
+
+                           --  Delete the process output file.
+                           Delete_File (Temp_File_Name.all, Success);
+                           Close (FD);
+
+                           Success := True;
+
+                           <<Linker_Options_Incomplete>>
+
+                           --  We get there if anything went wrong.
+                           if not Success and then Opt.Verbose_Mode then
+                              Put_Line
+                                (Warning_Msg.all
+                                 & " Linker options may be incomplete.");
+                              Free (Warning_Msg);
                            end if;
                         end;
                      end if;
