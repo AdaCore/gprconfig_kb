@@ -411,8 +411,7 @@
       <external>clang -v</external>
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
     </version>
-    <languages>C</languages>
-    <languages>C++</languages>
+    <languages>C,C++</languages>
     <target>
       <external>clang -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
