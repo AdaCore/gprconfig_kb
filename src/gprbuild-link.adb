@@ -1283,6 +1283,8 @@ package body Gprbuild.Link is
       Objects            : String_Vectors.Vector;
       Other_Arguments    : Options_Data;
 
+      Linking_With_Static_SALs : Boolean := False;
+
       --------------------------
       -- Add_Run_Path_Options --
       --------------------------
@@ -1981,6 +1983,8 @@ package body Gprbuild.Link is
 
                      if Proj.Standalone_Library = GPR.Standard then
 
+                        Linking_With_Static_SALs := True;
+
                         declare
                            Status : aliased Integer;
                            Output : String_Access;
@@ -2009,7 +2013,6 @@ package body Gprbuild.Link is
 
                            Success     : Boolean := True;
                            Warning_Msg : String_Access;
-
                         begin
 
                            --  Create the temporary file to receive (and
@@ -2210,17 +2213,13 @@ package body Gprbuild.Link is
                               Lib_Dir_Name := Name_Find;
                               if Name_Buffer (1 .. 2) = "-L" then
                                  if not Library_Dirs.Get (Lib_Dir_Name) then
-                                    Add_Argument
-                                      (Other_Arguments,
-                                       Name_Buffer (1 .. Name_Len),
-                                       Opt.Verbose_Mode);
+                                    Binding_Options.Append
+                                      (Name_Buffer (1 .. Name_Len));
                                     Library_Dirs.Set (Lib_Dir_Name, True);
                                  end if;
                               else
-                                 Add_Argument
-                                   (Other_Arguments,
-                                    Name_Buffer (1 .. Name_Len),
-                                    Opt.Verbose_Mode);
+                                 Binding_Options.Append
+                                   (Name_Buffer (1 .. Name_Len));
                               end if;
                            end loop;
 
@@ -2435,12 +2434,335 @@ package body Gprbuild.Link is
 
          --  Then the binding options
 
-         for Option of Binding_Options loop
-            Add_Argument
-              (Other_Arguments,
-               Option,
-               Opt.Verbose_Mode);
-         end loop;
+         --  If we are linking with static SALs, process the linker options
+         --  coming from those SALs the same way as in gprbind (refactoring
+         --  needed!!) and add them to the command line.
+         --  The parts of the original code related to object files have been
+         --  removed since options from static SALs only include flags.
+
+         if Linking_With_Static_SALs then
+            declare
+               All_Binding_Options : Boolean := False;
+               Get_Option          : Boolean;
+               Xlinker_Seen        : Boolean := False;
+               Stack_Equal_Seen    : Boolean := False;
+
+               Adalib_Dir  : String_Access;
+               Prefix_Path : String_Access;
+               Lib_Path    : String_Access;
+
+               Shared_Libgcc : constant String := "-shared-libgcc";
+               Static_Libgcc : constant String := "-static-libgcc";
+
+               Libgcc_Specified : Boolean := False;
+               --  True if -shared-libgcc or -static-libgcc is used
+
+               Static_Libs : Boolean := True;
+
+               Shared_Libgcc_Default : Character;
+               for Shared_Libgcc_Default'Size use Character'Size;
+               pragma Import
+                 (C, Shared_Libgcc_Default, "__gnat_shared_libgcc_default");
+
+               Ada_Lang_Data_Ptr : Language_Ptr := No_Language_Index;
+               GNAT_Version_Part : Name_Id := No_Name;
+
+               Tree : constant Project_Tree_Ref := Main_File.Tree;
+               Project : Project_List := Tree.Projects;
+
+               procedure Add_To_Other_Arguments (A : String);
+               pragma Inline (Add_To_Other_Arguments);
+
+               procedure Add_To_Other_Arguments (A : String) is
+               begin
+                  Add_Argument (Other_Arguments, A, Opt.Verbose_Mode);
+               end Add_To_Other_Arguments;
+
+            begin
+
+               while Project /= null loop
+                  Ada_Lang_Data_Ptr :=
+                    Get_Language_From_Name (Project.Project, "Ada");
+                  exit when Ada_Lang_Data_Ptr /= No_Language_Index;
+                  Project := Project.Next;
+               end loop;
+
+               if Ada_Lang_Data_Ptr /= No_Language_Index then
+                  declare
+                     GNAT_Version : constant String := Get_Name_String
+                       (Ada_Lang_Data_Ptr.Config.Toolchain_Version);
+                  begin
+                     if GNAT_Version'Length >= 7 then
+                        Name_Len := 0;
+                        Add_Str_To_Name_Buffer (GNAT_Version (6 .. 7));
+                        GNAT_Version_Part := Name_Find;
+                     end if;
+                  end;
+               end if;
+
+               for Option of Binding_Options loop
+                  declare
+                     Line : constant String := Option;
+                     Last : constant Natural := Line'Last;
+                  begin
+
+                     if Line (1) = '-' then
+                        All_Binding_Options := True;
+                     end if;
+
+                     Get_Option := All_Binding_Options;
+
+                     if Get_Option then
+                        if Line = "-Xlinker" then
+                           Xlinker_Seen := True;
+
+                        elsif Xlinker_Seen then
+                           Xlinker_Seen := False;
+
+                           if Last > 8 and then Line (1 .. 8) = "--stack=" then
+                              if not Stack_Equal_Seen then
+                                 Stack_Equal_Seen := True;
+                                 Add_To_Other_Arguments ("-Xlinker");
+                                 Add_To_Other_Arguments (Line);
+                              end if;
+
+                           else
+                              Add_To_Other_Arguments ("-Xlinker");
+                              Add_To_Other_Arguments (Line);
+                           end if;
+
+                        elsif Last > 12
+                          and then Line (1 .. 12) = "-Wl,--stack="
+                        then
+                           if not Stack_Equal_Seen then
+                              Stack_Equal_Seen := True;
+                              Add_To_Other_Arguments (Line);
+                           end if;
+
+                        elsif Last >= 3 and then Line (1 .. 2) = "-L" then
+                           if Is_Regular_File
+                             (Line (3 .. Last) &
+                                Directory_Separator & "libgnat.a")
+                           then
+                              Adalib_Dir := new String'(Line (3 .. Last));
+
+                              declare
+                                 Dir_Last       : Positive;
+                                 Prev_Dir_Last  : Positive;
+                                 First          : Positive;
+                                 Prev_Dir_First : Positive;
+                                 Nmb            : Natural;
+                              begin
+                                 Name_Len := 0;
+                                 Add_Str_To_Name_Buffer (Line (3 .. Last));
+
+                                 while Name_Buffer (Name_Len) =
+                                   Directory_Separator
+                                   or else Name_Buffer (Name_Len) = '/'
+                                 loop
+                                    Name_Len := Name_Len - 1;
+                                 end loop;
+
+                                 while Name_Buffer (Name_Len) /=
+                                   Directory_Separator
+                                   and then Name_Buffer (Name_Len) /= '/'
+                                 loop
+                                    Name_Len := Name_Len - 1;
+                                 end loop;
+
+                                 while Name_Buffer (Name_Len) =
+                                   Directory_Separator
+                                   or else Name_Buffer (Name_Len) = '/'
+                                 loop
+                                    Name_Len := Name_Len - 1;
+                                 end loop;
+
+                                 Dir_Last := Name_Len;
+                                 Nmb := 0;
+
+                                 Dir_Loop : loop
+                                    Prev_Dir_Last := Dir_Last;
+                                    First := Dir_Last - 1;
+                                    while First > 3
+                                      and then Name_Buffer (First) /=
+                                      Directory_Separator
+                                      and then Name_Buffer (First) /= '/'
+                                    loop
+                                       First := First - 1;
+                                    end loop;
+
+                                    Prev_Dir_First := First + 1;
+
+                                    exit Dir_Loop when First <= 3;
+
+                                    Dir_Last := First - 1;
+                                    while Name_Buffer (Dir_Last) =
+                                      Directory_Separator
+                                      or else Name_Buffer (Dir_Last) = '/'
+                                    loop
+                                       Dir_Last := Dir_Last - 1;
+                                    end loop;
+
+                                    Nmb := Nmb + 1;
+
+                                    if Nmb <= 1 then
+                                       Add_Char_To_Name_Buffer
+                                         (Path_Separator);
+                                       Add_Str_To_Name_Buffer
+                                         (Name_Buffer (1 .. Dir_Last));
+
+                                    elsif Name_Buffer
+                                      (Prev_Dir_First .. Prev_Dir_Last) = "lib"
+                                    then
+                                       Add_Char_To_Name_Buffer
+                                         (Path_Separator);
+                                       Add_Str_To_Name_Buffer
+                                         (Name_Buffer (1 .. Prev_Dir_Last));
+                                       exit Dir_Loop;
+                                    end if;
+                                 end loop Dir_Loop;
+
+                                 Prefix_Path :=
+                                   new String'(Name_Buffer (1 .. Name_Len));
+                              end;
+                           end if;
+                           Add_To_Other_Arguments (Line);
+
+                        elsif Line = Static_Libgcc then
+                           Add_To_Other_Arguments (Line);
+                           Libgcc_Specified := True;
+
+                        elsif Line = Shared_Libgcc then
+                           Add_To_Other_Arguments (Line);
+                           Libgcc_Specified := True;
+
+                        elsif Line = "-static" then
+                           Static_Libs := True;
+                           Add_To_Other_Arguments (Line);
+
+                           if Shared_Libgcc_Default = 'T'
+                             and then Get_Name_String
+                               (GNAT_Version_Part) /= "3."
+                             and then not Libgcc_Specified
+                           then
+                              Add_To_Other_Arguments (Static_Libgcc);
+                           end if;
+
+                        elsif Line = "-shared" then
+                           Static_Libs := False;
+                           Add_To_Other_Arguments (Line);
+
+                           if Get_Name_String (GNAT_Version_Part) /= "3."
+                             and then not Libgcc_Specified
+                           then
+                              Add_To_Other_Arguments (Shared_Libgcc);
+                           end if;
+
+                        elsif Line = "-lgnat" then
+                           if Adalib_Dir = null then
+                              Add_To_Other_Arguments ("-lgnat");
+
+                           elsif Static_Libs then
+                              Add_To_Other_Arguments
+                                (Adalib_Dir.all & "libgnat.a");
+
+                           else
+                              Add_To_Other_Arguments ("-lgnat");
+                           end if;
+
+                        elsif Line = "-lgnarl" and then
+                          Static_Libs and then
+                          Adalib_Dir /= null
+                        then
+                           Add_To_Other_Arguments
+                             (Adalib_Dir.all & "libgnarl.a");
+
+                        elsif Line = "-laddr2line"
+                          and then Prefix_Path /= null
+                        then
+                           Lib_Path := Locate_Regular_File
+                             ("libaddr2line.a", Prefix_Path.all);
+
+                           if Lib_Path /= null then
+                              Add_To_Other_Arguments (Lib_Path.all);
+                              Free (Lib_Path);
+
+                           else
+                              Add_To_Other_Arguments (Line);
+                           end if;
+
+                        elsif Line = "-lbfd"
+                          and then Prefix_Path /= null
+                        then
+                           Lib_Path := Locate_Regular_File
+                             ("libbfd.a", Prefix_Path.all);
+
+                           if Lib_Path /= null then
+                              Add_To_Other_Arguments (Lib_Path.all);
+                              Free (Lib_Path);
+
+                           else
+                              Add_To_Other_Arguments (Line);
+                           end if;
+
+                        elsif Line = "-lgnalasup"
+                          and then Prefix_Path /= null
+                        then
+                           Lib_Path := Locate_Regular_File
+                             ("libgnalasup.a", Prefix_Path.all);
+
+                           if Lib_Path /= null then
+                              Add_To_Other_Arguments (Lib_Path.all);
+                              Free (Lib_Path);
+
+                           else
+                              Add_To_Other_Arguments (Line);
+                           end if;
+
+                        elsif Line = "-lgnatmon"
+                          and then Prefix_Path /= null
+                        then
+                           Lib_Path := Locate_Regular_File
+                             ("libgnatmon.a", Prefix_Path.all);
+
+                           if Lib_Path /= null then
+                              Add_To_Other_Arguments (Lib_Path.all);
+                              Free (Lib_Path);
+
+                           else
+                              Add_To_Other_Arguments (Line);
+                           end if;
+
+                        elsif Line = "-liberty"
+                          and then Prefix_Path /= null
+                        then
+                           Lib_Path := Locate_Regular_File
+                             ("libiberty.a", Prefix_Path.all);
+
+                           if Lib_Path /= null then
+                              Add_To_Other_Arguments (Lib_Path.all);
+                              Free (Lib_Path);
+
+                           else
+                              Add_To_Other_Arguments (Line);
+                           end if;
+
+                        else
+                           Add_To_Other_Arguments (Line);
+                        end if;
+                     end if;
+                  end;
+               end loop;
+            end;
+
+         else
+            for Option of Binding_Options loop
+               Add_Argument
+                 (Other_Arguments,
+                  Option,
+                  Opt.Verbose_Mode);
+            end loop;
+         end if;
 
          --  Then the required switches, if any. These are put here because,
          --  if they include -L switches for example, the link may fail because
@@ -2870,6 +3192,48 @@ package body Gprbuild.Link is
 
          Objects.Clear;
          Other_Arguments.Clear;
+
+         --  Filter out duplicate arguments for .a and --specs= that may come
+         --  with static SALs linker options.
+
+         if Linking_With_Static_SALs then
+            declare
+               package Static_Lib_Paths is new GNAT.HTable.Simple_HTable
+                 (Header_Num => GPR.Header_Num,
+                  Element    => Boolean,
+                  No_Element => False,
+                  Key        => Path_Name_Type,
+                  Hash       => Hash,
+                  Equal      => "=");
+               Specs_Seen : Boolean := False;
+            begin
+               for Index in reverse 1 .. Arguments.Last_Index loop
+                  declare
+                     Arg : constant String := Arguments (Index).Name;
+                     Last : constant Natural := Arg'Length;
+                     Archive_Path : Path_Name_Type;
+                  begin
+                     if Last >= 8 and then Arg (1 .. 8) = "--specs="
+                     then
+                        if Specs_Seen then
+                           Arguments.Delete (Index);
+                        else
+                           Specs_Seen := True;
+                        end if;
+                     elsif Last > 1 and then Arg (Last - 1 .. Last) = ".a" then
+                        Name_Len := 0;
+                        Add_Str_To_Name_Buffer (Arg);
+                        Archive_Path := Name_Find;
+                        if Static_Lib_Paths.Get (Archive_Path) then
+                           Arguments.Delete (Index);
+                        else
+                           Static_Lib_Paths.Set (Archive_Path, True);
+                        end if;
+                     end if;
+                  end;
+               end loop;
+            end;
+         end if;
 
          --  Delete an eventual executable, in case it is a symbolic
          --  link as we don't want to modify the target of the link.
