@@ -3198,36 +3198,30 @@ package body Gprbuild.Link is
 
          if Linking_With_Static_SALs then
             declare
-               package Static_Lib_Paths is new GNAT.HTable.Simple_HTable
+               package Args is new GNAT.HTable.Simple_HTable
                  (Header_Num => GPR.Header_Num,
                   Element    => Boolean,
                   No_Element => False,
-                  Key        => Path_Name_Type,
+                  Key        => Name_Id,
                   Hash       => Hash,
                   Equal      => "=");
-               Specs_Seen : Boolean := False;
             begin
                for Index in reverse 1 .. Arguments.Last_Index loop
                   declare
                      Arg : constant String := Arguments (Index).Name;
                      Last : constant Natural := Arg'Length;
-                     Archive_Path : Path_Name_Type;
+                     Arg_Name_Id : Name_Id;
                   begin
-                     if Last >= 8 and then Arg (1 .. 8) = "--specs="
+                     if (Last > 1 and then Arg (Last - 1 .. Last) = ".a")
+                       or else (Last >= 8 and then Arg (1 .. 8) = "--specs=")
                      then
-                        if Specs_Seen then
-                           Arguments.Delete (Index);
-                        else
-                           Specs_Seen := True;
-                        end if;
-                     elsif Last > 1 and then Arg (Last - 1 .. Last) = ".a" then
                         Name_Len := 0;
                         Add_Str_To_Name_Buffer (Arg);
-                        Archive_Path := Name_Find;
-                        if Static_Lib_Paths.Get (Archive_Path) then
+                        Arg_Name_Id := Name_Find;
+                        if Args.Get (Arg_Name_Id) then
                            Arguments.Delete (Index);
                         else
-                           Static_Lib_Paths.Set (Archive_Path, True);
+                           Args.Set (Arg_Name_Id, True);
                         end if;
                      end if;
                   end;
