@@ -3193,8 +3193,8 @@ package body Gprbuild.Link is
          Objects.Clear;
          Other_Arguments.Clear;
 
-         --  Filter out duplicate arguments for .a and --specs= that may come
-         --  with static SALs linker options.
+         --  Filter out duplicate --specs= that may come with static SALs
+         --  linker options.
 
          if Linking_With_Static_SALs then
             declare
@@ -3212,9 +3212,7 @@ package body Gprbuild.Link is
                      Last : constant Natural := Arg'Length;
                      Arg_Name_Id : Name_Id;
                   begin
-                     if (Last > 1 and then Arg (Last - 1 .. Last) = ".a")
-                       or else (Last >= 8 and then Arg (1 .. 8) = "--specs=")
-                     then
+                     if Last >= 8 and then Arg (1 .. 8) = "--specs=" then
                         Name_Len := 0;
                         Add_Str_To_Name_Buffer (Arg);
                         Arg_Name_Id := Name_Find;
