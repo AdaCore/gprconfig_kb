@@ -3254,8 +3254,13 @@ package body Gprbuild.Link is
             Args_Vector : String_Vectors.Vector;
             Args_List   : String_List_Access;
          begin
+
+            Commands.Append (String_Vectors.Empty_Vector);
+            Commands.Reference (Commands.Last_Index).Append (Linker_Path.all);
+
             for Arg of Arguments loop
                Args_Vector.Append (Arg.Name);
+               Commands.Reference (Commands.Last_Index).Append (Arg.Name);
             end loop;
 
             Args_List := new String_List'(To_Argument_List (Args_Vector));
@@ -3369,13 +3374,17 @@ package body Gprbuild.Link is
          Main := Bad_Processes.First_Element;
          Fail_Program
            (Main.Tree,
-            "link of " & Get_Name_String (Main.File) & " failed");
+            "link of " & Get_Name_String (Main.File) & " failed"
+            & "+failed command was: " & String_Vector_To_String
+              (Commands.First_Element));
 
       elsif not Bad_Processes.Is_Empty then
-         for Main of Bad_Processes loop
+         for I in Bad_Processes.First_Index .. Bad_Processes.Last_Index loop
             Put ("   link of ");
-            Put (Get_Name_String (Main.File));
+            Put (Get_Name_String (Bad_Processes (I).File));
             Put_Line (" failed");
+            Put_Line ("   failed command was: "
+                      & String_Vector_To_String (Commands (I)));
          end loop;
 
          Fail_Program

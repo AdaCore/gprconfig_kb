@@ -40,6 +40,13 @@ package GPR.Util is
      (Positive, String);
    --  General-purpose vector of strings
 
+   function String_Vectors_Equal
+     (Left, Right : String_Vectors.Vector) return Boolean;
+
+   package Command_Vectors is new Ada.Containers.Indefinite_Vectors
+     (Positive, String_Vectors.Vector, String_Vectors_Equal);
+   --  Vector of string vectors.
+
    type String_Vector_Access is access all String_Vectors.Vector;
 
    type Config_Paths is array (Positive range <>) of Path_Name_Type;

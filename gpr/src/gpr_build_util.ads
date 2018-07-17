@@ -325,7 +325,7 @@ package Gpr_Build_Util is
    end record;
 
    No_Main_Info : constant Main_Info :=
-                    (No_File, 0, No_Location, No_Source, No_Project, null);
+     (No_File, 0, No_Location, No_Source, No_Project, null);
 
    package Main_Info_Vectors is new Ada.Containers.Vectors
      (Positive, Main_Info);

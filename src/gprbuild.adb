@@ -699,6 +699,20 @@ package body Gprbuild is
       OS_Exit (2);
    end Sigint_Intercepted;
 
+   -----------------------------
+   -- String_Vector_To_String --
+   -----------------------------
+
+   function String_Vector_To_String
+     (SV : String_Vectors.Vector) return String is
+   begin
+      Name_Len := 0;
+      for S of SV loop
+         Add_Str_To_Name_Buffer (S & " ");
+      end loop;
+      return Name_Buffer (1 .. Name_Len);
+   end String_Vector_To_String;
+
    ---------------------------
    -- Test_If_Relative_Path --
    ---------------------------

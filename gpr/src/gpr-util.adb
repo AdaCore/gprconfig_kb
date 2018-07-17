@@ -799,7 +799,9 @@ package body GPR.Util is
      (Project_Tree : Project_Tree_Ref;
       Exit_Code    : Exit_Code_Type := E_Success;
       S            : String := "";
-      No_Message   : Boolean := False) is
+      No_Message   : Boolean := False)
+   is
+      Lines : constant Name_Array_Type := Split (S, "+");
    begin
       if not Debug.Debug_Flag_N then
          if Project_Tree = null then
@@ -813,8 +815,10 @@ package body GPR.Util is
          if Exit_Code /= E_Success then
             if not No_Message then
                Set_Standard_Error;
-               Write_Program_Name;
-               Write_Line (S);
+               for Line of Lines loop
+                  Write_Program_Name;
+                  Write_Line (Get_Name_String (Line));
+               end loop;
             end if;
 
             Exit_Program (E_Fatal);
@@ -6021,6 +6025,19 @@ package body GPR.Util is
          return Get_Name_String (Command_Line_Arguments.Table (Rank));
       end if;
    end Command_Line_Argument;
+
+   --------------------------
+   -- String_Vectors_Equal --
+   --------------------------
+
+   function String_Vectors_Equal
+     (Left, Right : String_Vectors.Vector) return Boolean is
+   begin
+      return (Left.First_Index = Right.First_Index and then
+              Left.Last_Index = Right.Last_Index and then
+              (for all I in Left.First_Index .. Left.Last_Index =>
+                Left (I) = Right (I)));
+   end String_Vectors_Equal;
 
 begin
    declare
