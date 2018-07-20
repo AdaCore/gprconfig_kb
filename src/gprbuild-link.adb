@@ -74,13 +74,14 @@ package body Gprbuild.Link is
       Project_Tree   : Project_Tree_Ref;
       Has_Been_Built : out Boolean;
       Exists         : out Boolean;
+      Command        : out String_Vectors.Vector;
       OK             : out Boolean);
    --  Build, if necessary, the global archive for a main project.
    --  Out parameter Has_Been_Built is True iff the global archive has been
    --  built/rebuilt. Exists is False if there is no need for a global archive.
    --  OK is False when there is a problem building the global archive.
 
-   procedure Link_Main (Main_File : Main_Info);
+   procedure Link_Main (Main_File : in out Main_Info);
    --  Link a specific main unit
 
    procedure Add_Linker_Options
@@ -273,6 +274,7 @@ package body Gprbuild.Link is
       Project_Tree   : Project_Tree_Ref;
       Has_Been_Built : out Boolean;
       Exists         : out Boolean;
+      Command        : out String_Vectors.Vector;
       OK             : out Boolean)
    is
       Archive_Name : constant String :=
@@ -785,6 +787,7 @@ package body Gprbuild.Link is
 
       loop
          Arguments.Clear;
+         Command.Clear;
 
          --  Start with the minimal options
 
@@ -849,8 +852,11 @@ package body Gprbuild.Link is
          declare
             Options : String_Vectors.Vector;
          begin
+            Command.Append (Archive_Builder_Path.all);
+
             for Arg of Arguments loop
                Options.Append (Arg.Name);
+               Command.Append (Arg.Name);
             end loop;
 
             Spawn_And_Script_Write
@@ -874,6 +880,7 @@ package body Gprbuild.Link is
 
       if Archive_Indexer_Path /= null then
          Arguments.Clear;
+         Command.Clear;
 
          Arguments.Append (Archive_Indexer_Opts);
          Add_Argument
@@ -899,8 +906,11 @@ package body Gprbuild.Link is
          declare
             Options : String_Vectors.Vector;
          begin
+            Command.Append (Archive_Indexer_Path.all);
+
             for Arg of Arguments loop
                Options.Append (Arg.Name);
+               Command.Append (Arg.Name);
             end loop;
 
             Spawn_And_Script_Write
@@ -1221,7 +1231,7 @@ package body Gprbuild.Link is
    -- Link_Main --
    ---------------
 
-   procedure Link_Main (Main_File : Main_Info) is
+   procedure Link_Main (Main_File : in out Main_Info) is
 
       function Global_Archive_Name (For_Project : Project_Id) return String;
       --  Returns the name of the global archive for a project
@@ -1403,6 +1413,7 @@ package body Gprbuild.Link is
          Main_File.Tree,
          Global_Archive_Has_Been_Built,
          Global_Archive_Exists,
+         Main_File.Command,
          OK);
 
       if not OK then
@@ -1410,6 +1421,8 @@ package body Gprbuild.Link is
          Bad_Processes.Append (Main_File);
          return;
       end if;
+
+      Main_File.Command.Clear;
 
       --  Get the main base name
 
@@ -3254,13 +3267,11 @@ package body Gprbuild.Link is
             Args_Vector : String_Vectors.Vector;
             Args_List   : String_List_Access;
          begin
-
-            Commands.Append (String_Vectors.Empty_Vector);
-            Commands.Reference (Commands.Last_Index).Append (Linker_Path.all);
+            Main_File.Command.Append (Linker_Path.all);
 
             for Arg of Arguments loop
                Args_Vector.Append (Arg.Name);
-               Commands.Reference (Commands.Last_Index).Append (Arg.Name);
+               Main_File.Command.Append (Arg.Name);
             end loop;
 
             Args_List := new String_List'(To_Argument_List (Args_Vector));
@@ -3374,17 +3385,22 @@ package body Gprbuild.Link is
          Main := Bad_Processes.First_Element;
          Fail_Program
            (Main.Tree,
-            "link of " & Get_Name_String (Main.File) & " failed"
-            & "+failed command was: " & String_Vector_To_String
-              (Commands.First_Element));
+            "link of " & Get_Name_String (Main.File) & " failed" & (
+                if Main.Command.Is_Empty then ""
+                else "+failed command was: " & String_Vector_To_String
+                  (Main.Command)
+               )
+           );
 
       elsif not Bad_Processes.Is_Empty then
-         for I in Bad_Processes.First_Index .. Bad_Processes.Last_Index loop
+         for Main of Bad_Processes loop
             Put ("   link of ");
-            Put (Get_Name_String (Bad_Processes (I).File));
+            Put (Get_Name_String (Main.File));
             Put_Line (" failed");
-            Put_Line ("   failed command was: "
-                      & String_Vector_To_String (Commands (I)));
+            if not Main.Command.Is_Empty then
+               Put_Line ("   failed command was: "
+                         & String_Vector_To_String (Main.Command));
+            end if;
          end loop;
 
          Fail_Program

@@ -35,6 +35,7 @@ with GPR;        use GPR;
 with GPR.ALI;
 with GPR.Snames; use GPR.Snames;
 with GPR.Tree;
+with GPR.Util;   use GPR.Util;
 
 package Gpr_Build_Util is
 
@@ -322,10 +323,13 @@ package Gpr_Build_Util is
       Source    : GPR.Source_Id := No_Source;
       Project   : Project_Id;
       Tree      : Project_Tree_Ref;
+
+      Command   : String_Vectors.Vector;
    end record;
 
    No_Main_Info : constant Main_Info :=
-     (No_File, 0, No_Location, No_Source, No_Project, null);
+     (No_File, 0, No_Location, No_Source, No_Project,
+      null, String_Vectors.Empty_Vector);
 
    package Main_Info_Vectors is new Ada.Containers.Vectors
      (Positive, Main_Info);

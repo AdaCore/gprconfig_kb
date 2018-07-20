@@ -366,9 +366,6 @@ private
    Bad_Processes : Main_Info_Vectors.Vector;
    --  Info for all the mains where binding fails
 
-   Commands : Command_Vectors.Vector;
-   --  Store commands
-
    function String_Vector_To_String (SV : String_Vectors.Vector) return String;
    --  Use Name_Buffer to return a whitespace-separated string
    --  from a string vector.

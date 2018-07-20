@@ -6026,19 +6026,6 @@ package body GPR.Util is
       end if;
    end Command_Line_Argument;
 
-   --------------------------
-   -- String_Vectors_Equal --
-   --------------------------
-
-   function String_Vectors_Equal
-     (Left, Right : String_Vectors.Vector) return Boolean is
-   begin
-      return (Left.First_Index = Right.First_Index and then
-              Left.Last_Index = Right.Last_Index and then
-              (for all I in Left.First_Index .. Left.Last_Index =>
-                Left (I) = Right (I)));
-   end String_Vectors_Equal;
-
 begin
    declare
       Ext : String_Access := GNAT.OS_Lib.Get_Target_Executable_Suffix;

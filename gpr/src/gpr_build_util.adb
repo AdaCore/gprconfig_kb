@@ -19,6 +19,7 @@
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
+with Ada.Containers.Indefinite_Vectors;
 
 with GNAT.Case_Util;             use GNAT.Case_Util;
 with GNAT.Directory_Operations;  use GNAT.Directory_Operations;
@@ -35,7 +36,6 @@ with GPR.Ext;
 with GPR.Names;   use GPR.Names;
 with GPR.Output;  use GPR.Output;
 with GPR.Tempdir;
-with GPR.Util;    use GPR.Util;
 
 package body Gpr_Build_Util is
 
@@ -822,13 +822,11 @@ package body Gpr_Build_Util is
 
    package body Mains is
 
-      package Names is new GNAT.Table
-        (Table_Component_Type => Main_Info,
-         Table_Index_Type     => Integer,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 10,
-         Table_Increment      => 100);
-      --  The table that stores the mains
+      package Main_Info_Vectors is new Ada.Containers.Indefinite_Vectors
+        (Positive, Main_Info);
+      --  The vector that stores the mains
+
+      Names : Main_Info_Vectors.Vector;
 
       Current : Natural := 0;
       --  The index of the last main retrieved from the table
@@ -860,10 +858,10 @@ package body Gpr_Build_Util is
          --  times in parallel when -jnn is used, as this does not work on all
          --  platforms.
 
-         for J in 1 .. Names.Last loop
-            if Canonical_Name = Names.Table (J).File
-              and then Index = Names.Table (J).Index
-              and then Project = Names.Table (J).Project
+         for N of Names loop
+            if Canonical_Name = N.File
+              and then Index = N.Index
+              and then Project = N.Project
             then
                return;
             end if;
@@ -879,9 +877,8 @@ package body Gpr_Build_Util is
          Add_Str_To_Name_Buffer (Name);
          Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
 
-         Names.Increment_Last;
-         Names.Table (Names.Last) :=
-           (Name_Find, Index, Location, No_Source, Project, Tree);
+         Names.Append ((Name_Find, Index, Location, No_Source,
+                       Project, Tree, String_Vectors.Empty_Vector));
 
          if Tree /= null then
             Builder_Data (Tree).Number_Of_Mains :=
@@ -948,14 +945,14 @@ package body Gpr_Build_Util is
                        ("add main in project, index=" & Src.Index'Img);
                   end if;
 
-                  Names.Increment_Last;
-                  Names.Table (Names.Last) :=
-                    (File     => Src.File,
+                  Names.Append
+                    ((File     => Src.File,
                      Index    => Src.Index,
                      Location => No_Location,
                      Source   => Src,
                      Project  => Src.Project,
-                     Tree     => Tree);
+                     Tree     => Tree,
+                     Command  => String_Vectors.Empty_Vector));
 
                   Builder_Data (Tree).Number_Of_Mains :=
                     Builder_Data (Tree).Number_Of_Mains + 1;
@@ -1063,10 +1060,10 @@ package body Gpr_Build_Util is
                --  files we will be adding extra files at the end, and there's
                --  no need to process them in turn.
 
-               J := Names.Last;
+               J := Names.Last_Index;
                Main_Loop : loop
                   declare
-                     File        : Main_Info       := Names.Table (J);
+                     File        : Main_Info       := Names (J);
                      Main_Id     : File_Name_Type  := File.File;
                      Main        : constant String :=
                                      Get_Name_String (Main_Id);
@@ -1190,9 +1187,7 @@ package body Gpr_Build_Util is
                               --  Remove any main that is not in the list of
                               --  restricted languages.
 
-                              Names.Table (J .. Names.Last - 1) :=
-                                Names.Table (J + 1 .. Names.Last);
-                              Names.Set_Last (Names.Last - 1);
+                              Names.Delete (J);
 
                            else
                               --  If we have found a multi-unit source file but
@@ -1225,11 +1220,11 @@ package body Gpr_Build_Util is
                                  Debug_Output
                                    ("found main in project",
                                     Source.Project.Name);
-                                 Names.Table (J).File    := Source.File;
-                                 Names.Table (J).Project := Source.Project;
+                                 Names (J).File    := Source.File;
+                                 Names (J).Project := Source.Project;
 
-                                 if Names.Table (J).Tree = null then
-                                    Names.Table (J).Tree := File.Tree;
+                                 if Names (J).Tree = null then
+                                    Names (J).Tree := File.Tree;
 
                                     Builder_Data (File.Tree).Number_Of_Mains :=
                                       Builder_Data (File.Tree).Number_Of_Mains
@@ -1238,8 +1233,8 @@ package body Gpr_Build_Util is
                                       Mains.Count_Of_Mains_With_No_Tree - 1;
                                  end if;
 
-                                 Names.Table (J).Source  := Source;
-                                 Names.Table (J).Index   := Source.Index;
+                                 Names (J).Source  := Source;
+                                 Names (J).Index   := Source.Index;
                               end if;
                            end if;
 
@@ -1262,7 +1257,7 @@ package body Gpr_Build_Util is
                   end;
 
                   J := J - 1;
-                  exit Main_Loop when J < Names.First;
+                  exit Main_Loop when J < Names.First_Index;
                end loop Main_Loop;
             end if;
 
@@ -1276,10 +1271,10 @@ package body Gpr_Build_Util is
       begin
          Complete_All (Root_Project, Project_Tree);
 
-         for J in Names.First .. Names.Last loop
-            if Names.Table (J).Source = No_Source then
+         for N of Names loop
+            if N.Source = No_Source then
                Fail_Program
-                 (Project_Tree, '"' & Get_Name_String (Names.Table (J).File)
+                 (Project_Tree, '"' & Get_Name_String (N.File)
                   & """ is not a source of any project");
             end if;
          end loop;
@@ -1291,7 +1286,7 @@ package body Gpr_Build_Util is
 
       procedure Delete is
       begin
-         Names.Set_Last (0);
+         Names.Clear;
          Mains.Reset;
       end Delete;
 
@@ -1383,11 +1378,11 @@ package body Gpr_Build_Util is
 
       function Next_Main return Main_Info is
       begin
-         if Current >= Names.Last then
+         if Current >= Names.Last_Index then
             return No_Main_Info;
          else
             Current := Current + 1;
-            return Names.Table (Current);
+            return Names (Current);
          end if;
       end Next_Main;
 
@@ -1398,7 +1393,7 @@ package body Gpr_Build_Util is
       function Number_Of_Mains (Tree : Project_Tree_Ref) return Natural is
       begin
          if Tree = null then
-            return Names.Last;
+            return Names.Last_Index;
          else
             return Builder_Data (Tree).Number_Of_Mains;
          end if;
@@ -1423,19 +1418,19 @@ package body Gpr_Build_Util is
       is
       begin
          if Index /= 0 then
-            if Names.Last = 0 then
+            if Names.Last_Index = 0 then
                Fail_Program
                  (Project_Tree,
                   "cannot specify a multi-unit index but no main "
                   & "on the command line");
 
-            elsif Names.Last > 1 then
+            elsif Names.Last_Index > 1 then
                Fail_Program
                  (Project_Tree,
                   "cannot specify several mains with a multi-unit index");
 
             else
-               Names.Table (Names.Last).Index := Index;
+               Names (Names.Last_Index).Index := Index;
             end if;
          end if;
       end Set_Multi_Unit_Index;
