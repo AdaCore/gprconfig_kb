@@ -778,9 +778,10 @@ package body GPR.Util is
 
    procedure Fail_Program
      (Project_Tree   : Project_Tree_Ref;
-      S              : String;
+      Message        : String;
       Flush_Messages : Boolean := True;
-      No_Message     : Boolean := False) is
+      No_Message     : Boolean := False;
+      Command        : String := "") is
    begin
       if Flush_Messages and not No_Message then
          if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
@@ -788,7 +789,8 @@ package body GPR.Util is
          end if;
       end if;
 
-      Finish_Program (Project_Tree, E_Fatal, S => S, No_Message => No_Message);
+      Finish_Program (Project_Tree, E_Fatal, Message => Message,
+                      No_Message => No_Message, Command => Command);
    end Fail_Program;
 
    --------------------
@@ -798,10 +800,10 @@ package body GPR.Util is
    procedure Finish_Program
      (Project_Tree : Project_Tree_Ref;
       Exit_Code    : Exit_Code_Type := E_Success;
-      S            : String := "";
-      No_Message   : Boolean := False)
+      Message      : String := "";
+      No_Message   : Boolean := False;
+      Command      : String := "")
    is
-      Lines : constant Name_Array_Type := Split (S, "+");
    begin
       if not Debug.Debug_Flag_N then
          if Project_Tree = null then
@@ -811,20 +813,22 @@ package body GPR.Util is
          end if;
       end if;
 
-      if S'Length > 0 then
+      if Message'Length > 0 then
          if Exit_Code /= E_Success then
             if not No_Message then
                Set_Standard_Error;
-               for Line of Lines loop
+               Write_Program_Name;
+               Write_Line (Message);
+               if Command /= "" then
                   Write_Program_Name;
-                  Write_Line (Get_Name_String (Line));
-               end loop;
+                  Write_Line (Command);
+               end if;
             end if;
 
             Exit_Program (E_Fatal);
 
          elsif not No_Message then
-            Write_Str (S);
+            Write_Str (Message);
          end if;
       end if;
 

@@ -3383,14 +3383,20 @@ package body Gprbuild.Link is
 
       if Bad_Processes.Length = 1 then
          Main := Bad_Processes.First_Element;
-         Fail_Program
-           (Main.Tree,
-            "link of " & Get_Name_String (Main.File) & " failed" & (
-                if Main.Command.Is_Empty then ""
-                else "+failed command was: " & String_Vector_To_String
-                  (Main.Command)
-               )
-           );
+         if Main.Command.Is_Empty then
+            Fail_Program
+              (Main.Tree,
+               "link of " & Get_Name_String (Main.File) & " failed");
+         else
+            Fail_Program
+              (Main.Tree,
+               "link of " & Get_Name_String (Main.File) & " failed",
+               Command =>
+                 (if Main.Command.Is_Empty then ""
+                  else "failed command was: " & String_Vector_To_String
+                    (Main.Command))
+              );
+         end if;
 
       elsif not Bad_Processes.Is_Empty then
          for Main of Bad_Processes loop
