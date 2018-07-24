@@ -2522,20 +2522,6 @@ package body Gpr_Build_Util is
                    (Default_Switches_Array).Next;
             end loop;
 
-            if Global_Compilation_Array /= No_Array_Element
-              and then Default_Switches_Array /= No_Array
-            then
-               GPR.Err.Error_Msg
-                 (Env.Flags,
-                  "Default_Switches forbidden in presence of "
-                  & "Global_Compilation_Switches. Use Switches instead.",
-                  Project_Tree.Shared.Arrays.Table
-                    (Default_Switches_Array).Location);
-               Fail_Program
-                 (Project_Tree,
-                  "*** illegal combination of Builder attributes");
-            end if;
-
             if Lang /= No_Name then
                Switches_For_Lang := GPR.Util.Value_Of
                  (Name                    => Lang,
