@@ -3392,7 +3392,8 @@ package body Gprbuild.Link is
               (Main.Tree,
                "link of " & Get_Name_String (Main.File) & " failed",
                Command =>
-                 (if Main.Command.Is_Empty then ""
+                 (if Main.Command.Is_Empty or else
+                  Opt.Verbosity_Level /= Opt.None then ""
                   else "failed command was: " & String_Vector_To_String
                     (Main.Command))
               );
@@ -3403,7 +3404,9 @@ package body Gprbuild.Link is
             Put ("   link of ");
             Put (Get_Name_String (Main.File));
             Put_Line (" failed");
-            if not Main.Command.Is_Empty then
+            if not Main.Command.Is_Empty and then
+              Opt.Verbosity_Level = Opt.None
+            then
                Put_Line ("   failed command was: "
                          & String_Vector_To_String (Main.Command));
             end if;
