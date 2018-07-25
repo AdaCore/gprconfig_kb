@@ -29,6 +29,9 @@ with Ada.Strings;                use Ada.Strings;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps.Constants;
 with Ada.Text_IO;                use Ada.Text_IO;
+with Ada.Containers.Hashed_Maps;
+with Ada.Strings.Hash_Case_Insensitive;
+with Ada.Strings.Equal_Case_Insensitive;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -4860,6 +4863,36 @@ package body GPR.Nmsc is
          Suffix          : Variable_Value;
          Lang            : Name_Id;
 
+         function Name_Id_Hash (Key : Name_Id) return Ada.Containers.Hash_Type;
+
+         function Name_Id_Hash (Key : Name_Id) return Ada.Containers.Hash_Type
+         is
+         begin
+            return Ada.Strings.Hash_Case_Insensitive (Get_Name_String (Key));
+         end Name_Id_Hash;
+
+         function Name_Id_Equal_Case_Insensitive
+           (Left, Right : Name_Id) return Boolean;
+
+         function Name_Id_Equal_Case_Insensitive
+           (Left, Right : Name_Id) return Boolean
+         is
+         begin
+            return Ada.Strings.Equal_Case_Insensitive
+              (Get_Name_String (Left), Get_Name_String (Right));
+         end Name_Id_Equal_Case_Insensitive;
+
+         package Suffix_Lang_Maps is new Ada.Containers.Hashed_Maps
+           (Key_Type        => Name_Id,  --  Suffix
+            Element_Type    => Name_Id,  --  Language
+            Hash            => Name_Id_Hash,
+            Equivalent_Keys => Name_Id_Equal_Case_Insensitive,
+            "="             => Name_Id_Equal_Case_Insensitive);
+
+         Suffix_Lang_Map : Suffix_Lang_Maps.Map;
+
+         use type Suffix_Lang_Maps.Cursor;
+
       begin
          Check_Common
            (Dot_Replacement => Dot_Replacement,
@@ -4919,8 +4952,34 @@ package body GPR.Nmsc is
             if Suffix /= Nil_Variable_Value
               and then Suffix.Value /= No_Name
             then
+
+               --  Check if there is an ambiguity for the spec suffix
+               --  i.e. it is already associated (as a spec or body suffix)
+               --  with another language.
+
+               declare
+                  Associated_Lang : constant Suffix_Lang_Maps.Cursor :=
+                    Suffix_Lang_Map.Find (Key => Suffix.Value);
+               begin
+                  if Associated_Lang /= Suffix_Lang_Maps.No_Element then
+                     Error_Msg
+                       (Data.Flags,
+                        "Spec_Suffix ("""
+                        & Get_Name_String (Suffix.Value)
+                        & """) for language "
+                        & Get_Name_String (Lang_Id.Name)
+                        & " is also defined for language "
+                        & Get_Name_String (Suffix_Lang_Map (Suffix.Value))
+                        & ".",
+                        Suffix.Location, Project);
+                  else
+                     Suffix_Lang_Map.Include (Key      => Suffix.Value,
+                                              New_Item => Lang_Id.Name);
+                  end if;
+               end;
+
                Lang_Id.Config.Naming_Data.Spec_Suffix :=
-                   File_Name_Type (Suffix.Value);
+                 File_Name_Type (Suffix.Value);
 
                Check_Illegal_Suffix
                  (Project,
@@ -4954,6 +5013,32 @@ package body GPR.Nmsc is
             if Suffix /= Nil_Variable_Value
               and then Suffix.Value /= No_Name
             then
+
+               --  Check if there is an ambiguity for the body suffix
+               --  i.e. it is already associated (as a spec or body suffix)
+               --  with another language.
+
+               declare
+                  Associated_Lang : constant Suffix_Lang_Maps.Cursor :=
+                    Suffix_Lang_Map.Find (Key => Suffix.Value);
+               begin
+                  if Associated_Lang /= Suffix_Lang_Maps.No_Element then
+                     Error_Msg
+                       (Data.Flags,
+                        "Body_Suffix ("""
+                        & Get_Name_String (Suffix.Value)
+                        & """) for language "
+                        & Get_Name_String (Lang_Id.Name)
+                        & " is also defined for language "
+                        & Get_Name_String (Suffix_Lang_Map (Suffix.Value))
+                        & ".",
+                        Suffix.Location, Project);
+                  else
+                     Suffix_Lang_Map.Include (Key      => Suffix.Value,
+                                              New_Item => Lang_Id.Name);
+                  end if;
+               end;
+
                Lang_Id.Config.Naming_Data.Body_Suffix :=
                  File_Name_Type (Suffix.Value);
 
