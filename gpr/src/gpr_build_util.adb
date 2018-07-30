@@ -1275,7 +1275,7 @@ package body Gpr_Build_Util is
             if N.Source = No_Source then
                Fail_Program
                  (Project_Tree, '"' & Get_Name_String (N.File)
-                  & """ is not a source of any project");
+                  & """ was not found in the sources of any project");
             end if;
          end loop;
       end Complete_Mains;
