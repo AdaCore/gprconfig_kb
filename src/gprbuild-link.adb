@@ -3206,8 +3206,9 @@ package body Gprbuild.Link is
          Objects.Clear;
          Other_Arguments.Clear;
 
-         --  Filter out duplicate --specs= that may come with static SALs
-         --  linker options.
+         --  Filter out duplicate linker options from static SALs:
+         --     -T<linker script> (keep left-most)
+         --     --specs=... (keep right-most)
 
          if Linking_With_Static_SALs then
             declare
@@ -3219,6 +3220,25 @@ package body Gprbuild.Link is
                   Hash       => Hash,
                   Equal      => "=");
             begin
+               for Index in 1 .. Arguments.Last_Index loop
+                  exit when Index > Arguments.Last_Index;
+                  declare
+                     Arg : constant String := Arguments (Index).Name;
+                     Last : constant Natural := Arg'Length;
+                     Arg_Name_Id : Name_Id;
+                  begin
+                     if Last >= 2 and then Arg (1 .. 2) = "-T" then
+                        Name_Len := 0;
+                        Add_Str_To_Name_Buffer (Arg);
+                        Arg_Name_Id := Name_Find;
+                        if Args.Get (Arg_Name_Id) then
+                           Arguments.Delete (Index);
+                        else
+                           Args.Set (Arg_Name_Id, True);
+                        end if;
+                     end if;
+                  end;
+               end loop;
                for Index in reverse 1 .. Arguments.Last_Index loop
                   declare
                      Arg : constant String := Arguments (Index).Name;
