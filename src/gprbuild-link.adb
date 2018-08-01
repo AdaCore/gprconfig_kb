@@ -3207,7 +3207,7 @@ package body Gprbuild.Link is
          Other_Arguments.Clear;
 
          --  Filter out duplicate linker options from static SALs:
-         --     -T<linker script> (keep left-most)
+         --     -T[ ]<linker script> (keep left-most)
          --     --specs=... (keep right-most)
 
          if Linking_With_Static_SALs then
@@ -3219,26 +3219,66 @@ package body Gprbuild.Link is
                   Key        => Name_Id,
                   Hash       => Hash,
                   Equal      => "=");
+               Arg_Index : Positive := Arguments.First_Index;
             begin
-               for Index in 1 .. Arguments.Last_Index loop
-                  exit when Index > Arguments.Last_Index;
+
+               --  ??? We should use Argument_String_To_List here, for more
+               --  flexibility with user-set flags...
+               --  (this could even be an upstream strategy? so we wouldn't
+               --  have to bother with such issues here)
+
+               --  -T
+
+               while Arg_Index <= Arguments.Last_Index loop
                   declare
-                     Arg : constant String := Arguments (Index).Name;
-                     Last : constant Natural := Arg'Length;
+                     Arg1 : constant String := Arguments (Arg_Index).Name;
+                     Last1 : constant Natural := Arg1'Length;
                      Arg_Name_Id : Name_Id;
                   begin
-                     if Last >= 2 and then Arg (1 .. 2) = "-T" then
-                        Name_Len := 0;
-                        Add_Str_To_Name_Buffer (Arg);
-                        Arg_Name_Id := Name_Find;
-                        if Args.Get (Arg_Name_Id) then
-                           Arguments.Delete (Index);
+                     if Last1 >= 2 and then Arg1 (1 .. 2) = "-T" then
+
+                        --  Case of -T and <file> as separate arguments
+                        --  (from .cgpr file)
+                        if Last1 = 2 then
+                           if Arg_Index < Arguments.Last_Index then
+                              declare
+                                 Arg2 : constant String :=
+                                   Arguments (Arg_Index + 1).Name;
+                              begin
+                                 Name_Len := 0;
+                                 Add_Str_To_Name_Buffer (Arg1 & Arg2);
+                                 Arg_Name_Id := Name_Find;
+                                 if Args.Get (Arg_Name_Id) then
+                                    Arguments.Delete (Arg_Index, 2);
+                                 else
+                                    Args.Set (Arg_Name_Id, True);
+                                    Arg_Index := Arg_Index + 2;
+                                 end if;
+                              end;
+                           end if;
+
+                        --  Case of "-T<file>" (from SAL linker options)
                         else
-                           Args.Set (Arg_Name_Id, True);
+                           Name_Len := 0;
+                           Add_Str_To_Name_Buffer
+                             (Arg1);
+                           Arg_Name_Id := Name_Find;
+                           if Args.Get (Arg_Name_Id) then
+                              Arguments.Delete (Arg_Index);
+                           else
+                              Args.Set (Arg_Name_Id, True);
+                              Arg_Index := Arg_Index + 1;
+                           end if;
                         end if;
+
+                     else
+                        Arg_Index := Arg_Index + 1;
                      end if;
                   end;
                end loop;
+
+               --  --specs
+
                for Index in reverse 1 .. Arguments.Last_Index loop
                   declare
                      Arg : constant String := Arguments (Index).Name;
