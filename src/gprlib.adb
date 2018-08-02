@@ -225,6 +225,9 @@ procedure Gprlib is
    PL_Options                    : String_Vectors.Vector;
    --  Options of the library partial linker
 
+   Trailing_PL_Options           : String_Vectors.Vector;
+   --  Partial linker options from Library_Options
+
    Partial_Linker_Path           : String_Access;
    --  The path to the partial linker driver
 
@@ -1468,24 +1471,32 @@ procedure Gprlib is
              "lib" & Library_Name.all & Archive_Suffix.all);
 
       if not Library_Options_Table.Is_Empty then
-         --  Add the object files specified in the Library_Options
+         --  Add the object files specified in the Library_Options.
 
-         for Path of Library_Options_Table loop
+         --  If we perform a partial link, do not check that all library
+         --  options are object files: switches may also be used.
+
+         for Opt of Library_Options_Table loop
             declare
                Object_Path : constant String :=
-                               (if Is_Absolute_Path (Path) then Path
-                                else Project_Directory.all &
-                                  Directory_Separator & Path);
+                 (if Is_Absolute_Path (Opt) then Opt
+                  else Project_Directory.all &
+                    Directory_Separator & Opt);
             begin
                if Is_Regular_File (Object_Path) then
                   Object_Files.Append (Object_Path);
                else
-                  Fail_Program
-                    (null,
-                     "unknown object file """ & Object_Path & """");
+                  if Partial_Linker_Path = null then
+                     Fail_Program
+                       (null,
+                        "unknown object file """ & Object_Path & """");
+                  else
+                     Trailing_PL_Options.Append (Opt);
+                  end if;
                end if;
             end;
          end loop;
+
       end if;
 
       if Standalone /= No and then Partial_Linker_Path /= null then
@@ -1521,6 +1532,10 @@ procedure Gprlib is
                   Size := Size + 1 + Option'Length;
                end loop;
 
+               for Option of Trailing_PL_Options loop
+                  Size := Size + 1 + Option'Length;
+               end loop;
+
                loop
                   PL_Options.Append (Object_Files (First_Object));
                   Size := Size + 1 + PL_Options.Last_Element'Length;
@@ -1531,6 +1546,8 @@ procedure Gprlib is
                     First_Object > Object_Files.Last_Index
                     or else Size >= Maximum_Size;
                end loop;
+
+               PL_Options.Append (Trailing_PL_Options);
 
                if not Quiet_Output then
                   if Verbose_Mode then
@@ -1881,6 +1898,7 @@ procedure Gprlib is
             when Gprexch.Partial_Linker =>
                Partial_Linker := null;
                PL_Options.Clear;
+               Trailing_PL_Options.Clear;
 
             when Gprexch.Auto_Init =>
                Auto_Init := True;

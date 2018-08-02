@@ -1866,9 +1866,12 @@ package body Gprbuild.Post_Compile is
 
             --  For static libraries, check that the library options are
             --  existing object files.
+            --  Also, skip this check for SALs so that Library_Options other
+            --  than object files may be specified for the partial linking.
 
-            if For_Project.Library_Kind = Static or else
-              For_Project.Library_Kind = Static_Pic
+            if For_Project.Standalone_Library = No and then
+              (For_Project.Library_Kind = Static or else
+               For_Project.Library_Kind = Static_Pic)
             then
                declare
                   List : String_List_Id := Library_Options.Values;
