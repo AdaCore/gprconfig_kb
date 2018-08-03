@@ -1887,9 +1887,9 @@ package body Gprbuild.Post_Compile is
 
                      else
                         OK := Is_Regular_File
-                          (Get_Name_String (For_Project.Directory.Name) &
-                          Directory_Separator &
-                          Name_Buffer (1 .. Name_Len));
+                          (Get_Name_String (For_Project.Object_Directory.Name)
+                           & Directory_Separator
+                           & Name_Buffer (1 .. Name_Len));
                      end if;
 
                      if not OK then

@@ -1477,24 +1477,17 @@ procedure Gprlib is
          --  options are object files: switches may also be used.
 
          for Opt of Library_Options_Table loop
-            declare
-               Object_Path : constant String :=
-                 (if Is_Absolute_Path (Opt) then Opt
-                  else Project_Directory.all &
-                    Directory_Separator & Opt);
-            begin
-               if Is_Regular_File (Object_Path) then
-                  Object_Files.Append (Object_Path);
+            if Is_Regular_File (Opt) then
+               Object_Files.Append (Opt);
+            else
+               if Partial_Linker_Path = null then
+                  Fail_Program
+                    (null,
+                     "unknown object file """ & Opt & """");
                else
-                  if Partial_Linker_Path = null then
-                     Fail_Program
-                       (null,
-                        "unknown object file """ & Object_Path & """");
-                  else
-                     Trailing_PL_Options.Append (Opt);
-                  end if;
+                  Trailing_PL_Options.Append (Opt);
                end if;
-            end;
+            end if;
          end loop;
 
       end if;
@@ -1520,7 +1513,6 @@ procedure Gprlib is
                Saved_PL_Options := PL_Options;
 
                PL_Options.Append (Partial);
-               Size := Size + 1 + Partial'Length;
 
                if Partial_Number > 0 then
                   PL_Options.Append
@@ -1766,8 +1758,10 @@ procedure Gprlib is
                Size := Size + Option'Length + 1;
             end loop;
 
+            Last_AB_Object_Pos := First_AB_Object_Pos;
+
             for J in First_AB_Object_Pos .. AB_Objects.Last_Index loop
-               Size := Size + AB_Objects.Element (J)'Length;
+               Size := Size + AB_Objects.Element (J)'Length + 1;
                exit when Size > Maximum_Size;
                Last_AB_Object_Pos := J;
             end loop;
