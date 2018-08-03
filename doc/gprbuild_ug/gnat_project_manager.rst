@@ -1716,11 +1716,10 @@ Other library-related attributes can be used to change the defaults:
 **Library_Options**:
 
   This attribute may be used to specify additional switches ("last switches")
-  when linking a shared library.
-
-  It may also be used to add foreign object files to a static library.
-  Each string in ``Library_Options`` is an absolute or relative path of an object
-  file. When a relative path, it is relative to the object directory.
+  when linking a shared library or a static standalone library.
+  In the case of a simple static library, the values for this attribute are
+  restricted to paths to object files. Those paths may be absolute or relative
+  to the object directory.
 
 .. index:: Leading_Library_Options attribute
 
