@@ -3255,6 +3255,11 @@ package body Gprbuild.Link is
                                     Arg_Index := Arg_Index + 2;
                                  end if;
                               end;
+                           else
+                              --  We get here if the link command somehow ends
+                              --  with "-T" which would indicate a bug.
+                              --  Just ignore it now and let the linker fail.
+                              Arg_Index := Arg_Index + 1;
                            end if;
 
                         --  Case of "-T<file>" (from SAL linker options)
