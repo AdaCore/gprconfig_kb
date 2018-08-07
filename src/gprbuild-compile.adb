@@ -434,6 +434,8 @@ package body Gprbuild.Compile is
                           Err_To_Out  => True,
                           Force_Local => True);
 
+                     Check_Local_Process (Comp_Data.Process);
+
                      Compilation_Htable.Set (Comp_Data.Process, Comp_Data);
 
                      Free (Exec_Path);
@@ -2951,6 +2953,8 @@ package body Gprbuild.Compile is
                          then ""
                          else Get_Name_String (Source.Id.Object)),
             Response_File => Response_File);
+
+         Check_Local_Process (Process);
 
          if Last_Switches_For_File >= 0 then
             while Compilation_Options.Last_Index > Last_Switches_For_File loop

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -30,6 +30,8 @@ with Ada.Text_IO;
 with GNAT.MD5;          use GNAT;
 with GNAT.String_Split; use GNAT.String_Split;
 
+with GPR.Util;
+
 package body GPR.Compilation is
 
    Last_Env_MD5 : MD5.Message_Digest := (others => <>);
@@ -37,6 +39,23 @@ package body GPR.Compilation is
    --  ??? Ideally, we should set them when spawning the process, in
    --  which case it would be less expensive to set and could be set
    --  every time.
+
+   -------------------------
+   -- Check_Local_Process --
+   -------------------------
+
+   procedure Check_Local_Process (Process : Id) is
+   begin
+      if Process = Invalid_Process then
+         declare
+            Err : constant String := "spawn failed with ERRNO ="
+              & Errno'Img
+              & " (" & Errno_Message & ")";
+         begin
+            GPR.Util.Fail_Program (null, Err);
+         end;
+      end if;
+   end Check_Local_Process;
 
    -----------
    -- Image --
