@@ -2002,10 +2002,11 @@ package body Gprbuild.Link is
                            Status : aliased Integer;
                            Output : String_Access;
 
-                           EOL       : constant String (1 .. 1) :=
+                           EOL           : constant String (1 .. 1) :=
                              (1 => ASCII.LF);
-                           Obj_Found : Boolean := False;
-                           Obj       : String_Access;
+                           Obj_Found     : Boolean := False;
+                           Obj           : String_Access;
+                           Obj_Path_Name : Path_Name_Type;
 
                            Objcopy_Path : String_Access;
                            Objcopy_Exec : String_Access;
@@ -2022,7 +2023,6 @@ package body Gprbuild.Link is
 
                            FD             : File_Descriptor;
                            Tmp_File       : Path_Name_Type;
-                           Temp_File_Name : String_Access;
 
                            Success     : Boolean := True;
                            Warning_Msg : String_Access;
@@ -2037,8 +2037,7 @@ package body Gprbuild.Link is
                               Fail_Program
                                 (null, "could not create temporary file");
                            else
-                              Temp_File_Name :=
-                                new String'(Get_Name_String (Tmp_File));
+                              Record_Temp_File (null, Tmp_File);
                            end if;
 
                            --  Use the archive builder path to compute the
@@ -2115,6 +2114,7 @@ package body Gprbuild.Link is
                                     --  Skip the final CR.
                                     Name_Len := Name_Len - 1;
                                  end if;
+                                 Obj_Path_Name := Name_Find;
                                  Obj := new String'
                                    (Name_Buffer (1 .. Name_Len));
                                  if Obj.all = "b__" & Lib_Name & ".o"
@@ -2159,6 +2159,11 @@ package body Gprbuild.Link is
                                  & " failed.");
                               goto Linker_Options_Incomplete;
                            end if;
+
+                           --  Record the extracted object file as temporary
+                           Record_Temp_File
+                             (Shared => null,
+                              Path => Obj_Path_Name);
 
                            --  Extract the linker options section.
 
@@ -2237,15 +2242,6 @@ package body Gprbuild.Link is
                            end loop;
 
                            Close (File);
-
-                           --  Delete the linker_options file.
-                           if not Debug_Flag_N then
-                              Delete_Temporary_File
-                                (null, Options_File_Path_Name);
-                           end if;
-
-                           --  Delete the process output file.
-                           Delete_File (Temp_File_Name.all, Success);
                            Close (FD);
 
                            Success := True;
@@ -2260,6 +2256,9 @@ package body Gprbuild.Link is
                               Free (Warning_Msg);
                            end if;
                         end;
+
+                        Delete_All_Temp_Files (null);
+
                      end if;
                   end;
 
@@ -3359,6 +3358,7 @@ package body Gprbuild.Link is
             end if;
          end;
       end if;
+
    end Link_Main;
 
    ---------

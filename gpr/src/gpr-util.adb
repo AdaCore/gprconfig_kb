@@ -805,7 +805,7 @@ package body GPR.Util is
       Command      : String := "")
    is
    begin
-      if not Debug.Debug_Flag_N then
+      if not Opt.Keep_Temporary_Files then
          if Project_Tree = null then
             Delete_All_Temp_Files (null);
          else

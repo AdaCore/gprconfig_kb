@@ -1679,7 +1679,6 @@ procedure Gprlib is
                     new String_List'(To_Argument_List (Objcopy_Args));
                   FD             : File_Descriptor;
                   Tmp_File       : Path_Name_Type;
-                  Temp_File_Name : String_Access;
                   Status         : aliased Integer;
 
                begin
@@ -1690,17 +1689,15 @@ procedure Gprlib is
                   if FD = Invalid_FD then
                      Fail_Program
                        (null, "could not create temporary file");
-                  else
-                     Temp_File_Name :=
-                       new String'(Get_Name_String (Tmp_File));
                   end if;
+
+                  Record_Temp_File (null, Tmp_File);
 
                   Spawn (Objcopy_Name.all, Arg_List.all, FD, Status);
 
                   Success := Status = 0;
                   Free (Arg_List);
                   Close (FD);
-                  Delete_File (Temp_File_Name.all, Success);
                end;
 
                if not Success and then Verbose_Mode then

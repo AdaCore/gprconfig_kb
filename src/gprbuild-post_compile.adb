@@ -26,7 +26,6 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
 with Gprexch;        use Gprexch;
-with GPR.Debug;      use GPR.Debug;
 with GPR.Env;
 with GPR.Err;        use GPR.Err;
 with GPR.Names;      use GPR.Names;
@@ -2138,7 +2137,7 @@ package body Gprbuild.Post_Compile is
                --  Delete the temporary file, if gprbuild was not invoked
                --  with -dn.
 
-               if not Debug_Flag_N then
+               if not Opt.Keep_Temporary_Files then
                   Delete_File (Get_Name_String (Pname), Disregard);
                end if;
             end if;
@@ -3444,7 +3443,7 @@ package body Gprbuild.Post_Compile is
 
          Write_Response_Files;
 
-         if Debug.Debug_Flag_N then
+         if Opt.Keep_Temporary_Files then
             Put_Line (Exchange_File, Library_Label (Keep_Temporary_Files));
          end if;
 
@@ -4319,7 +4318,7 @@ package body Gprbuild.Post_Compile is
             --  temporary response file, if created, should not
             --  deleted.
 
-            if Debug_Flag_N then
+            if Opt.Keep_Temporary_Files then
                Put_Line (Exchange_File, Binding_Label (Delete_Temp_Files));
                Put_Line (Exchange_File, "False");
             end if;

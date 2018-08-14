@@ -705,6 +705,7 @@ procedure Gprbuild.Main is
          if Arg = Keep_Temp_Files_Option then
             --  This is equivalent to switch -dn: Keep temporary files
             Set_Debug_Flag ('n');
+            Opt.Keep_Temporary_Files := True;
 
          elsif Arg = Complete_Output_Option then
             Forbidden_In_Package_Builder;
@@ -1742,6 +1743,10 @@ procedure Gprbuild.Main is
                Success      => Do_Not_Care);
          end loop Scan_Args;
       end;
+
+      if Debug.Debug_Flag_N then
+         Opt.Keep_Temporary_Files := True;
+      end if;
 
       if CodePeer_Mode then
          if Languages_Are_Restricted then

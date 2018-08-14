@@ -721,9 +721,44 @@ package body Gprclean is
 
                --  For non library project, clean the global archive and its
                --  dependency file if they exist.
+               --  Also, if the project hierarchy includes static SALs, clean
+               --  the artifacts related to linker options extraction.
 
                if not Project.Library then
                   Clean_Archive (Project);
+
+                  --  Also clean artifacts
+                  declare
+                     Imported : Project_List := Project.All_Imported_Projects;
+                  begin
+                     while Imported /= null loop
+                        if Imported.Project /= No_Project
+                          and then Imported.Project.Standalone_Library /= No
+                        then
+                           declare
+                              Lib_Name : constant String := Get_Name_String
+                                (Imported.Project.Library_Name);
+                              Link_Opt : constant String := Lib_Name &
+                                ".linker_options";
+                              Partial : constant String := Partial_Name
+                                (Lib_Name, 0, Object_Suffix);
+                              Binder : constant String := "b__" & Lib_Name &
+                                Object_Suffix;
+                           begin
+                              if Is_Regular_File (Link_Opt) then
+                                 Delete (Obj_Dir, Link_Opt);
+                              end if;
+                              if Is_Regular_File (Partial) then
+                                 Delete (Obj_Dir, Partial);
+                              end if;
+                              if Is_Regular_File (Binder) then
+                                 Delete (Obj_Dir, Binder);
+                              end if;
+                           end;
+                        end if;
+                        Imported := Imported.Next;
+                     end loop;
+                  end;
                end if;
 
                --  For a library project, clean the partially link objects, if
@@ -734,7 +769,7 @@ package body Gprclean is
                   loop
                      declare
                         Partial : constant String :=
-                                    Partial_Name
+                          Partial_Name
                                       (Get_Name_String (Project.Library_Name),
                                        Partial_Number,
                                        Object_Suffix);
@@ -749,6 +784,24 @@ package body Gprclean is
                         end if;
                      end;
                   end loop;
+
+                  --  For a static SAL, clean the .linker_options file which
+                  --  exists if the latest build was done in "keep temp files"
+                  --  mode.
+
+                  if Project.Standalone_Library /= No
+                    and then Project.Library_Kind = Static
+                  then
+                     declare
+                        Link_Opt_File : constant String :=
+                          Get_Name_String (Project.Library_Name)
+                          & ".linker_options";
+                     begin
+                        if Is_Regular_File (Link_Opt_File) then
+                           Delete (Obj_Dir, Link_Opt_File);
+                        end if;
+                     end;
+                  end if;
                end if;
 
                --  Check all the object file for the sources of the current
