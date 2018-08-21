@@ -2035,9 +2035,11 @@ package body Gprbuild.Link is
 
                            if FD = Invalid_FD then
                               Fail_Program
-                                (null, "could not create temporary file");
+                                (Main_File.Tree,
+                                "could not create temporary file");
                            else
-                              Record_Temp_File (null, Tmp_File);
+                              Record_Temp_File (Main_File.Tree.Shared,
+                                                Tmp_File);
                            end if;
 
                            --  Use the archive builder path to compute the
@@ -2162,7 +2164,7 @@ package body Gprbuild.Link is
 
                            --  Record the extracted object file as temporary
                            Record_Temp_File
-                             (Shared => null,
+                             (Shared => Main_File.Tree.Shared,
                               Path => Obj_Path_Name);
 
                            --  Extract the linker options section.
@@ -2206,7 +2208,7 @@ package body Gprbuild.Link is
                               & Dir_Separator & Options_File);
                            Options_File_Path_Name := Name_Find;
                            Record_Temp_File
-                             (Shared => null,
+                             (Shared => Main_File.Tree.Shared,
                               Path => Options_File_Path_Name);
 
                            if not Is_Valid (File) then
@@ -2241,9 +2243,6 @@ package body Gprbuild.Link is
                               end if;
                            end loop;
 
-                           Close (File);
-                           Close (FD);
-
                            Success := True;
 
                            <<Linker_Options_Incomplete>>
@@ -2255,9 +2254,15 @@ package body Gprbuild.Link is
                                  & " Linker options may be incomplete.");
                               Free (Warning_Msg);
                            end if;
-                        end;
 
-                        Delete_All_Temp_Files (null);
+                           if Is_Valid (File) then
+                              Close (File);
+                           end if;
+
+                           if FD /= Invalid_FD then
+                              Close (FD);
+                           end if;
+                        end;
 
                      end if;
                   end;
