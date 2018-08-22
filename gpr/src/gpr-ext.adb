@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2000-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2000-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -254,8 +254,35 @@ package body GPR.Ext is
    procedure Free (Self : in out External_References) is
       procedure Unchecked_Free is new Ada.Unchecked_Deallocation
         (Name_To_Name_HTable.Instance, Instance_Access);
+      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
+        (Name_To_Name, Name_To_Name_Ptr);
+      Ptr  : Name_To_Name_Ptr;
+      Size : Natural := 0;
    begin
       if Self.Refs /= null then
+         Ptr := Name_To_Name_HTable.Get_First (Self.Refs.all);
+
+         while Ptr /= null loop
+            Size := Size + 1;
+            Ptr := Name_To_Name_HTable.Get_Next (Self.Refs.all);
+         end loop;
+
+         declare
+            Ptr_Array : array (1 .. Size) of Name_To_Name_Ptr;
+            Idx : Positive := 1;
+         begin
+            Ptr := Name_To_Name_HTable.Get_First (Self.Refs.all);
+
+            while Ptr /= null loop
+               Ptr_Array (Idx) := Ptr;
+               Ptr := Name_To_Name_HTable.Get_Next (Self.Refs.all);
+            end loop;
+
+            for I in Ptr_Array'Range loop
+               Unchecked_Free (Ptr_Array (I));
+            end loop;
+         end;
+
          Reset (Self);
          Unchecked_Free (Self.Refs);
       end if;
