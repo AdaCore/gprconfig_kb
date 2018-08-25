@@ -276,10 +276,11 @@ package body GPR.Ext is
             while Ptr /= null loop
                Ptr_Array (Idx) := Ptr;
                Ptr := Name_To_Name_HTable.Get_Next (Self.Refs.all);
+               Idx := Idx + 1;
             end loop;
 
-            for I in Ptr_Array'Range loop
-               Unchecked_Free (Ptr_Array (I));
+            for J in Ptr_Array'Range loop
+               Unchecked_Free (Ptr_Array (J));
             end loop;
          end;
 
