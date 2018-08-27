@@ -269,7 +269,7 @@ package body GPR.Ext is
 
          declare
             Ptr_Array : array (1 .. Size) of Name_To_Name_Ptr;
-            Idx : constant Positive := 1;
+            Idx : Positive := 1;
          begin
             Ptr := Name_To_Name_HTable.Get_First (Self.Refs.all);
 
