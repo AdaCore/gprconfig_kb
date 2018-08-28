@@ -61,6 +61,7 @@
   <!-- x86-linux -->
   <targetset canonical="x86-linux">
     <target>x86-linux</target>
+    <target>x86_32-linux</target>
     <target>i.86-.*linux.*</target>
   </targetset>
 
@@ -100,6 +101,7 @@
   <targetset canonical="x86-windows">
     <!--  known targets: pentium-mingw32msv, i686-pc-mingw32 -->
     <target>x86-windows</target>
+    <target>x86_32-windows</target>
     <target>mingw32</target>
     <target>i.86-.*mingw32.*</target>
     <target>pentium-.*mingw32.*</target>
@@ -135,6 +137,7 @@
   <!-- x86-darwin -->
   <targetset canonical="x86-darwin">
     <target>x86-darwin</target>
+    <target>x86_32-darwin</target>
     <target>i.86-.*-darwin.*</target>
   </targetset>
 
@@ -204,6 +207,7 @@
   <!-- x86 Freebsd -->
   <targetset canonical="x86-freebsd">
     <target>x86-freebsd</target>
+    <target>x86_32-freebsd</target>
     <target>i.86-.*freebsd.*</target>
   </targetset>
 
