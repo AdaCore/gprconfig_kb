@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2002-2018, Free Software Foundation, Inc.         --
+--          Copyright (C) 2002-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -243,26 +243,6 @@ package body GPR.Err is
       Nxt      : Error_Msg_Id;
       E, F     : Error_Msg_Id;
 
-      procedure Free
-       (Index : Errors.Valid_Table_Index_Type;
-        Item  : Error_Msg_Object;
-        Quit  : in out Boolean);
-
-      procedure Free
-       (Index : Errors.Valid_Table_Index_Type;
-        Item  : Error_Msg_Object;
-        Quit  : in out Boolean)
-      is
-         pragma Unreferenced (Index);
-         Text : String_Access;
-      begin
-         Text := Item.Text;
-         Free (Text);
-         Quit := False;
-      end Free;
-
-      procedure Clean_Up is new Errors.For_Each (Free);
-
    begin
       --  Eliminate any duplicated error messages from the list. This is
       --  done after the fact to avoid problems with Change_Error_Text.
@@ -417,8 +397,6 @@ package body GPR.Err is
       end if;
 
       --  Prevent displaying the same messages again in the future
-
-      Clean_Up;
 
       First_Error_Msg := No_Error_Msg;
    end Finalize;
