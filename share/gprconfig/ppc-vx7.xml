@@ -17,6 +17,7 @@
 
 <!ENTITY if_these_cpp_compilers
     '<compilers>
+       <compiler name="^G\+\+_Pro$" />
        <compiler name="^G\+\+-WRS7PPC$" />
      </compilers>'>
 
