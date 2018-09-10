@@ -3337,6 +3337,7 @@ package body Gprbuild.Compile is
          Last_Switches_For_File : Integer;
          Mapping_File           : Path_Name_Type;
          The_ALI                : ALI.ALI_Id;
+         Compiler               : OS_Lib.String_Access;
 
          Last_Conf_Path : Natural := 0;
 
@@ -3414,14 +3415,17 @@ package body Gprbuild.Compile is
                Add_Object_File_Switches (Id);
                Add_Multi_Unit_Switches (Id);
                Add_Object_Path_Switches (Id);
+               Compiler :=
+                 Get_Compiler_Driver_Path (Project_Tree, Id.Language);
 
-               Spawn_Compiler_And_Register
-                 (Source                 => Source,
-                  Source_Project         => Source_Project,
-                  Compiler_Path          =>
-                    Get_Compiler_Driver_Path (Project_Tree, Id.Language).all,
-                  Mapping_File_Path      => Mapping_File,
-                  Last_Switches_For_File => Last_Switches_For_File);
+               if Compiler /= null then
+                  Spawn_Compiler_And_Register
+                    (Source                 => Source,
+                     Source_Project         => Source_Project,
+                     Compiler_Path          => Compiler.all,
+                     Mapping_File_Path      => Mapping_File,
+                     Last_Switches_For_File => Last_Switches_For_File);
+               end if;
 
             else
                Print_Compilation_Outputs (Source.Id);
