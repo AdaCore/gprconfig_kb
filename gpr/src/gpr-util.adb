@@ -4682,7 +4682,13 @@ package body GPR.Util is
          begin
             if GNAT_Version /= Tree.Shared.Ada_Runtime_Library_Version then
                if Opt.Verbosity_Level > Opt.Low then
-                  Put_Line ("    -> GNAT version changed");
+                  Put ("    -> GNAT version changed: ");
+                  Put ("ALI version = ");
+                  Put (Get_Name_String (GNAT_Version));
+                  Put ("; expected version = ");
+                  Put_Line
+                    (Get_Name_String
+                      (Tree.Shared.Ada_Runtime_Library_Version));
                end if;
 
                return True;
