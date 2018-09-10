@@ -73,7 +73,7 @@
              Compiler &apos; Leading_Required_Switches ("C++")
              &amp; ("-mlong-calls");
 
-         when "powerpc-wrs-vxworks" =>
+         when "powerpc-wrs-vxworks" | "powerpc-wrs-vxworks7" =>
            for Leading_Required_Switches ("C++") use
              Compiler &apos; Leading_Required_Switches ("C++")
              &amp; ("-mlongcall");

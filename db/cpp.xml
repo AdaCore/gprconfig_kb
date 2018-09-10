@@ -218,6 +218,18 @@
 
    <configuration>
      <compilers>
+       <compiler name="^G\+\+_Pro$" runtime="^rtp$" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++") &amp; ("-mrtp");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="^G\+\+-WRS7ARM$" runtime="^rtp$" />
        <compiler name="^G\+\+-WRS7PPC$" runtime="^rtp$" />
        <compiler name="^G\+\+-WRS7E500V2$" runtime="^rtp$" />
