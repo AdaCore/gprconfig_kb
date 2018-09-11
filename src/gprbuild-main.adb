@@ -72,7 +72,9 @@ procedure Gprbuild.Main is
    Subst_Switch_Present : Boolean := False;
    --  True if --compiler-subst=... or --compiler-pkg-subst=... appears on the
    --  command line. Used to detect switches that are incompatible with these.
-   --  Also used to prevent passing builder args to the "compiler".
+   --  Also used to prevent passing builder args to the "compiler". These
+   --  switches are used by ASIS-based tools such as gnatpp when the
+   --  --incremental switch is given.
 
    Main_On_Command_Line : Boolean := False;
    --  True if there is at least one main specified on the command line
@@ -505,9 +507,6 @@ procedure Gprbuild.Main is
       procedure Forbidden_In_Package_Builder;
       --  Fail if switch Arg is found in package Builder
 
-      procedure Forbidden_With_Subst;
-      --  Fail if an incompatibility with -compiler-[pkg]-subst is found
-
       ----------------------------------
       -- Forbidden_In_Package_Builder --
       ----------------------------------
@@ -520,19 +519,6 @@ procedure Gprbuild.Main is
                Arg & " can only be used on the command line");
          end if;
       end Forbidden_In_Package_Builder;
-
-      ----------------------------------
-      -- Forbidden_With_Subst --
-      ----------------------------------
-
-      procedure Forbidden_With_Subst is
-      begin
-         if Subst_Switch_Present then
-            Fail_Program
-              (Project_Tree,
-               Arg & " is not compatible with compiler-[pkg-]subst");
-         end if;
-      end Forbidden_With_Subst;
 
    begin
       pragma Assert (Arg'First = 1);
@@ -639,14 +625,20 @@ procedure Gprbuild.Main is
          --  -bargs     all binder arguments
 
       elsif Arg = "-bargs" then
-         Forbidden_With_Subst;
+         if Subst_Switch_Present then
+            return; -- ignore switch incompatible with --compiler-subst
+         end if;
+
          Current_Processor := Binder;
          Current_Bind_Option_Table := No_Bind_Option_Table;
 
          --  -bargs:lang    arguments for binder of language lang
 
       elsif Arg'Length > 7 and then Arg (1 .. 7) = "-bargs:" then
-         Forbidden_With_Subst;
+         if Subst_Switch_Present then
+            return; -- ignore switch incompatible with --compiler-subst
+         end if;
+
          Current_Processor := Binder;
 
          Name_Len := 0;
@@ -670,7 +662,10 @@ procedure Gprbuild.Main is
          --  -largs     linker arguments
 
       elsif Arg = "-largs" then
-         Forbidden_With_Subst;
+         if Subst_Switch_Present then
+            return; -- ignore switch incompatible with --compiler-subst
+         end if;
+
          Current_Processor := Linker;
 
          --  -gargs/margs     options directly for gprbuild
@@ -739,7 +734,9 @@ procedure Gprbuild.Main is
             and then
             Arg (1 .. Distributed_Option'Length) = Distributed_Option
          then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
 
             if Complete_Output then
                Fail_Program
@@ -774,7 +771,9 @@ procedure Gprbuild.Main is
          elsif Arg'Length >= Hash_Option'Length
             and then Arg (1 .. Hash_Option'Length) = Hash_Option
          then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
 
             Hash_Value :=
               new String'(Arg (Hash_Option'Length + 2 .. Arg'Last));
@@ -783,7 +782,9 @@ procedure Gprbuild.Main is
             and then
             Arg (1 .. Slave_Env_Option'Length) = Slave_Env_Option
          then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
 
             if Arg = Slave_Env_Option then
                --  Just --slave-env, it is up to gprbuild to build a sensible
@@ -1212,7 +1213,10 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = Create_Map_File_Switch then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
+
             Map_File := new String'("");
 
          elsif Arg'Length > Create_Map_File_Switch'Length + 1
@@ -1221,7 +1225,10 @@ procedure Gprbuild.Main is
            and then
              Arg (Create_Map_File_Switch'Length + 1) = '='
          then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
+
             Map_File :=
               new String'(Arg (Create_Map_File_Switch'Length + 2 .. Arg'Last));
 
@@ -1242,7 +1249,10 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-b" then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
+
             Opt.Bind_Only  := True;
 
          elsif Arg = "-c" then
@@ -1273,7 +1283,10 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg'Length > 3 and then Arg (1 .. 3) = "-eI" then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
+
             Forbidden_In_Package_Builder;
 
             begin
@@ -1349,7 +1362,10 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-l" then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
+
             Opt.Link_Only  := True;
 
             if Opt.Compile_Only then
@@ -1357,7 +1373,10 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-m" then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
+
             Opt.Minimal_Recompilation := True;
 
          elsif Arg = "-o" then
@@ -1409,7 +1428,10 @@ procedure Gprbuild.Main is
             Recursive := True;
 
          elsif Arg = "-R" then
-            Forbidden_With_Subst;
+            if Subst_Switch_Present then
+               return; -- ignore switch incompatible with --compiler-subst
+            end if;
+
             Opt.Run_Path_Option := False;
 
          elsif Arg = "-s" then
