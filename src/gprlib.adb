@@ -2423,10 +2423,7 @@ begin
 
    --  Archives
 
-   if CodePeer_Mode then
-      null;
-
-   elsif Static and then not No_Create then
+   if Static and then not No_Create then
       Process_Static;
 
    elsif not No_Create then

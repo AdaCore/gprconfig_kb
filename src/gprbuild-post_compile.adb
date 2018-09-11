@@ -4940,15 +4940,24 @@ package body Gprbuild.Post_Compile is
                Proj := Lib_Projs (J);
 
                if not Proj.Is_Aggregated then
-                  --  Try building a library only if no errors occured in
+                  --  Try building a library only if no error occurred in
                   --  library project and projects it depends on.
+                  --  Do not actually create the library for aggregate projects
+                  --  or in CodePeer mode or when generating "C", since
+                  --  there is no notion of library is this case, only the
+                  --  rest of the processing (creation and compilation of
+                  --  binder file in particular, possibly copying ALI files)
+                  --  is useful.
 
                   if not Project_Compilation_Failed (Proj.Proj) then
                      if Proj.Proj.Extended_By = No_Project then
                         if not Proj.Proj.Externally_Built then
                            Build_Library
                              (Proj.Proj, Project_Tree,
-                              No_Create => Proj.Is_Aggregated);
+                              No_Create =>
+                                Proj.Is_Aggregated
+                                  or else Opt.CodePeer_Mode
+                                  or else Target_Name.all = "c");
                         end if;
 
                         if not Is_Static (Proj.Proj) then

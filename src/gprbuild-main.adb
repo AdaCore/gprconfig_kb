@@ -2507,6 +2507,12 @@ begin
            and then Get_Name_String (Variable.Value) = "c"
          then
             C_Target := True;
+
+            --  Set Target_Name so that e.g. gprbuild-post_compile.adb knows
+            --  that we have Target = "c".
+
+            Free (Target_Name);
+            Target_Name := new String'("c");
          end if;
       end if;
 
