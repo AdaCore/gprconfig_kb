@@ -212,15 +212,24 @@ package Builder of the main project:
 
   It is usually used with one or several mains specified on the command line.
 
+* :samp:`--no-complete-output`
+
+  Synonym: :samp:`-n`.
+
+  By default, gprbuild redirects the standard output and the standard error of
+  the compilations to different text files. This allows to inspect the results
+  afterwards, and also ensures that parallel processes do not clobber each
+  other's output. When this switch is specified, these files are not created
+  and individual compilations output directly to common standard streams.
+
 * :samp:`--complete-output`
 
   This switch is not compatible with :samp:`--distributed=`.
 
-  When this switch is specified, the standard output and the standard error of
-  the compilations are redirected to different text files. When a source is up to
-  date, if such text files exist, their contents are send to standard output
+  When this switch is specified, if a source is up to date and compilation
+  log files exist, their contents are sent to standard output
   and standard error. This allows to redisplay any warning or info from the
-  last invocation of gprbuild --complete-output.
+  last invocation of gprbuild.
 
 * :samp:`--distributed[={slave1}[,{slave2}]]`
 
