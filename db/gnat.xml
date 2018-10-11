@@ -311,8 +311,8 @@
    </config>
   </configuration>
 
-  <!-- When using the (Ada) ios-simulator runtime, always compile
-       all files with -mios-version-min (including non-Ada files).  -->
+  <!-- When using the (Ada) ios-simulator runtime, always compile all files
+       with -mios-simulator-version-min (including non-Ada files).  -->
 
    <configuration>
      <compilers>
@@ -322,22 +322,22 @@
    package Compiler is
       for Leading_Required_Switches ("Ada") use
         Compiler'Leading_Required_Switches ("Ada")
-        &amp; ("-mios-version-min=8.0");
+        &amp; ("-mios-simulator-version-min=8.0");
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C")
-        &amp; ("-mios-version-min=8.0");
+        &amp; ("-mios-simulator-version-min=8.0");
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-mios-version-min=8.0");
+        &amp; ("-mios-simulator-version-min=8.0");
       for Leading_Required_Switches ("Asm") use
         Compiler'Leading_Required_Switches ("Asm")
-        &amp; ("-mios-version-min=8.0");
+        &amp; ("-mios-simulator-version-min=8.0");
       for Leading_Required_Switches ("Asm2") use
         Compiler'Leading_Required_Switches ("Asm2")
-        &amp; ("-mios-version-min=8.0");
+        &amp; ("-mios-simulator-version-min=8.0");
       for Leading_Required_Switches ("Asm_Cpp") use
         Compiler'Leading_Required_Switches ("Asm_Cpp")
-        &amp; ("-mios-version-min=8.0");
+        &amp; ("-mios-simulator-version-min=8.0");
    end Compiler;
      </config>
    </configuration>
