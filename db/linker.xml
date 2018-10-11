@@ -1623,11 +1623,11 @@
    for Library_Support  use "static_only";
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc",
-                                   "-mios-version-min=8.0",
+                                   "-mios-simulator-version-min=8.0",
                                    "-nostdlib", "-Wl,-r", "-o");
    package Linker is
       for Required_Switches use Linker'Required_Switches
-        &amp; ("-mios-version-min=8.0",
+        &amp; ("-mios-simulator-version-min=8.0",
                "-nostartfiles",
                "-Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk");
    end Linker;
