@@ -136,13 +136,13 @@
   </configuration>
 
   <configuration>
+    <compilers negate="true">
+       <compiler language="Ada" runtime="ios-simulator" />
+    </compilers>
     <targets>
        <target name="^i.86-.*darwin.*$" />
        <target name="^x86_64-.*darwin.*$" />
     </targets>
-    <compilers negate="true">
-       <compiler language="Ada" runtime="ios-simulator" />
-    </compilers>
     <config>
    for Object_Lister use ("nm", "-g");
    for Object_Lister_Matcher use " [TDS] (.*)";
@@ -872,14 +872,14 @@
 
   <!--  Darwin (MacOS): not applicable to iOS  -->
   <configuration>
+    <compilers negate="true">
+       <compiler runtime="ios-simulator" />
+    </compilers>
     <targets>
        <target name="^i.86-.*darwin.*$" />
        <target name="^powerpc-.*darwin.*$" />
        <target name="^x86_64-.*darwin.*$" />
     </targets>
-    <compilers negate="true">
-       <compiler runtime="ios-simulator" />
-    </compilers>
     <config>
    for Library_Builder use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support use "full";
