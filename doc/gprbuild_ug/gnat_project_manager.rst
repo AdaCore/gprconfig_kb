@@ -1239,10 +1239,12 @@ Cyclic Project Dependencies
 In general, cyclic import dependencies are forbidden:
 if project `A` |withs| project `B` (directly or indirectly) then `B`
 is not allowed to |with| `A`. However, there are cases when cyclic
-dependencies would be beneficial. For these cases, another form of import
-between projects is supplied: the **limited with**.  A project `A` that
-imports a project `B` with a simple |with| may also be imported,
-directly or indirectly, by `B` through a |limited_with|.
+dependencies at the project level are necessary, as dependencies at
+the source level may exist both ways between `A`'s sources and `B`'s sources.
+For these cases, another form of import between projects is supplied:
+the **limited with**.
+A project `A` that imports a project `B` with a simple |with| may also be
+imported, directly or indirectly, by `B` through a |limited_with|.
 
 The difference between a simple |with| and |limited_with| is that
 the name of a project imported with a |limited_with| cannot be used
