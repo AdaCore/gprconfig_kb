@@ -45,7 +45,7 @@
        <target name="^arm-eabi$" />
        <target name="^.*-elinos-linux$" />
        <target name="^.*-generic-linux-gnu$" />
-       <target name="^.*-pikeos$" />
+       <target name="^.*-pikeos.*$" />
        <target name="^.*-qnx[0-9]*$" />
        <target name="^arm-linux-androideabi" />
        <target name="^arm-linux-gnueabi" />
@@ -142,7 +142,7 @@
        <compiler name="^G\+\+$"/>
      </compilers>
      <targets>
-       <target name="^.*-sysgo-pikeos$" />
+       <target name="^.*-sysgo-pikeos.*$" />
      </targets>
      <config>
    package Compiler is
