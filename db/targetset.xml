@@ -445,6 +445,13 @@
     <target>arm-.*-pikeos</target>
   </targetset>
 
+  <!-- arm-pikeos4.2  -->
+
+  <targetset canonical="arm-pikeos4.2">
+    <target>arm-pikeos4.2</target>
+    <target>arm-.*-pikeos4.2</target>
+  </targetset>
+
   <!-- ppc-pikeos  -->
 
   <targetset canonical="ppc-pikeos">

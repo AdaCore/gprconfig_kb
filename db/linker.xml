@@ -632,6 +632,18 @@
 
   <configuration>
     <targets>
+      <target name="^arm-sysgo-pikeos4.2$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("arm-sysgo-pikeos4.2-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("arm-sysgo-pikeos4.2-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^i586-sysgo-pikeos$" />
     </targets>
     <config>
@@ -714,7 +726,7 @@
       <target name="^.*aix.*$" />
       <target name="^.*ia64.*hpux.*$" />
       <target name="^.*pc-mingw32$" />
-      <target name="^.*-pikeos$" />
+      <target name="^.*-pikeos.*$" />
       <target name="^.*-linux.*" />
       <target name="^.*-gnueabihf$" />
       <target name="^.*-gnueabi$" />
@@ -809,7 +821,7 @@
        <target name="^arm-apple-darwin.*$" />
        <target name="^.*wrs-vxworks.*$" />
        <target name="^avr$" />
-       <target name="^.*-pikeos$" />
+       <target name="^.*-pikeos.*$" />
        <target name="^c$" />
     </targets>
     <config>
@@ -1324,7 +1336,7 @@
     <targets>
        <target name="^.*-vxworks.*$" />
        <target name="^.*-lynxos.*$" />
-       <target name="^.*-pikeos$" />
+       <target name="^.*-pikeos.*$" />
        <target name="^.*-elf$" />
        <target name="^.*-eabispe$" />
        <target name="^.*-eabi$" />
@@ -1441,7 +1453,7 @@
        <target name="^.*-elinos-linux$" />
        <target name="^.*-generic-linux-gnu$" />
        <target name="^.*-wrs-linux$" />
-       <target name="^.*-pikeos$" />
+       <target name="^.*-pikeos.*$" />
        <target name="^.*mingw.*$" />
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
