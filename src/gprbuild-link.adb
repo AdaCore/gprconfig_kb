@@ -783,7 +783,7 @@ package body Gprbuild.Link is
       First_Object := Objects.First_Index;
 
       --  If there is an Archive_Builder_Append_Option, we may have
-      --  to build the archive in chuck.
+      --  to build the archive in chunks.
 
       loop
          Arguments.Clear;
@@ -989,7 +989,7 @@ package body Gprbuild.Link is
          if Opt.Verbose_Mode then
             if Opt.Verbosity_Level = Opt.Low then
                Add_Str_To_Name_Buffer
-                 (Ada.Directories.Base_Name (Path.all));
+                 (Base_Name (Path.all, Executable_Suffix.all));
             else
                Add_Str_To_Name_Buffer (Path.all);
             end if;
