@@ -249,6 +249,22 @@
      </config>'
   >
 
+  <!ENTITY config_ada_linker
+    '<config>
+   package Linker is
+      for Driver use Compiler &apos; Driver ("Ada");
+   end Linker;
+     </config>'
+  >
+
+  <!ENTITY config_c_linker
+    '<config>
+   package Linker is
+      for Driver use Compiler &apos; Driver ("C");
+   end Linker;
+     </config>'
+  >
+
   <!ENTITY config_cpp_linker
     '<config>
    package Linker is
@@ -257,10 +273,10 @@
      </config>'
   >
 
-  <!ENTITY config_ada_linker
+  <!ENTITY config_dkm_linker
     '<config>
    package Linker is
-      for Driver use Compiler &apos; Driver ("Ada");
+      for Driver use "&this_target;-vxlink";
    end Linker;
      </config>'
   >
@@ -330,10 +346,30 @@
      &config_mlongcall_cpp;
    </configuration>
 
-   <!-- For VxWorks use Ada driver as default for linking, since cc*
-        and c++* do not recognize the -crtbe switch needed for ZCX -->
+   <!-- For VxWorks kernel modules, use vxlink for linking: this tool takes
+        care of generating the proper _ctors and _dtors symbols used to
+        elaborate DKMs -->
+   <configuration>
+     &if_not_rtp;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_dkm_linker;
+   </configuration>
+
+   <configuration>
+     &if_cpp;
+     &if_rtp;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_cpp_linker;
+   </configuration>
+
    <configuration>
      &if_ada;
+     &if_no_cpp;
+     &if_rtp;
      &if_this_target;
      <!-- vx6, vx7 and vx6cert -->
 
@@ -341,12 +377,12 @@
    </configuration>
 
    <configuration>
-     &if_no_ada;
-     &if_cpp;
+     &if_c_only;
+     &if_rtp;
      &if_this_target;
      <!-- vx6, vx7 and vx6cert -->
 
-     &config_cpp_linker;
+     &config_c_linker;
    </configuration>
 
    <!-- Partial link enabled when generating static libraries -->
