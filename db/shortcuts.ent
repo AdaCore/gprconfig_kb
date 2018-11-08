@@ -23,6 +23,12 @@
     </compilers>'
    >
 
+   <!ENTITY if_no_cpp
+   '<compilers negate="true">
+       <compiler language="C++" />
+    </compilers>'
+   >
+
    <!ENTITY if_c_only
    '<compilers negate="true">
        <compiler language="C++" />
