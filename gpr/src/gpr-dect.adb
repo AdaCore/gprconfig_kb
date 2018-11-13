@@ -1416,74 +1416,144 @@ package body GPR.Dect is
 
          Scan (In_Tree);
 
-         Expect (Tok_Identifier, "identifier");
+         declare
+            Buffer      : String (1 .. 1_024);
+            Buffer_Last : Natural := 0;
+            --  Local buffer for the renames/extends clause.
+            --  The global buffer is already used by the scanner.
 
-         if Token = Tok_Identifier then
-            declare
-               Project_Name : constant Name_Id := Token_Name;
+            Last_Dot_Index     : Natural := 0;
+            Project_Name       : Name_Id := No_Name;
+            Package_Name       : Name_Id := No_Name;
+            Project_Source_Ptr : Source_Ptr := No_Location;
+            Package_Source_Ptr : Source_Ptr := No_Location;
+            Success            : Boolean := True;
 
-               The_Project  : Project_Node_Id := Empty_Project_Node;
+            procedure Add_To_Buffer (S : String);
+            --  Add S to the local buffer
 
+            procedure Add_To_Buffer (S : String) is
+               New_Buffer_Last : constant Integer := Buffer_Last + S'Length;
             begin
-               --  Look for a possible project name
+               Buffer (Buffer_Last + 1 .. New_Buffer_Last) := S;
+               Buffer_Last := New_Buffer_Last;
+            end Add_To_Buffer;
 
-               The_Project := Imported_Or_Extended_Project_Of
-                 (Current_Project, In_Tree, Project_Name);
-
-               if The_Project /= Empty_Project_Node then
-                  Set_Project_Of_Renamed_Package_Of
-                    (Package_Declaration, In_Tree, To => The_Project);
-               else
-                  Error_Msg_Name_1 := Project_Name;
-                  Error_Msg
-                    (Flags,
-                     "% is not an imported or extended project", Token_Ptr);
-               end if;
-            end;
-
-            Scan (In_Tree);
-            Expect (Tok_Dot, "`.`");
-
-            if Token = Tok_Dot then
-               Scan (In_Tree);
+         begin
+            loop
                Expect (Tok_Identifier, "identifier");
 
-               if Token = Tok_Identifier then
-                  if Name_Of (Package_Declaration, In_Tree) /= Token_Name then
-                     Error_Msg (Flags, "not the same package name", Token_Ptr);
-                  elsif
-                    Present (Project_Of_Renamed_Package_Of
-                               (Package_Declaration, In_Tree))
-                  then
-                     declare
-                        Current : Project_Node_Id :=
-                                    First_Package_Of
-                                      (Project_Of_Renamed_Package_Of
-                                           (Package_Declaration, In_Tree),
-                                       In_Tree);
+               if Token /= Tok_Identifier then
+                  Success := False;
+                  exit;
+               end if;
 
-                     begin
-                        while Present (Current)
-                          and then Name_Of (Current, In_Tree) /= Token_Name
-                        loop
-                           Current :=
-                             Next_Package_In_Project (Current, In_Tree);
-                        end loop;
+               --  On the first iteration we have the source pointer for the
+               --  project name. After that, every iteration is assumed to give
+               --  the source pointer and identifier for the package.
 
-                        if No (Current) then
-                           Error_Msg
-                             (Flags, """" &
-                              Get_Name_String (Token_Name) &
-                              """ is not a package declared by the project",
-                              Token_Ptr);
-                        end if;
-                     end;
+               if Project_Source_Ptr = No_Location then
+                  Project_Source_Ptr := Token_Ptr;
+               else
+                  Package_Source_Ptr := Token_Ptr;
+                  Package_Name := Token_Name;
+               end if;
+
+               --  Add the identifier name to the buffer
+
+               Add_To_Buffer (Get_Name_String (Token_Name));
+
+               --  Scan past the identifier
+
+               Scan (In_Tree);
+
+               exit when Token /= Tok_Dot;
+
+               --  If we have a dot, add a dot to the Buffer and look for the
+               --  next identifier.
+
+               Add_To_Buffer (".");
+               Last_Dot_Index := Buffer_Last;
+
+               --  Scan past the dot
+
+               Scan (In_Tree);
+            end loop;
+
+            --  If no package name is set, it means we only did one iteration
+            --  of the loop i.e. there was only one identifier.
+
+            if Package_Name = No_Name then
+               Success := False;
+               Expect (Tok_Dot, "`.`");  --  we were indeed expecting a dot
+            end if;
+
+            if Success then
+
+               --  The project name is the idenfier or group of identifiers
+               --  that prefixes the package name (last dot excluded).
+
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Buffer (1 .. Last_Dot_Index - 1));
+               Project_Name := Name_Find;
+
+               --  Now check the project and package
+
+               declare
+                  The_Project : Project_Node_Id := Empty_Project_Node;
+
+               begin
+                  --  Look for a possible project name
+
+                  The_Project := Imported_Or_Extended_Project_Of
+                    (Current_Project, In_Tree, Project_Name);
+
+                  if The_Project /= Empty_Project_Node then
+                     Set_Project_Of_Renamed_Package_Of
+                       (Package_Declaration, In_Tree, To => The_Project);
+                  else
+                     Error_Msg_Name_1 := Project_Name;
+                     Error_Msg
+                       (Flags,
+                        "% is not an imported or extended project",
+                        Project_Source_Ptr);
                   end if;
+               end;
 
-                  Scan (In_Tree);
+               if Name_Of (Package_Declaration, In_Tree) /= Package_Name then
+                  Error_Msg
+                    (Flags, "not the same package name", Package_Source_Ptr);
+               elsif
+                 Present (Project_Of_Renamed_Package_Of
+                          (Package_Declaration, In_Tree))
+               then
+                  declare
+                     Current : Project_Node_Id :=
+                                 First_Package_Of
+                                   (Project_Of_Renamed_Package_Of
+                                      (Package_Declaration, In_Tree),
+                                    In_Tree);
+
+                  begin
+                     while Present (Current)
+                       and then Name_Of (Current, In_Tree) /= Package_Name
+                     loop
+                        Current :=
+                          Next_Package_In_Project (Current, In_Tree);
+                     end loop;
+
+                     if No (Current) then
+                        Error_Msg
+                          (Flags, """" &
+                             Get_Name_String (Package_Name) &
+                             """ is not a package declared " &
+                             "by the project",
+                           Package_Source_Ptr);
+                     end if;
+                  end;
                end if;
             end if;
-         end if;
+         end;
       end if;
 
       if Renaming then
