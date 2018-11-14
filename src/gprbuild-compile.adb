@@ -31,6 +31,7 @@ with GPR.Compilation;              use GPR.Compilation;
 
 with GPR.Compilation.Process;      use GPR.Compilation.Process;
 with GPR.Compilation.Slave;
+with GPR.Debug;
 with GPR.Env;
 with GPR.Names;                    use GPR.Names;
 with GPR.Opt;                      use GPR.Opt;
@@ -2246,6 +2247,9 @@ package body Gprbuild.Compile is
 
          File : Text_IO.File_Type;
 
+         File_Content     : String_Vectors.Vector;
+         Expected_Content : String_Vectors.Vector;
+
          function Assert_Line (Current : String) return Boolean;
          --  Return False if Current is not the next line in the switches file
 
@@ -2285,8 +2289,48 @@ package body Gprbuild.Compile is
 
          List    : Name_List_Index;
          Nam_Nod : Name_Node;
+
+         use GPR.Debug;
+
       begin
+         if Opt.Verbosity_Level > Opt.Low and then Debug.Debug_Flag_S then
+            Expected_Content.Append (String (Id.Object_TS));
+
+            for Opt of Compilation_Options loop
+               Expected_Content.Append (Opt.Name);
+            end loop;
+
+            List := Id.Language.Config.Compiler_Trailing_Required_Switches;
+
+            while List /= No_Name_List loop
+               Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
+               Expected_Content.Append (Get_Name_String (Nam_Nod.Name));
+               List := Nam_Nod.Next;
+            end loop;
+         end if;
+
          Open (File, In_File, Get_Name_String (Id.Switches_Path));
+
+         if Opt.Verbosity_Level > Opt.Low and then Debug.Debug_Flag_S then
+            declare
+               Line : String (1 .. 1_000);
+               Last : Natural;
+            begin
+               while not End_Of_File (File) loop
+                  Get_Line (File, Line, Last);
+                  File_Content.Append (Line (1 .. Last));
+               end loop;
+            end;
+            Reset (File);
+            Put_Line ("       expected .cswi file content:");
+            for S of Expected_Content loop
+               Put_Line ("          " & S);
+            end loop;
+            Put_Line ("       actual .cswi file content:");
+            for S of File_Content loop
+               Put_Line ("          " & S);
+            end loop;
+         end if;
 
          if not Assert_Line (String (Id.Object_TS)) then
             return True;
