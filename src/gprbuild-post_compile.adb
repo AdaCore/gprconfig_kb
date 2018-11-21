@@ -18,6 +18,7 @@
 
 with Ada.Containers.Ordered_Sets;
 with Ada.Directories;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;                 use Ada, Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
@@ -622,18 +623,46 @@ package body Gprbuild.Post_Compile is
 
                      OK := False;
                      List := For_Project.Lib_Interface_ALIs;
+
                      while List /= Nil_String loop
                         Elem := Project_Tree.Shared.String_Elements.Table
                           (List);
 
-                        if Elem.Value = Name_Id (Source.Dep_Name)
-                        then
-                           OK := True;
-                           Library_Sources.Append (Source);
-                           Interface_ALIs.Set (Source.Dep_Name, True);
-                           Complete_Interface_ALIs.Set (Source.Dep_Name, True);
-                           exit;
-                        end if;
+                        --  Checking against Lib_Interface_ALIs will never
+                        --  succeed if Source is in a multi-unit file because
+                        --  Dep_Name will be in the format <base>~<n>.ali
+                        --  whereas the corresponding Elem will be <base>.ali.
+                        --  ??? Fix the computation of Lib_Interface_ALIs ???
+                        --  As a quick fix we compare <base>.
+
+                        declare
+                           use Ada.Strings.Fixed;
+
+                           Actual_Dep_Str : constant String := Get_Name_String
+                             (Source.Dep_Name);
+                           Elem_Str       : constant String := Get_Name_String
+                             (Elem.Value);
+
+                           Dep_Multi_Char_Index : constant Natural := Index
+                             (Actual_Dep_Str, "~");
+                           Elem_Dot_Index       : constant Natural := Index
+                             (Elem_Str, ".");
+                        begin
+                           if Elem.Value = Name_Id (Source.Dep_Name) or else
+                             (Source.Index /= 0 and then
+                              Dep_Multi_Char_Index = Elem_Dot_Index and then
+                              Head (Actual_Dep_Str, Dep_Multi_Char_Index - 1) =
+                                  Head (Elem_Str, Elem_Dot_Index - 1))
+                           then
+                              OK := True;
+                              Library_Sources.Append (Source);
+                              Interface_ALIs.Set
+                                (Source.Dep_Name, True);
+                              Complete_Interface_ALIs.Set
+                                (Source.Dep_Name, True);
+                              exit;
+                           end if;
+                        end;
 
                         List := Elem.Next;
                      end loop;
