@@ -1966,13 +1966,13 @@ The parts of a project that can be installed are:
 
 * executables built from a standard project
 
-Moreover, GPRinstall will create, when needed, a project to use the
-installed sources, objects or library. By default, this project file
-is installed in the GPRbuild's default path location so that it can be
-"with"ed easily without further configuration. The installation
-process keeps record of every file installed for easy and safe removal.
+Moreover, GPRinstall will create, when needed, a project to use the installed
+sources, objects or library. By default, this project file is installed in the
+GPRbuild's default path location so that it can be "with"ed easily without
+further configuration. The installation process keeps record of every file
+installed for easy and safe removal.
 
-GPRinstall supports all kind of project:
+GPRinstall supports all kinds of project:
 
 * standard projects
 
@@ -1998,10 +1998,10 @@ Projects that won't be installed are:
 
   Both abstract projects and standard projects without any sources
 
-At a minimum, to invoke GPRinstall you must specify a main project file
-in a command such as `gprinstall proj.gpr` or
-`gprinstall -P proj.gpr` (in installing mode) or the install name (in
-uninstalling mode) `gprinstall --uninstall proj`.
+At a minimum, to invoke GPRinstall you must specify a main project file in a
+command such as ``gprinstall proj.gpr`` or ``gprinstall -P proj.gpr`` (in
+installing mode) or the install name (in uninstalling mode)
+``gprinstall --uninstall proj``.
 
 Examples of invocation of GPRinstall:
 
@@ -2010,17 +2010,15 @@ Examples of invocation of GPRinstall:
      gprinstall prj1.gpr
      gprinstall -r --prefix=/my/root/install -P prj2.gpr
 
-GPRinstall will record the installation under the *install name*
-which is by default the name of the project without the
-extension. That is above the project install names are `prj1` and
-`prj2`.
+GPRinstall will record the installation under the *install name* which is by
+default the name of the project without the extension. That is above the
+project install names are ``prj1`` and ``prj2``.
 
-The installation name can be specified with the option
-`--install-name`. This makes it possible to record the
-installation of multiple projects under the same name. This is handy
-if an application comes with a library and a set of tools built with
-multiple projects. In this case we may want to record the installation
-under the same name. The install name is also used as a suffix to
+The installation name can be specified with the option ``--install-name``. This
+makes it possible to record the installation of multiple projects under the
+same name. This is handy if an application comes with a library and a set of
+tools built with multiple projects. In this case we may want to record the
+installation under the same name. The install name is also used as a suffix to
 group include and library directories.
 
 Examples of installation under the same name:
@@ -2030,18 +2028,18 @@ Examples of installation under the same name:
      gprinstall --install-name=myapp lib.gpr
      gprinstall --install-name=myapp --mode=usage tools/tools.gpr
 
-Note the `--mode=usage` option above. This tells GPRinstall to
-only install the executable built as part of the project.
+Note the ``--mode=usage`` option above. This tells GPRinstall to only install
+the executable built as part of the project.
 
-It is possible to uninstall a project by using the `--uninstall`
-option. In this case we just pass the install name to GPRinstall:
+It is possible to uninstall a project by using the ``--uninstall`` option. In
+this case we just pass the install name to GPRinstall:
 
 ::
 
      gprinstall --uninstall prj1
      gprinstall --uninstall prj2
 
-And both `lib.gpr` and `tools.gpr` above will be uninstalled with:
+And both ``lib.gpr`` and ``tools.gpr`` above will be uninstalled with:
 
 ::
 
@@ -2049,11 +2047,11 @@ And both `lib.gpr` and `tools.gpr` above will be uninstalled with:
 
 
 Note that GPRinstall does not deal with dependencies between projects. Also
-GPRinstall in uninstall mode does not need nor use information in the
-installed project. This is because the project may not be present anymore
-and many different project scenario may have been installed. So when
-uninstalling GPRinstall just use the manifest file (whose name is the install
-name) information.
+GPRinstall in uninstall mode does not need nor use information in the installed
+project. This is because the project may not be present anymore and many
+different project scenario may have been installed. So when uninstalling
+GPRinstall just use the manifest file (whose name is the install name)
+information.
 
 
 .. _Switches_for_GPRinstall:
@@ -2088,7 +2086,7 @@ The switches for GPRinstall are:
 
   Specify the name of the build variable in the installed project.
   If this options is not used, the default build variable used is
-  `<PROJECT_NAME>_BUILD`.
+  ``<PROJECT_NAME>_BUILD``.
 
   It is possible to specify multiple variables in --build-var
   option. In this case, if the first build variable is not found, the
@@ -2097,6 +2095,7 @@ The switches for GPRinstall are:
   and a more generic build variable shared by multiple projects.
 
   ::
+
       $ gprinstall -Pproject1 \
         --build-var=PROJECT1_BUILD,LIBRARY_TYPE
                     ^
@@ -2124,12 +2123,12 @@ The switches for GPRinstall are:
 
 * :samp:`-a`
 
-  Install all the sources (default). Cannot be used with `-m` below.
+  Install all the sources (default). Cannot be used with ``-m`` below.
 
 * :samp:`-m`
 
   Install only the interface sources (minimal set of sources). Cannot
-  be used with `-a` above.
+  be used with ``-a`` above.
 
 * :samp:`-f`
 
@@ -2144,6 +2143,7 @@ The switches for GPRinstall are:
   Specify the installation mode.
 
   * dev
+
     This is the default mode. The installation is done in developer
     mode. All files to use the project are copied to to install prefix. For a
     library this means that the specs, the corresponding ALI files for
@@ -2152,6 +2152,7 @@ The switches for GPRinstall are:
     instead of the library.
 
   * usage
+
     The installation is done in usage mode. This means that only the
     library or the executable is installed. In this installation mode
     there is no project generated, nor specs or ALI files installed.
@@ -2177,8 +2178,8 @@ The switches for GPRinstall are:
 
   Specify the location of the installation.
   If not specified, the default location for the current
-  compiler is used. That is, `path` corresponds to parent directory
-  where `gprinstall` is found.
+  compiler is used. That is, ``path`` corresponds to parent directory
+  where ``gprinstall`` is found.
 
 * :samp:`--install-name={name}`
 
@@ -2191,14 +2192,14 @@ The switches for GPRinstall are:
 
   Specify the value for the sources installation directory if an absolute path.
   Otherwise it is appended to the prefix above. The default is
-  `include/<project_name>[.<build-name>]`
+  ``include/<project_name>[.<build-name>]``
 
 * :samp:`--lib-subdir={path}`
 
   Specify the value for the library and object installation
   directory if an absolute path.
   Otherwise it is appended to the prefix above. The default is
-  `lib/<project_name>[.<build-name>]`
+  ``lib/<project_name>[.<build-name>]``
 
 * :samp:`--link-lib-subdir={path}`
 
@@ -2210,13 +2211,13 @@ The switches for GPRinstall are:
 
   Specify the value for the
   executables installation directory if an absolute path. Otherwise it is
-  appended to the prefix above. The default is `bin`.
+  appended to the prefix above. The default is ``bin``.
 
 * :samp:`--project-subdir={path}`
 
   Specify the value for the
   project installation directory if an absolute path. Otherwise it is
-  appended to the prefix above. The default is `share/gpr`.
+  appended to the prefix above. The default is ``share/gpr``.
 
 * :samp:`--no-project`
 
@@ -2243,10 +2244,10 @@ The switches for GPRinstall are:
 
   Write debug symbols out of executables and libraries into a
   separate file. The separate file is named after the main file with
-  an added `.debug` extension. That is, if the executable to be
-  installed is named `main`, then a file `main.debug` is also created in
+  an added ``.debug`` extension. That is, if the executable to be
+  installed is named ``main``, then a file ``main.debug`` is also created in
   the same location, containing only the debug information. The
-  debug information is then removed from the `main` executable.
+  debug information is then removed from the ``main`` executable.
 
 * :samp:`--subdirs={subdir}`
 
