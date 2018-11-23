@@ -1998,6 +1998,10 @@ package body Gprbuild.Link is
 
                         Linking_With_Static_SALs := True;
 
+                        if Archive_Builder_Path = null then
+                           Check_Archive_Builder;
+                        end if;
+
                         declare
                            Status : aliased Integer;
                            Output : String_Access;
