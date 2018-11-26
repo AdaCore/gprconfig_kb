@@ -806,6 +806,10 @@ begin
 
    Initialize;
 
+   --  Add the external variable GPR_TOOL (default value "gprbuild")
+
+   Add_Gpr_Tool_External;
+
    --  Parse the command line, getting the switches and the executable names
 
    In_Package_Clean := False;

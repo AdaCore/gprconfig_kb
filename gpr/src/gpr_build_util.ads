@@ -215,6 +215,9 @@ package Gpr_Build_Util is
    function Escape_Path (Path : String) return String;
    --  Escapes the characters '\', ' ' and '"' with character '\' before them
 
+   procedure Add_Gpr_Tool_External;
+   --  Add the GPR_TOOL external variable with default "gprbuild"
+
    --------------
    -- Switches --
    --------------

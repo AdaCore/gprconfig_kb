@@ -878,6 +878,10 @@ procedure Gprls.Main is
 begin
    Initialize;
 
+   --  Add the external variable GPR_TOOL (default value "gprbuild")
+
+   Add_Gpr_Tool_External;
+
    Check_Version_And_Help
      ("GPRLS", "2015", Version_String => Gpr_Version_String);
 

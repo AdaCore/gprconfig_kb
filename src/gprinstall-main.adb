@@ -901,6 +901,10 @@ begin
 
    Install_Int_Handler (Gprinstall.Sigint_Intercepted'Access);
 
+   --  Add the external variable GPR_TOOL (default value "gprbuild")
+
+   Add_Gpr_Tool_External;
+
    --  Check command line arguments. These will be overridden when looking
    --  for the configuration file
 

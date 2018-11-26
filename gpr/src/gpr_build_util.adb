@@ -20,6 +20,7 @@ with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Containers.Indefinite_Vectors;
+with Ada.Environment_Variables;
 
 with GNAT.Case_Util;             use GNAT.Case_Util;
 with GNAT.Directory_Operations;  use GNAT.Directory_Operations;
@@ -102,6 +103,22 @@ package body Gpr_Build_Util is
    begin
       Add (Option => new String'(Option), To => To, Last => Last);
    end Add;
+
+   ---------------------------
+   -- Add_Gpr_Tool_External --
+   ---------------------------
+
+   procedure Add_Gpr_Tool_External is
+      use Ada.Environment_Variables;
+
+      Gpr_Tool : constant String := Value ("GPR_TOOL", "");
+   begin
+      --  Set GPR_TOOL unless already set
+
+      if Gpr_Tool = "" then
+         Ada.Environment_Variables.Set ("GPR_TOOL", "gprbuild");
+      end if;
+   end Add_Gpr_Tool_External;
 
    ----------------------------
    -- Aggregate_Libraries_In --

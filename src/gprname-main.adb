@@ -685,6 +685,7 @@ procedure GPRName.Main is
                when others =>
                   null;
             end case;
+
             --  -x
 
          elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-x" then
@@ -697,6 +698,16 @@ procedure GPRName.Main is
                  (Arg (3 .. Arg'Last));
                Check_Regular_Expression (Arg (3 .. Arg'Last));
             end if;
+
+            --  -X
+
+         elsif Arg'Length >= 3
+           and then Arg (1 .. 2) = "-X"
+           and then Is_External_Assignment (Root_Environment, Arg)
+         then
+            --  Is_External_Assignment has side effects when it returns True
+
+            null;
 
             --  Junk switch starting with minus
 
@@ -771,6 +782,10 @@ procedure GPRName.Main is
 --  Start of processing for Gnatname
 
 begin
+   --  Add the external variable GPR_TOOL (default value "gprbuild")
+
+   Add_Gpr_Tool_External;
+
    Initialize;
 
    if Opt.Verbose_Mode then
