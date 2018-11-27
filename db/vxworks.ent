@@ -183,6 +183,13 @@
      </compilers>'
   >
 
+  <!ENTITY if_not_kernel_full
+    '<compilers negate="true">
+       <compiler runtime="^kernel$" />
+       <compiler runtime="^kernel-" />
+     </compilers>'
+  >
+
   <!ENTITY if_ada_rtp
     '<compilers>
       <compiler name="^GNAT$" runtime="^rtp$" />
