@@ -301,8 +301,7 @@
    </configuration>
 
    <configuration>
-     &if_not_kernel_full;
-     &if_not_rtp;
+     &if_cert_based;
      &if_this_target;
     <!-- vx6cert -->
 
