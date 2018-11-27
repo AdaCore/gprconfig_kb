@@ -123,6 +123,16 @@
      </config>'
   >
 
+  <!ENTITY config_no_startfiles_no_defaultlibs
+    '<config>
+     package Linker is
+        for Required_Switches use
+          Linker &apos; Required_Switches
+          &amp; ("-nostartfiles", "-nodefaultlibs");
+     end Linker;
+     </config>'
+  >
+
   <!ENTITY config_kernel_cflags
     '<config>
    package Compiler is
@@ -289,5 +299,14 @@
 
     &config_rtp_cert_lib;
    </configuration>
+
+   <configuration>
+     &if_not_kernel_full;
+     &if_not_rtp;
+     &if_this_target;
+    <!-- vx6cert -->
+
+    &config_no_startfiles_no_defaultlibs;
+  </configuration>
   '
   >
