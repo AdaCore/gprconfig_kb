@@ -129,7 +129,7 @@ package GPR.Util is
       No_Message   : Boolean := False;
       Command      : String := "");
    --  Terminate program, with or without a message, setting the status code
-   --  according to Fatal. This properly removes all temporary files. Do not
+   --  according to Exit_Code. This properly removes all temporary files. Don't
    --  issue any message when No_Message is True.
 
    procedure Duplicate
