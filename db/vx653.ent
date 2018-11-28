@@ -87,5 +87,13 @@
 
      &config_cpp_linker;
    </configuration>
+
+   <configuration>
+     &if_no_ada;
+     &if_no_cpp;
+     &if_this_target;
+
+     &config_c_linker;
+   </configuration>
   '
   >
