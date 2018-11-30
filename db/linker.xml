@@ -823,6 +823,7 @@
        <target name="^avr$" />
        <target name="^.*-pikeos.*$" />
        <target name="^c$" />
+       <target name="^llvm$" />
     </targets>
     <config>
    for Library_Support  use "static_only";
