@@ -1485,6 +1485,13 @@ order of priority):
 
 .. index:: external function
 
+**Tool mode**:
+  In the special case of the ``GPR_TOOL`` variable, if its value has not been
+  specified via the commandline or as an environment variable, the various
+  tools set this variable to a value proper to each tool. gprbuild sets this
+  value to ``gprbuild``. See the documentation of other tools to find out which
+  value they set this variable to.
+
 **External function second parameter**.
   Once an external variable is defined, its value needs to be obtained by
   the project. The general form is to use
