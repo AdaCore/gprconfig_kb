@@ -1100,7 +1100,7 @@ package body GPRName is
          Path_Last := Path_Name'Last;
       end if;
 
-      Output_Name := new String'(To_Lower (Path_Name (1 .. Path_Last)));
+      Output_Name := new String'(Path_Name (1 .. Path_Last));
       Output_Name_Last := Output_Name'Last - 4;
 
       --  If there is already a project file with the specified name, parse
