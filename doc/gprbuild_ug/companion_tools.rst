@@ -36,7 +36,7 @@ first that matches provides the configuration file to use.
   `<target.cgpr`, `<rts>.cgpr` or `default.cgpr` is found in
   the default configuration files directory, this file is used. The target
   and rts parameters are specified via the `--target` and `--RTS`
-  switches of `gprbuild`. The default directory is is :file:`share/gpr`
+  switches of `gprbuild`. The default directory is :file:`share/gpr`
   in the installation directory of `gprbuild`
 
 * If not found, the environment variable `GPR_CONFIG` is tested
