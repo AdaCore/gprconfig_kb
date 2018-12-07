@@ -313,7 +313,9 @@ procedure GPRName.Main is
             Path_Last := Path_Name'Last;
          end if;
 
-         File_Path := new String'(Path_Name (1 .. Path_Last));
+         Free (File_Path);
+         File_Path := new String'
+           (Normalize_Pathname (Path_Name (1 .. Path_Last)));
       end;
 
       if Is_Regular_File (File_Path.all) then
