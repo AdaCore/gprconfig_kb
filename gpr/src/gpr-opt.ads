@@ -156,6 +156,9 @@ package GPR.Opt is
    Minimal_Recompilation : Boolean := False;
    --  Set to True if minimal recompilation mode requested
 
+   Checksum_Recompilation : Boolean := False;
+   --  Set to True if checksum-based recompilation mode requested
+
    No_Backup : Boolean := False;
    --  Do not create backup copies of project files in gprname.
    --  Set by switch --no-backup.

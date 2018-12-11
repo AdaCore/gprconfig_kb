@@ -1519,6 +1519,9 @@ procedure Gprbuild.Main is
                Register_Command_Line_Option (Warnings_Suppress);
             end if;
 
+         elsif Arg = "-m2" then
+            Opt.Checksum_Recompilation := True;
+
          elsif Arg = "-x" then
             Opt.Use_Include_Path_File := True;
 
@@ -2185,7 +2188,12 @@ procedure Gprbuild.Main is
 
          --  Line for -m
 
-         Put ("  -m       Minimum Ada recompilation");
+         Put ("  -m       Minimum Ada recompilation, timestamp-based");
+         New_Line;
+
+         --  Line for -m2
+
+         Put ("  -m2      Minimum Ada recompilation, checksum-based");
          New_Line;
 
          --  Line for -o

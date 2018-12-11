@@ -4878,9 +4878,11 @@ package body GPR.Util is
                         then
                            Found := True;
 
-                           if Opt.Minimal_Recompilation
-                             and then ALI.Sdep.Table (D).Stamp /=
-                             Dep_Src.Source_TS
+                           if (Opt.Minimal_Recompilation
+                               and then ALI.Sdep.Table (D).Stamp /=
+                                 Dep_Src.Source_TS) or else
+                             ((ALI.Sdep.Table (D).Stamp = Dep_Src.Source_TS)
+                              and then Opt.Checksum_Recompilation)
                            then
                               --  If minimal recompilation is in action,
                               --  replace the stamp of the source file in
@@ -4924,6 +4926,20 @@ package body GPR.Util is
 
                                        ALI.Sdep.Table (D).Stamp :=
                                          Dep_Src.Source_TS;
+
+                                    elsif Opt.Checksum_Recompilation then
+                                       if Opt.Verbosity_Level > Opt.Low then
+                                          Put ("   ");
+                                          Put
+                                            (Get_Name_String
+                                               (ALI.Sdep.Table (D).Sfile));
+                                          Put (": changed, " &
+                                                 "same timestamp " &
+                                                 "but different checksums");
+                                          New_Line;
+                                       end if;
+
+                                       return True;
                                     end if;
                                  end if;
 
