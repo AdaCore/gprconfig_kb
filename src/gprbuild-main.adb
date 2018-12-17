@@ -2032,7 +2032,7 @@ procedure Gprbuild.Main is
 
          Put ("  --subdirs=dir");
          New_Line;
-         Put ("           Real obj/lib/exec dirs are subdirs");
+         Put ("           Use dir as suffix to obj/lib/exec directories");
          New_Line;
 
          --  Line for --single-compile-per-obj-dir

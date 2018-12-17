@@ -780,7 +780,7 @@ procedure Gprinstall.Main is
          --  Line for --subdirs=
 
          Put_Line ("  --subdirs=dir");
-         Put_Line ("           Real obj/lib/exec dirs are subdirs");
+         Put_Line ("           Use dir as suffix to obj/lib/exec directories");
 
          --  Line for Target_Project_Option
 

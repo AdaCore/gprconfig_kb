@@ -298,13 +298,11 @@ package Builder of the main project:
 
 * :samp:`--subdirs={subdir}`
 
-  This indicates that the real directories (except the source directories) are
-  subdirectories of the directories specified in the project files. This applies
-  in particular to object directories, library directories and exec directories.
-  If the directories do not exist, they are created automatically.
-  For externally built projects, the directories are never created. If such a
-  subdirectory exists, it is used, otherwise the directory without --subdirs=
-  is used in externally built projects.
+  This indicates that the object, library and executable directories specified
+  in the project file will be suffixed with {subdir}. If needed, those
+  subdirectories are created except for externally built projects: in this case
+  if the subdirectories already exist they are used, otherwise the base
+  directories are used.
 
 * :samp:`--src-subdirs={subdir}`
 

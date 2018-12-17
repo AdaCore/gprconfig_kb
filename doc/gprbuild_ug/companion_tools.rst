@@ -1846,7 +1846,11 @@ The switches for GPRclean are:
 
 * :samp:`--subdirs={dir}`
 
-  Real object, library or exec directories are subdirectories `dir` of the specified ones.
+  This indicates that the object, library and executable directories specified
+  in the project file will be suffixed with {subdir}. If needed, those
+  subdirectories are created except for externally built projects: in this case
+  if the subdirectories already exist they are used, otherwise the base
+  directories are used.
 
 * :samp:`--src-subdirs={subdir}`
 
@@ -2251,11 +2255,11 @@ The switches for GPRinstall are:
 
 * :samp:`--subdirs={subdir}`
 
-  This indicates that the real directories (except the source directories) are
-  subdirectories of the directories specified in the project files. This applies
-  in particular to object directories, library directories and exec directories.
-  If the directories do not exist, they are created automatically. It is
-  expected that the sub-dir option value here is the one used with gprbuild.
+  This indicates that the object, library and executable directories specified
+  in the project file will be suffixed with {subdir}. If needed, those
+  subdirectories are created except for externally built projects: in this case
+  if the subdirectories already exist they are used, otherwise the base
+  directories are used.
 
 * :samp:`--relocate-build-tree[={dir}]`
 
@@ -2402,8 +2406,11 @@ You may specify any of the following switches to `gprname`:
 
 * :samp:`--subdirs={dir}`
 
-  Real object, library or exec directories are subdirectories <dir> of the
-  specified ones.
+  This indicates that the object, library and executable directories specified
+  in the project file will be suffixed with {subdir}. If needed, those
+  subdirectories are created except for externally built projects: in this case
+  if the subdirectories already exist they are used, otherwise the base
+  directories are used.
 
 * :samp:`--no-backup`
 

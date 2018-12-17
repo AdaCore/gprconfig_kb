@@ -776,7 +776,7 @@ procedure Gprclean.Main is
          Put_Line ("           Prepend <obj>/dir to the list of source dirs" &
                    " for each project");
          Put_Line ("  --subdirs=dir");
-         Put_Line ("           Real obj/lib/exec dirs are subdirs");
+         Put_Line ("           Use dir as suffix to obj/lib/exec directories");
          Put_Line ("  " & Gpr_Build_Util.Unchecked_Shared_Lib_Imports);
          Put_Line ("           Shared lib projects may import any project");
          New_Line;
