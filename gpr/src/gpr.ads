@@ -2352,7 +2352,7 @@ package GPR is
       Locally_Removed   : Boolean    := True) return Source_Iterator;
    --  Returns an iterator for all the sources of a project tree, or a specific
    --  project, or a specific language. Include sources from aggregated libs if
-   --  Aggregated_Libs is True. If Locally_Removed is set to False the
+   --  Encapsulated_Libs is True. If Locally_Removed is set to False the
    --  Locally_Removed files won't be reported.
 
    function Element (Iter : Source_Iterator) return Source_Id;
