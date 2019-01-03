@@ -818,6 +818,19 @@
     </config>
   </configuration>
 
+  <configuration>
+    <compilers>
+       <compiler runtime="ios-simulator" />
+    </compilers>
+    <targets>
+       <target name="^x86_64-.*darwin.*$" />
+    </targets>
+    <config>
+   for Library_Support  use "static_only";
+   for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
+    </config>
+  </configuration>
+
   <!-- GNAAMP -->
   <configuration>
     <targets>
@@ -870,6 +883,21 @@
     </config>
   </configuration>
 
+  <!--  Darwin (MacOS/iOS)  -->
+  <configuration>
+    <targets>
+       <target name="^.*-darwin.*$" />
+    </targets>
+    <config>
+   package Linker is
+      for Map_File_Option         use "-Wl,-map,";
+      for Max_Command_Line_Length use "128000";
+      for Response_File_Format    use "object_list";
+      for Response_File_Switches  use ("-Wl,-filelist,");
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  Darwin (MacOS): not applicable to iOS  -->
   <configuration>
     <compilers negate="true">
@@ -896,13 +924,6 @@
    for Shared_Library_Minimum_Switches use
          ("-dynamiclib", "-shared-libgcc");
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
-
-   package Linker is
-      for Map_File_Option         use "-Wl,-map,";
-      for Max_Command_Line_Length use "128000";
-      for Response_File_Format    use "object_list";
-      for Response_File_Switches  use ("-Wl,-filelist,");
-   end Linker;
     </config>
   </configuration>
 
