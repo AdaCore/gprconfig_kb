@@ -114,6 +114,23 @@
    </config>
   </configuration>
 
+  <!-- Add -G to binder switches for C target starting with version 20 -->
+  <configuration>
+   <compilers>
+     <compiler name="^GNAT_C$"/>
+   </compilers>
+   <compilers negate="true">
+     <compiler version="18" />
+     <compiler version="19" />
+   </compilers>
+   <config>
+   package Binder is
+      for Required_Switches ("Ada") use
+        Binder'Required_Switches ("Ada") &amp; ("-G");
+   end Binder;
+   </config>
+  </configuration>
+
   <!-- Add -m32 on linux and windows 64bits hosts for C target -->
   <configuration>
    <compilers>
