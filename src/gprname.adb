@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                      Copyright (C) 2001-2018, AdaCore                    --
+--                      Copyright (C) 2001-2019, AdaCore                    --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -130,6 +130,10 @@ package body GPRName is
       Spec      : Boolean;
    end record;
 
+   function "<" (Left, Right : Source) return Boolean is
+     ("<" (Get_Name_String (Left.File_Name),
+           Get_Name_String (Right.File_Name)));
+
    package Source_Vectors is new Ada.Containers.Vectors
      (Positive, Source);
 
@@ -142,6 +146,10 @@ package body GPRName is
       Language : Name_Id;
       File_Name : Name_Id;
    end record;
+
+   function "<" (Left, Right : Foreign_Source) return Boolean is
+     ("<" (Get_Name_String (Left.File_Name),
+           Get_Name_String (Right.File_Name)));
 
    package Foreign_Source_Vectors is new Ada.Containers.Vectors
      (Positive, Foreign_Source);
@@ -807,8 +815,10 @@ package body GPRName is
 
          --  Put the sources in the source list files (or attribute
          --  Source_Files) and in the naming project (or the Naming package).
+         --  Use reverse order to make up for the AST construction method that
+         --  assembles things in reverse.
 
-         for Source_Index in 1 .. Sources.Last_Index loop
+         for Source_Index in reverse 1 .. Sources.Last_Index loop
 
             --  Add the corresponding attribute in the Naming package
 
@@ -898,16 +908,8 @@ package body GPRName is
                      end if;
                   else
                      Source_Files.Set (Current_Source.File_Name, True);
-
-                     Get_Name_String (Current_Source.File_Name);
-                     Add_Char_To_Name_Buffer (ASCII.LF);
-
-                     if Write (Source_List_FD,
-                               Name_Buffer (1)'Address,
-                               Name_Len) /= Name_Len
-                     then
-                        GPR.Com.Fail ("disk full");
-                     end if;
+                     --  Do not write it to the source list file yet, as it
+                     --  would result in a weird reverse ordering.
                   end if;
                end if;
 
@@ -964,6 +966,23 @@ package body GPRName is
                   end if;
                end if;
             end;
+         end loop;
+
+         --  Now add source file names to the source list file, in direct order
+         --  this time.
+
+         for Current_Source of Sources loop
+            if Source_Files.Get (Current_Source.File_Name) then
+               Get_Name_String (Current_Source.File_Name);
+               Add_Char_To_Name_Buffer (ASCII.LF);
+
+               if Write (Source_List_FD,
+                         Name_Buffer (1)'Address,
+                         Name_Len) /= Name_Len
+               then
+                  GPR.Com.Fail ("disk full");
+               end if;
+            end if;
          end loop;
       end;
 
@@ -1725,6 +1744,19 @@ package body GPRName is
                   end if;
                end if;
             end loop File_Loop;
+
+            --  Sort the ada/foreign source vectors to have deterministic
+            --  content in the source list and naming project files.
+
+            declare
+               package Sources_Sorting is
+                 new Source_Vectors.Generic_Sorting;
+               package Foreign_Sources_Sorting is
+                 new Foreign_Source_Vectors.Generic_Sorting;
+            begin
+               Sources_Sorting.Sort (Sources);
+               Foreign_Sources_Sorting.Sort (Foreign_Sources);
+            end;
 
             Close (Dir);
          end if;
