@@ -374,6 +374,12 @@
     <target>aarch64-wrs-vxworks7</target>
   </targetset>
 
+  <!-- aarch64-vx7r2 (vxworks 7.2) -->
+  <targetset canonical="aarch64-vx7">
+    <target>aarch64-vx7r2</target>
+    <target>aarch64-wrs-vxworks7r2</target>
+  </targetset>
+
   <!-- ppc-elf-.*  -->
   <targetset canonical="ppc-elf">
     <target>ppc-elf</target>
