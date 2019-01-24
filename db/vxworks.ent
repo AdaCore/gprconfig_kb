@@ -106,6 +106,7 @@
     '<targets>
        <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworks7$" />
+       <target name="^.*-wrs-vxworks7r2$" />
      </targets>'>
 
   <!ENTITY rtp_runtimes
