@@ -243,7 +243,7 @@ package body GPRName is
       begin
          Result := 0;
 
-         for J in reverse 1 .. Source_Index - 1 loop
+         for J in Source_Index + 1 .. Sources.Last_Index loop
             declare
                S : Source renames Sources (J);
             begin
@@ -328,6 +328,19 @@ package body GPRName is
            (Project_Naming_File_Name (1 .. Project_Naming_Last));
          Put_Line ("""");
       end if;
+
+      --  Sort the ada/foreign source vectors to have deterministic
+      --  content in the source list and naming project files.
+
+      declare
+         package Sources_Sorting is
+           new Source_Vectors.Generic_Sorting;
+         package Foreign_Sources_Sorting is
+           new Foreign_Source_Vectors.Generic_Sorting;
+      begin
+         Sources_Sorting.Sort (Sources);
+         Foreign_Sources_Sorting.Sort (Foreign_Sources);
+      end;
 
       --  Create the naming project node
 
@@ -1744,19 +1757,6 @@ package body GPRName is
                   end if;
                end if;
             end loop File_Loop;
-
-            --  Sort the ada/foreign source vectors to have deterministic
-            --  content in the source list and naming project files.
-
-            declare
-               package Sources_Sorting is
-                 new Source_Vectors.Generic_Sorting;
-               package Foreign_Sources_Sorting is
-                 new Foreign_Source_Vectors.Generic_Sorting;
-            begin
-               Sources_Sorting.Sort (Sources);
-               Foreign_Sources_Sorting.Sort (Foreign_Sources);
-            end;
 
             Close (Dir);
          end if;
