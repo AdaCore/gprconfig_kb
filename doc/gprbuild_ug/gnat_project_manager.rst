@@ -4244,6 +4244,13 @@ Project Level Attributes
     Indicates the exec directory for the project, that is the directory where the
     executables are.
 
+  * **Create_Missing_Dirs**: single
+
+    Indicates if the missing object, library and executable directories should
+    be created automatically by the project-aware tool.  Taken into account
+    only in the main project. Only authorized case-insensitive values are
+    "true" and "false".
+
   * **Source_Dirs**: list
 
     The list of source directories of the project.
