@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2019, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -23,8 +23,10 @@
 ------------------------------------------------------------------------------
 
 --  This package spec holds version information for the GPR tools.
---  It is updated whenever the release number is changed and at the beginning
---  of each calendar year.
+--
+--  It is patched on the fly during builds to match the current version, date
+--  and build type. Consider it as a compilable template rather than real
+--  source.
 
 package GPR.Version is
 
