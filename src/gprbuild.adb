@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2018, AdaCore                     --
+--                     Copyright (C) 2004-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -23,7 +23,6 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GPR.Compilation.Slave; use GPR.Compilation.Slave;
 with GPR.Names;             use GPR.Names;
 with GPR.Script;            use GPR.Script;
-with GPR.Util;              use GPR.Util;
 
 package body Gprbuild is
 
