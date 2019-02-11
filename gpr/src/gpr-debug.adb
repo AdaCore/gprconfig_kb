@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 1992-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2019, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -39,6 +39,13 @@ package body GPR.Debug is
    --  dt  When a time stamp mismatch has been found for an ALI file,
    --      display the source file name, the time stamp expected and
    --      the time stamp found.
+
+   --  da  Print information about names being registered and accessed in
+   --      the package GPR.Names.
+
+   --  ds  In verbose mode, print details about the checks on .cswi files.
+
+   --  du  Disable checks on unit names, thus allowing non-ascii characters.
 
    --------------------
    -- Set_Debug_Flag --

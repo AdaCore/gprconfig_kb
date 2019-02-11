@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2000-2018, Free Software Foundation, Inc.         --
+--          Copyright (C) 2000-2019, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -40,6 +40,7 @@ with GNAT.Regexp;               use GNAT.Regexp;
 with GNAT.Table;
 
 with GPR.Com;
+with GPR.Debug;
 with GPR.Env;     use GPR.Env;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
@@ -6627,9 +6628,10 @@ package body GPR.Nmsc is
          return;
       end if;
 
-      --  Check that the casing matches
+      --  Check that the casing matches.
+      --  The debug flag -du deactivates this.
 
-      if File_Names_Case_Sensitive then
+      if not Debug.Debug_Flag_U and then File_Names_Case_Sensitive then
          case Naming.Casing is
             when All_Lower_Case =>
                for J in Filename'First .. Last loop
@@ -6722,9 +6724,14 @@ package body GPR.Nmsc is
       end if;
 
       --  Name_Buffer contains the name of the unit in lower-cases. Check
-      --  that this is a valid unit name
+      --  that this is a valid unit name.
+      --  The debug flag -du deactivates this.
 
-      Check_Unit_Name (Name_Buffer (1 .. Name_Len), Unit);
+      if not Debug.Debug_Flag_U then
+         Check_Unit_Name (Name_Buffer (1 .. Name_Len), Unit);
+      else
+         Unit := Name_Find;
+      end if;
 
       --  If there is a naming exception for the same unit, the file is not
       --  a source for the unit.
