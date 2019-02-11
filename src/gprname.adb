@@ -20,6 +20,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
+with Ada.Containers.Ordered_Maps;
 with Ada.Text_IO;               use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -128,11 +129,12 @@ package body GPRName is
       Unit_Name : Name_Id;
       Index     : Int := 0;
       Spec      : Boolean;
+      Position  : Natural;  --  Used to preserve the file search order
    end record;
 
    function "<" (Left, Right : Source) return Boolean is
-     ("<" (Get_Name_String (Left.File_Name),
-           Get_Name_String (Right.File_Name)));
+     ("<" (Get_Name_String (Left.File_Name) & Left.Position'Image,
+           Get_Name_String (Right.File_Name) & Right.Position'Image));
 
    package Source_Vectors is new Ada.Containers.Vectors
      (Positive, Source);
@@ -143,13 +145,14 @@ package body GPRName is
    --  the pragmas Source_File_Name in the configuration pragmas file.
 
    type Foreign_Source is record
-      Language : Name_Id;
+      Language  : Name_Id;
       File_Name : Name_Id;
+      Position  : Natural;  --  Used to preserve the file search order
    end record;
 
    function "<" (Left, Right : Foreign_Source) return Boolean is
-     ("<" (Get_Name_String (Left.File_Name),
-           Get_Name_String (Right.File_Name)));
+     ("<" (Get_Name_String (Left.File_Name) & Left.Position'Image,
+           Get_Name_String (Right.File_Name) & Right.Position'Image));
 
    package Foreign_Source_Vectors is new Ada.Containers.Vectors
      (Positive, Foreign_Source);
@@ -166,6 +169,36 @@ package body GPRName is
    --  Hash table to keep track of source file names, to avoid putting several
    --  times the same file name in case of multi-unit files.
 
+   package Source_Count_Package is new Ada.Containers.Ordered_Maps
+     (Key_Type     => Name_Id,
+      Element_Type => Natural);
+
+   Source_Count : Source_Count_Package.Map;
+   --  For a source file name (without path information), keep track of the
+   --  number of homonyms.
+
+   function Get_Source_Position (N : Name_Id) return Natural;
+
+   type Name_Index_Pair is record
+      Name  : Name_Id;
+      Index : Int;
+   end record;
+
+   function "<" (Left, Right : Name_Index_Pair) return Boolean;
+
+   function "<" (Left, Right : Name_Index_Pair) return Boolean is
+     ((if Left.Name /= Right.Name
+       then Left.Name < Right.Name
+       else Left.Index < Right.Index));
+
+   package First_Index_Package is new Ada.Containers.Ordered_Maps
+     (Key_Type     => Name_Index_Pair,
+      Element_Type => Positive);
+
+   First_Index : First_Index_Package.Map;
+   --  For a source file name (without path information), keep track of the
+   --  index in Sources for its first occurrence.
+
    Languages : Name_Vectors.Vector;
 
    procedure Add_Language (Lang : Name_Id);
@@ -181,6 +214,22 @@ package body GPRName is
          Languages.Append (Lang);
       end if;
    end Add_Language;
+
+   -------------------------
+   -- Get_Source_Position --
+   -------------------------
+
+   function Get_Source_Position (N : Name_Id) return Natural is
+      Result : Natural := 1;
+   begin
+      if Source_Count.Contains (N) then
+         Result := Source_Count.Element (N) + 1;
+         Source_Count.Replace (N, Result);
+      else
+         Source_Count.Insert (N, 1);
+      end if;
+      return Result;
+   end Get_Source_Position;
 
    ---------
    -- Dup --
@@ -223,39 +272,6 @@ package body GPRName is
         Default_Project_Node
           (Of_Kind => N_Package_Declaration,
            In_Tree => Tree);
-
-      procedure Check_Duplicates
-        (Current_Source : Source;
-         Source_Index   : Natural;
-         Result         : out Natural);
-      --  Check for duplicated source file+index in
-      --  Source.Table (1 .. Source_Index - 1) and set Result to the relevant
-      --  index if any. Set Result to 0 if not found.
-
-      ----------------------
-      -- Check_Duplicates --
-      ----------------------
-
-      procedure Check_Duplicates
-        (Current_Source : Source;
-         Source_Index   : Natural;
-         Result         : out Natural) is
-      begin
-         Result := 0;
-
-         for J in Source_Index + 1 .. Sources.Last_Index loop
-            declare
-               S : Source renames Sources (J);
-            begin
-               if S.File_Name = Current_Source.File_Name
-                 and then S.Index = Current_Source.Index
-               then
-                  Result := J;
-                  return;
-               end if;
-            end;
-         end loop;
-      end Check_Duplicates;
 
    begin
       --  If there were no already existing project file, or if the parsing was
@@ -826,6 +842,24 @@ package body GPRName is
             end if;
          end loop;
 
+         --  Set the Source_Files entries so that, for every Ada source, we
+         --  have an easy access to the index of its first occurrence in
+         --  Sources.
+
+         for Source_Index in 1 .. Sources.Last_Index loop
+            declare
+               Current_Source : constant Source := Sources (Source_Index);
+            begin
+               if not First_Index.Contains
+                 ((Current_Source.File_Name, Current_Source.Index))
+               then
+                  First_Index.Insert
+                    ((Current_Source.File_Name, Current_Source.Index),
+                     Source_Index);
+               end if;
+            end;
+         end loop;
+
          --  Put the sources in the source list files (or attribute
          --  Source_Files) and in the naming project (or the Naming package).
          --  Use reverse order to make up for the AST construction method that
@@ -836,8 +870,7 @@ package body GPRName is
             --  Add the corresponding attribute in the Naming package
 
             declare
-               Current_Source : constant Source :=
-                                  Sources (Source_Index);
+               Current_Source : constant Source := Sources (Source_Index);
 
                Decl_Item : constant Project_Node_Id :=
                              Default_Project_Node
@@ -887,43 +920,45 @@ package body GPRName is
                   --  If already there, check for duplicate filenames+source
                   --  index and emit warnings accordingly.
 
-                  if Source_Files.Get (Current_Source.File_Name) then
-                     Check_Duplicates (Current_Source, Source_Index, Index);
+                  Index := First_Index.Element
+                    ((Current_Source.File_Name, Current_Source.Index));
 
-                     if Index /= 0 then
-                        if Opt.Ignore_Duplicate_Files then
-                           Process_File := False;
+                  if Index /= Source_Index then
+                     --  Means we have several elements in Sources with the
+                     --  same (File_Name, Index).
 
-                        elsif Sources (Index).Unit_Name
-                          = Current_Source.Unit_Name
-                        then
-                           Put_Line
-                             ("warning: duplicate file " &
-                              Get_Name_String (Current_Source.File_Name) &
-                              " for unit " &
-                              Get_Name_String (Current_Source.Unit_Name) &
-                              " will be ignored");
-                           Process_File := False;
+                     if Opt.Ignore_Duplicate_Files then
+                        Process_File := False;
 
-                        else
-                           Put_Line
-                             ("warning: duplicate file " &
-                              Get_Name_String (Current_Source.File_Name) &
-                              " for units " &
-                              Get_Name_String (Current_Source.Unit_Name) &
-                              " and " &
-                              Get_Name_String
-                                (Sources (Index).Unit_Name));
-                              Put_Line
-                                ("warning: generated Naming package needs " &
-                                 "to be reviewed manually");
-                        end if;
+                     elsif Sources (Index).Unit_Name
+                       = Current_Source.Unit_Name
+                     then
+                        Put_Line
+                          ("warning: duplicate file " &
+                             Get_Name_String (Current_Source.File_Name) &
+                             " for unit " &
+                             Get_Name_String (Current_Source.Unit_Name) &
+                             " will be ignored");
+                        Process_File := False;
+
+                     else
+                        Put_Line
+                          ("warning: duplicate file " &
+                             Get_Name_String (Current_Source.File_Name) &
+                             " for units " &
+                             Get_Name_String (Current_Source.Unit_Name) &
+                             " and " &
+                             Get_Name_String
+                             (Sources (Index).Unit_Name));
+                        Put_Line
+                          ("warning: generated Naming package needs " &
+                             "to be reviewed manually");
                      end if;
                   else
                      Source_Files.Set (Current_Source.File_Name, True);
-                     --  Do not write it to the source list file yet, as it
-                     --  would result in a weird reverse ordering.
                   end if;
+                  --  Do not write it to the source list file yet, as it
+                  --  would result in a weird reverse ordering.
                end if;
 
                if Process_File then
@@ -982,7 +1017,7 @@ package body GPRName is
          end loop;
 
          --  Now add source file names to the source list file, in direct order
-         --  this time.
+         --  this time. Reuse Source_Files to avoid duplicates.
 
          for Current_Source of Sources loop
             if Source_Files.Get (Current_Source.File_Name) then
@@ -995,6 +1030,7 @@ package body GPRName is
                then
                   GPR.Com.Fail ("disk full");
                end if;
+               Source_Files.Set (Current_Source.File_Name, False);
             end if;
          end loop;
       end;
@@ -1083,6 +1119,8 @@ package body GPRName is
 
       GPR.Tree.Initialize (Tree);
 
+      Source_Count.Clear;
+      First_Index.Clear;
       Sources.Clear;
       Source_Directories.Clear;
       Foreign_Sources.Clear;
@@ -1649,6 +1687,8 @@ package body GPRName is
                                             Text_Line (6 .. J - 7);
                                           Current_Source :=
                                             (Unit_Name  => Name_Find,
+                                             Position   => Get_Source_Position
+                                               (File_Name_Id),
                                              File_Name  => File_Name_Id,
                                              Index => 0,
                                              Spec  => Text_Line (J - 5 .. J) =
@@ -1752,6 +1792,7 @@ package body GPRName is
                         Add_Str_To_Name_Buffer (Canon (1 .. Last));
                         Foreign_Sources.Append
                           ((File_Name => Name_Find,
+                            Position  => Get_Source_Position (File_Name_Id),
                             Language  => Current_Language));
                      end if;
                   end if;
