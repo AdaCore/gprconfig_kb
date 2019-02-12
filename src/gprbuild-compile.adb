@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2018, AdaCore                     --
+--                     Copyright (C) 2011-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -3299,7 +3299,7 @@ package body Gprbuild.Compile is
                   begin
                      Data.Imported_Dirs_Switches :=
                        new String_List'
-                         (1 => new String'("-specs=" & Escape_Path (Path)));
+                         (1 => new String'("-specs=" & Path));
                   end;
                end;
 
