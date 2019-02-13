@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2018, AdaCore                     --
+--                     Copyright (C) 2006-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1218,7 +1218,6 @@ procedure Gprlib is
                            Last_Char : Natural := 1;
 
                         begin
-
                            for Ch of Arg loop
                               Last_Char := Last_Char + 1;
                               Quoted (Last_Char) := Ch;
@@ -1228,6 +1227,8 @@ procedure Gprlib is
                                  Quoted (Last_Char) := '"';
                               end if;
                            end loop;
+
+                           Quoted (1) := '"';
 
                            Last_Char := Last_Char + 1;
                            Quoted (Last_Char) := '"';
