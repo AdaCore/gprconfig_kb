@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2006-2018, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2019, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -3442,10 +3442,10 @@ package body GPR.Knowledge is
             Filter := Compiler_Filter_Lists.Element (Comp);
             Put_Verbose
               ("<compiler name='"
-               & Get_Name_String (Filter.Name) & "' version='"
-               & Get_Name_String (Filter.Version) & "' runtime='"
-               & Get_Name_String (Filter.Runtime) & "' language='"
-               & Get_Name_String (Filter.Language_LC) & "' />");
+               & Get_Name_String_Or_Null (Filter.Name) & "' version='"
+               & Get_Name_String_Or_Null (Filter.Version) & "' runtime='"
+               & Get_Name_String_Or_Null (Filter.Runtime) & "' language='"
+               & Get_Name_String_Or_Null (Filter.Language_LC) & "' />");
             Next (Comp);
          end loop;
          Put_Verbose ("</compilers>", -1);
