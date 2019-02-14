@@ -4689,9 +4689,14 @@ package body GPR.Util is
                   Put ("ALI version = ");
                   Put (Get_Name_String (GNAT_Version));
                   Put ("; expected version = ");
-                  Put_Line
-                    (Get_Name_String
-                      (Tree.Shared.Ada_Runtime_Library_Version));
+
+                  if Tree.Shared.Ada_Runtime_Library_Version /= No_Name then
+                     Put_Line
+                       (Get_Name_String
+                         (Tree.Shared.Ada_Runtime_Library_Version));
+                  else
+                     Put_Line ("unknown");
+                  end if;
                end if;
 
                return True;
