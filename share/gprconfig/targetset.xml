@@ -35,6 +35,11 @@
 
 <!-- Add plain linux ports *before* native ports to
      be matched before native compiler -->
+  <targetset canonical="aarch64-linux">
+    <target>aarch64-linux</target>
+    <target>aarch64-linux-gnu</target>
+  </targetset>
+
   <targetset canonical="arm-linux">
     <target>arm-linux</target>
     <target>arm-linux-gnueabi</target>
