@@ -943,9 +943,10 @@ be any of:
   The language attribute, when specified, matches
   the corresponding attribute used in the `<compiler_description>`
   children. All other attributes are regular expressions, which are matched
-  against the corresponding selected compilers. When an attribute is not
-  specified, it will always match. Matching is done in a case-insensitive
-  manner.
+  against the corresponding selected compilers. Runtime attribute is matched
+  against the base name of corresponding compiler runtime if it is given
+  as a full path. When an attribute is not specified, it will always match.
+  Matching is done in a case-insensitive manner.
 
   For instance, to check a GNAT compiler in the 5.x family, use:
 

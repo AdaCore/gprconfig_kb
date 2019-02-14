@@ -3173,6 +3173,12 @@ package body GPR.Knowledge is
    is
       C    : Compiler_Lists.Cursor := First (Compilers);
       Comp : Compiler_Access;
+
+      function Runtime_Base_Name (Rt : Name_Id) return String is
+        (GNAT.Directory_Operations.Base_Name (Get_Name_String (Rt)));
+      --  Runtime filters should only apply to the base name of runtime when
+      --  full path is given, otherwise we can potentially match some unrelated
+      --  patterns from enclosing directory names.
    begin
       while Has_Element (C) loop
          Comp := Compiler_Lists.Element (C);
@@ -3195,7 +3201,7 @@ package body GPR.Knowledge is
                        (Comp.Runtime /= No_Name
                         and then Match
                           (Filter.Runtime_Re.all,
-                           Get_Name_String (Comp.Runtime))))
+                           Runtime_Base_Name (Comp.Runtime))))
            and then (Filter.Language_LC = No_Name
                      or else Filter.Language_LC = Comp.Language_LC)
          then
