@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2019, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -772,6 +772,13 @@ package GPR.Util is
    --  --rpath-link.
    --  This normalizes the path, and ensure the use of unix-style directory
    --  separator.
+
+   function Common_Path_Prefix_Length (A, B : String) return Integer;
+   --  Adapted from:
+   --     https://www.rosettacode.org/wiki/Find_common_directory_path#Ada
+   --  The result is the length of the longest common path prefix, including
+   --  trailing separators.
+   --  If the only common prefix is "/" then the result is zero.
 
    function Relative_RPath (Dest, Src, Origin : String) return String;
    --  returns Dest as a path relative to the Src directory using Origin

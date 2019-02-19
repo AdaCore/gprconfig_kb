@@ -417,6 +417,38 @@ package body GPR.Util is
       return Name_Find;
    end Create_Name;
 
+   -------------------------------
+   -- Common_Path_Prefix_Length --
+   -------------------------------
+
+   function Common_Path_Prefix_Length (A, B : String) return Integer is
+      Slash : Integer := A'First;  --  At the last slash seen in A
+      At_A  : Integer := A'First;
+      At_B  : Integer := B'First;
+   begin
+      loop
+         if At_A > A'Last then
+            if At_B > B'Last or else B (At_B) = '/' then
+               return A'Length;
+            else
+               return Slash - A'First;
+            end if;
+         elsif At_B > B'Last then
+            if A (At_A) = '/' then  --  A cannot be shorter than B here
+               return B'Length;
+            else
+               return Slash - A'First;
+            end if;
+         elsif A (At_A) /= B (At_B) then
+            return Slash - A'First;
+         elsif A (At_A) = '/' then
+            Slash := At_A;
+         end if;
+         At_A := At_A + 1;
+         At_B := At_B + 1;
+      end loop;
+   end Common_Path_Prefix_Length;
+
    -------------------
    -- Common_Prefix --
    -------------------
@@ -3491,57 +3523,50 @@ package body GPR.Util is
 
       --  Rpaths are always considered case sensitive, as it's a runtime
       --  property of dynamic objects, so in case of cross compilation is
-      --  independent of the host's way of handling case sensitivity
-      Exec        : constant String := As_RPath (Src, False);
-      Full        : constant String := As_RPath (Dest, True);
-      Insensitive : constant String := As_RPath (Dest, False);
-      Idx         : Natural := Insensitive'First;
-      N           : Natural;
+      --  independent of the host's way of handling case sensitivity.
+
+      RP_Src              : constant String := As_RPath (Src, False);
+      RP_Dest             : constant String := As_RPath (Dest, True);
+      RP_Dest_Insensitive : constant String := As_RPath (Dest, False);
 
    begin
-      --  Trim common prefix
-      for J in Insensitive'Range loop
-         if J not in Exec'Range then
-            if Full (J) = '/' then
-               return Origin & Full (J .. Full'Last);
-            else
-               return Origin & "/" & Full (J .. Full'Last);
-            end if;
+      declare
+         Len : constant Natural := Common_Path_Prefix_Length
+           (RP_Src, RP_Dest_Insensitive);
+      begin
+         if Len = 0 then
+            --  No common prefix: return an absolute path
+            return RP_Dest;
 
-         elsif Exec (J) /= Insensitive (J) then
-            Idx := J;
-            exit;
+         else
+            declare
+               Sep_Mode     : Boolean := True;
+               Subdir_Count : Natural := 0;
+            begin
+               --  Compute the relative path from Src to Dest. For this we
+               --  need to find the number of subdirectories from the common
+               --  prefix to Src.
+
+               for I in RP_Src'First + Len .. RP_Src'Last loop
+                  if RP_Src (I) = '/' then
+                     Sep_Mode := True;
+
+                  elsif Sep_Mode then
+                     --  If the previous characters were separators, we are now
+                     --  reading a new subdir. Sep_Mode is initialy True so
+                     --  that we get here if the first character we see is not
+                     --  a separator.
+
+                     Subdir_Count := Subdir_Count + 1;
+                     Sep_Mode := False;
+                  end if;
+               end loop;
+
+               return Origin & "/" & Subdir_Count * "../"
+                 & RP_Dest (RP_Dest'First + Len .. RP_Dest'Last);
+            end;
          end if;
-      end loop;
-
-      if Idx = Insensitive'First
-        or else
-          (Idx = Insensitive'First + 1
-           and then Insensitive (Insensitive'First) = '/')
-      then
-         --  No common prefix: return an absolute path.
-         return Full;
-      end if;
-
-      --  Go back to previous directory delimiter
-      for J in reverse Insensitive'First .. Idx loop
-         if Insensitive (J) = '/' then
-            Idx := J + 1;
-            exit;
-         end if;
-      end loop;
-
-      --  Count the number of subdirs remaining in Exec
-      N := 0;
-      for J in Idx .. Exec'Last loop
-         if Exec (J) = '/' then
-            N := N + 1;
-         elsif J = Exec'Last then
-            N := N + 1;
-         end if;
-      end loop;
-
-      return Origin & "/" & N * "../" & Full (Idx .. Full'Last);
+      end;
    end Relative_RPath;
 
    ------------------
