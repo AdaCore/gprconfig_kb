@@ -10,7 +10,7 @@
   <compiler_description>
     <name>GCC-WRS7R2PPC</name>
     <executable prefix="1">cc(ppc)</executable>
-    &version_from_wrs7_gnu_cc;
+    &version_from_wrs7r2_gnu_cc;
     &languages_c;
     &runtimes_vx7;
     <target>powerpc-wrs-vxworks7r2</target>
@@ -19,7 +19,7 @@
   <compiler_description>
     <name>G++-WRS7R2PPC</name>
     <executable prefix="1">c\+\+(ppc)</executable>
-    &version_from_wrs7_gnu_cpp;
+    &version_from_wrs7r2_gnu_cpp;
     &languages_cpp;
     &runtimes_vx7;
     <target>powerpc-wrs-vxworks7r2</target>
