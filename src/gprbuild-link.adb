@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2018, AdaCore                     --
+--                     Copyright (C) 2011-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -2231,17 +2231,28 @@ package body Gprbuild.Link is
                            while not End_Of_File (File) loop
                               Get_Line (File, Name_Buffer, Name_Len);
 
+                              if Name_Len > 0
+                                and then Name_Buffer (1) = ASCII.NUL
+                              then
+                                 --  We are reading a NUL character padding at
+                                 --  the end of the section: stop here.
+
+                                 exit;
+                              end if;
+
                               --  Add the linker option.
                               --  Avoid duplicates for -L.
 
                               Lib_Dir_Name := Name_Find;
-                              if Name_Buffer (1 .. 2) = "-L" then
+                              if Name_Len > 2
+                                and then Name_Buffer (1 .. 2) = "-L"
+                              then
                                  if not Library_Dirs.Get (Lib_Dir_Name) then
                                     Binding_Options.Append
                                       (Name_Buffer (1 .. Name_Len));
                                     Library_Dirs.Set (Lib_Dir_Name, True);
                                  end if;
-                              else
+                              elsif Name_Len > 0 then
                                  Binding_Options.Append
                                    (Name_Buffer (1 .. Name_Len));
                               end if;
@@ -2252,6 +2263,7 @@ package body Gprbuild.Link is
                            <<Linker_Options_Incomplete>>
 
                            --  We get there if anything went wrong.
+
                            if not Success and then Opt.Verbose_Mode then
                               Put_Line
                                 (Warning_Msg.all
