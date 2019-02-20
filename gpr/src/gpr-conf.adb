@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---            Copyright (C) 2006-2017, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2019, Free Software Foundation, Inc.       --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -558,7 +558,8 @@ package body GPR.Conf is
       Config                     : out GPR.Project_Id;
       Config_File_Path           : out String_Access;
       Automatically_Generated    : out Boolean;
-      On_Load_Config             : Config_File_Hook := null)
+      On_Load_Config             : Config_File_Hook := null;
+      Gprconfig_Options          : String_Vectors.Vector)
    is
       Shared : constant Shared_Project_Tree_Data_Access := Project_Tree.Shared;
 
@@ -928,6 +929,7 @@ package body GPR.Conf is
             Config_Switches : Argument_List_Access;
             Db_Switches     : Argument_List_Access;
             Args            : Argument_List (1 .. 7);
+            Comm_Line_Opt   : Argument_List_Access;
             Arg_Last        : Positive;
 
          begin
@@ -1050,11 +1052,25 @@ package body GPR.Conf is
                end if;
             end if;
 
+            Comm_Line_Opt := new Argument_List
+              (1 .. Integer (Gprconfig_Options.Length));
+
+            declare
+               CL_Index : Integer := 1;
+            begin
+               for Opt of Gprconfig_Options loop
+                  Comm_Line_Opt (CL_Index) := new String'(Opt);
+                  CL_Index := CL_Index + 1;
+               end loop;
+            end;
+
             Spawn (Gprconfig_Path.all, Args (1 .. Arg_Last) &
-                   Config_Switches.all & Db_Switches.all,
+                   Config_Switches.all & Db_Switches.all & Comm_Line_Opt.all,
                    Auto_Configuration_Success);
 
             Free (Config_Switches);
+
+            Free (Comm_Line_Opt);
 
             Config_File_Path := Locate_Config_File (Args (3).all);
 
@@ -1581,7 +1597,9 @@ package body GPR.Conf is
       Normalized_Hostname        : String;
       On_Load_Config             : Config_File_Hook := null;
       Implicit_Project           : Boolean := False;
-      On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null)
+      On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
+      Gprconfig_Options          : String_Vectors.Vector :=
+        String_Vectors.Empty_Vector)
    is
       Success          : Boolean := False;
       Target_Try_Again : Boolean := True;
@@ -1809,7 +1827,8 @@ package body GPR.Conf is
          Normalized_Hostname        => N_Hostname.all,
          On_Load_Config             => On_Load_Config,
          On_New_Tree_Loaded         => On_New_Tree_Loaded,
-         Do_Phase_1                 => False);
+         Do_Phase_1                 => False,
+         Gprconfig_Options          => Gprconfig_Options);
 
       if Auto_Generated then
          Automatically_Generated := True;
@@ -2163,7 +2182,8 @@ package body GPR.Conf is
       On_Load_Config             : Config_File_Hook := null;
       Reset_Tree                 : Boolean := True;
       On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
-      Do_Phase_1                 : Boolean := True)
+      Do_Phase_1                 : Boolean := True;
+      Gprconfig_Options          : String_Vectors.Vector)
    is
       Shared              : constant Shared_Project_Tree_Data_Access :=
                               Project_Tree.Shared;
@@ -2295,7 +2315,8 @@ package body GPR.Conf is
          Packages_To_Check          => Packages_To_Check,
          Config_File_Path           => Config_File_Path,
          Automatically_Generated    => Automatically_Generated,
-         On_Load_Config             => On_Load_Config);
+         On_Load_Config             => On_Load_Config,
+         Gprconfig_Options          => Gprconfig_Options);
 
       Apply_Config_File (Main_Config_Project, Project_Tree);
 

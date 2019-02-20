@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2018, AdaCore                     --
+--                     Copyright (C) 2004-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -140,12 +140,12 @@ private
    --  command line.
 
    Builder_Compiling_Options              : String_Vectors.Vector;
-   --  Tables to store the options for the compilers of the different
+   --  Table to store the options for the compilers of the different
    --  languages, that is those after switch "-cargs:<lang>", in the Builder
    --  switches.
 
    Compiling_Options                      : String_Vectors.Vector;
-   --  Tables to store the options for the compilers of the different
+   --  Table to store the options for the compilers of the different
    --  languages, that is those after switch "-cargs:<lang>", on the command
    --  line.
 
@@ -227,6 +227,9 @@ private
 
    Command_Line_Linker_Options : String_Vectors.Vector;
    --  Table to store the linking options
+
+   Command_Line_Gprconfig_Options : String_Vectors.Vector;
+   --  Table to store the gprconfig options
 
    Project_Of_Current_Object_Directory : Project_Id := No_Project;
    --  The object directory of the project for the last binding. Avoid

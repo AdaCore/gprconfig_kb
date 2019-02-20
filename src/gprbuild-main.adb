@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2018, AdaCore                     --
+--                     Copyright (C) 2011-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -131,7 +131,7 @@ procedure Gprbuild.Main is
    Current_Working_Dir : constant String := Get_Current_Dir;
    --  The current working directory
 
-   type Processor is (None, Linker, Binder, Compiler);
+   type Processor is (None, Linker, Binder, Compiler, Gprconfig);
    Current_Processor : Processor := None;
    --  This variable changes when switches -*args are used
 
@@ -383,6 +383,11 @@ procedure Gprbuild.Main is
                   Current_Builder_Comp_Option_Table.Append (Arg);
                end if;
             end if;
+
+         when Gprconfig =>
+
+            Command_Line_Gprconfig_Options.Append (Option.all);
+
       end case;
    end Add_Option;
 
@@ -670,6 +675,9 @@ procedure Gprbuild.Main is
 
          --  -gargs/margs     options directly for gprbuild
          --  support -margs for compatibility with gnatmake
+
+      elsif Arg = "-kargs" then
+         Current_Processor := Gprconfig;
 
       elsif Arg = "-gargs"
         or else Arg = "-margs"
@@ -2442,7 +2450,8 @@ begin
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
          Normalized_Hostname        => Knowledge.Normalized_Hostname,
-         Implicit_Project           => No_Project_File_Found);
+         Implicit_Project           => No_Project_File_Found,
+         Gprconfig_Options          => Command_Line_Gprconfig_Options);
    exception
       when E : GPR.Conf.Invalid_Config =>
          Fail_Program (Project_Tree, Exception_Message (E));

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---            Copyright (C) 2006-2017, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2019, Free Software Foundation, Inc.       --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -26,8 +26,11 @@
 
 with GPR.Tree;
 with GPR.Proc;
+with GPR.Util;
 
 package GPR.Conf is
+
+   use GPR.Util;
 
    type Config_File_Hook is access procedure
      (Config_File       : in out GPR.Project_Node_Id;
@@ -66,7 +69,9 @@ package GPR.Conf is
       Normalized_Hostname        : String;
       On_Load_Config             : Config_File_Hook              := null;
       Implicit_Project           : Boolean                       := False;
-      On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null);
+      On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
+      Gprconfig_Options          : String_Vectors.Vector :=
+        String_Vectors.Empty_Vector);
    --  Find the main configuration project and parse the project tree rooted at
    --  this configuration project.
    --
@@ -128,7 +133,8 @@ package GPR.Conf is
       On_Load_Config             : Config_File_Hook              := null;
       Reset_Tree                 : Boolean                       := True;
       On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
-      Do_Phase_1                 : Boolean                       := True);
+      Do_Phase_1                 : Boolean                       := True;
+      Gprconfig_Options          : String_Vectors.Vector);
    --  Same as above, except the project must already have been parsed through
    --  GPR.Part.Parse, and only the processing of the project and the
    --  configuration is done at this level.
@@ -162,7 +168,8 @@ package GPR.Conf is
       Config                     : out GPR.Project_Id;
       Config_File_Path           : out String_Access;
       Automatically_Generated    : out Boolean;
-      On_Load_Config             : Config_File_Hook   := null);
+      On_Load_Config             : Config_File_Hook   := null;
+      Gprconfig_Options          : String_Vectors.Vector);
    --  Compute the name of the configuration file that should be used. If no
    --  default configuration file is found, a new one will be automatically
    --  generated if Allow_Automatic_Generation is true. This configuration
