@@ -70,7 +70,7 @@ package GPR.Conf is
       On_Load_Config             : Config_File_Hook              := null;
       Implicit_Project           : Boolean                       := False;
       On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
-      Gprconfig_Options          : String_Vectors.Vector :=
+      Gprconfig_Options          : String_Vectors.Vector         :=
         String_Vectors.Empty_Vector);
    --  Find the main configuration project and parse the project tree rooted at
    --  this configuration project.
@@ -134,7 +134,8 @@ package GPR.Conf is
       Reset_Tree                 : Boolean                       := True;
       On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
       Do_Phase_1                 : Boolean                       := True;
-      Gprconfig_Options          : String_Vectors.Vector);
+      Gprconfig_Options          : String_Vectors.Vector         :=
+        String_Vectors.Empty_Vector);
    --  Same as above, except the project must already have been parsed through
    --  GPR.Part.Parse, and only the processing of the project and the
    --  configuration is done at this level.
@@ -160,16 +161,17 @@ package GPR.Conf is
       Project_Node_Tree          : GPR.Tree.Project_Node_Tree_Ref;
       Env                        : in out GPR.Tree.Environment;
       Allow_Automatic_Generation : Boolean;
-      Config_File_Name           : String             := "";
+      Config_File_Name           : String                := "";
       Autoconf_Specified         : Boolean;
-      Target_Name                : String             := "";
+      Target_Name                : String                := "";
       Normalized_Hostname        : String;
-      Packages_To_Check          : String_List_Access := null;
+      Packages_To_Check          : String_List_Access    := null;
       Config                     : out GPR.Project_Id;
       Config_File_Path           : out String_Access;
       Automatically_Generated    : out Boolean;
-      On_Load_Config             : Config_File_Hook   := null;
-      Gprconfig_Options          : String_Vectors.Vector);
+      On_Load_Config             : Config_File_Hook      := null;
+      Gprconfig_Options          : String_Vectors.Vector :=
+        String_Vectors.Empty_Vector);
    --  Compute the name of the configuration file that should be used. If no
    --  default configuration file is found, a new one will be automatically
    --  generated if Allow_Automatic_Generation is true. This configuration

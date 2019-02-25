@@ -550,16 +550,17 @@ package body GPR.Conf is
       Project_Node_Tree          : GPR.Tree.Project_Node_Tree_Ref;
       Env                        : in out GPR.Tree.Environment;
       Allow_Automatic_Generation : Boolean;
-      Config_File_Name           : String := "";
+      Config_File_Name           : String                := "";
       Autoconf_Specified         : Boolean;
-      Target_Name                : String := "";
+      Target_Name                : String                := "";
       Normalized_Hostname        : String;
-      Packages_To_Check          : String_List_Access := null;
+      Packages_To_Check          : String_List_Access    := null;
       Config                     : out GPR.Project_Id;
       Config_File_Path           : out String_Access;
       Automatically_Generated    : out Boolean;
-      On_Load_Config             : Config_File_Hook := null;
-      Gprconfig_Options          : String_Vectors.Vector)
+      On_Load_Config             : Config_File_Hook      := null;
+      Gprconfig_Options          : String_Vectors.Vector :=
+        String_Vectors.Empty_Vector)
    is
       Shared : constant Shared_Project_Tree_Data_Access := Project_Tree.Shared;
 
@@ -1583,22 +1584,22 @@ package body GPR.Conf is
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out GPR.Project_Id;
       User_Project_Node          : out GPR.Project_Node_Id;
-      Config_File_Name           : String := "";
+      Config_File_Name           : String                        := "";
       Autoconf_Specified         : Boolean;
       Project_File_Name          : String;
       Project_Tree               : GPR.Project_Tree_Ref;
       Project_Node_Tree          : GPR.Tree.Project_Node_Tree_Ref;
       Env                        : in out GPR.Tree.Environment;
       Packages_To_Check          : String_List_Access;
-      Allow_Automatic_Generation : Boolean := True;
+      Allow_Automatic_Generation : Boolean                       := True;
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
-      Target_Name                : String := "";
+      Target_Name                : String                        := "";
       Normalized_Hostname        : String;
-      On_Load_Config             : Config_File_Hook := null;
-      Implicit_Project           : Boolean := False;
+      On_Load_Config             : Config_File_Hook              := null;
+      Implicit_Project           : Boolean                       := False;
       On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
-      Gprconfig_Options          : String_Vectors.Vector :=
+      Gprconfig_Options          : String_Vectors.Vector         :=
         String_Vectors.Empty_Vector)
    is
       Success          : Boolean := False;
@@ -2168,22 +2169,23 @@ package body GPR.Conf is
    procedure Process_Project_And_Apply_Config
      (Main_Project               : out GPR.Project_Id;
       User_Project_Node          : GPR.Project_Node_Id;
-      Config_File_Name           : String := "";
+      Config_File_Name           : String                        := "";
       Autoconf_Specified         : Boolean;
       Project_Tree               : GPR.Project_Tree_Ref;
       Project_Node_Tree          : GPR.Tree.Project_Node_Tree_Ref;
       Env                        : in out GPR.Tree.Environment;
       Packages_To_Check          : String_List_Access;
-      Allow_Automatic_Generation : Boolean := True;
+      Allow_Automatic_Generation : Boolean                       := True;
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
-      Target_Name                : String := "";
+      Target_Name                : String                        := "";
       Normalized_Hostname        : String;
-      On_Load_Config             : Config_File_Hook := null;
-      Reset_Tree                 : Boolean := True;
+      On_Load_Config             : Config_File_Hook              := null;
+      Reset_Tree                 : Boolean                       := True;
       On_New_Tree_Loaded         : GPR.Proc.Tree_Loaded_Callback := null;
-      Do_Phase_1                 : Boolean := True;
-      Gprconfig_Options          : String_Vectors.Vector)
+      Do_Phase_1                 : Boolean                       := True;
+      Gprconfig_Options          : String_Vectors.Vector         :=
+        String_Vectors.Empty_Vector)
    is
       Shared              : constant Shared_Project_Tree_Data_Access :=
                               Project_Tree.Shared;
