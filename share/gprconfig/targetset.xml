@@ -311,6 +311,12 @@
     <target>x86_64-vx7</target>
   </targetset>
 
+  <!-- x86_64-vx7r2 (vxworks 7.2) -->
+  <targetset canonical="x86_64-vx7r2">
+    <target>x86_64-vx7r2</target>
+    <target>x86_64-wrs-vxworks7r2</target>
+  </targetset>
+
   <!-- arm-vx6 (vxworks 6) -->
   <targetset canonical="arm-vx6">
     <target>arm-vx6</target>
@@ -380,7 +386,7 @@
   </targetset>
 
   <!-- aarch64-vx7r2 (vxworks 7.2) -->
-  <targetset canonical="aarch64-vx7">
+  <targetset canonical="aarch64-vx7r2">
     <target>aarch64-vx7r2</target>
     <target>aarch64-wrs-vxworks7r2</target>
   </targetset>
