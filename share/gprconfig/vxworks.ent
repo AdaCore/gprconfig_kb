@@ -356,13 +356,39 @@
 
    <!-- For VxWorks kernel modules, use vxlink for linking: this tool takes
         care of generating the proper _ctors and _dtors symbols used to
-        elaborate DKMs -->
+        elaborate DKMs. -->
    <configuration>
      &if_not_rtp;
+     &if_gnat_20_and_later;
      &if_this_target;
      <!-- vx6, vx7 and vx6cert -->
 
      &config_dkm_linker;
+   </configuration>
+
+   <!-- For older versions of GNAT Pro, use Ada driver as default for
+        linking, since cc* and c++* do not recognize the -crtbe swtich needed
+        for ZCX.
+        If no Ada is used in the project, default to the natural linker for
+        the language. -->
+   <configuration>
+     &if_ada;
+     &if_not_rtp;
+     &if_gnat_20_pre;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_ada_linker;
+   </configuration>
+
+   <configuration>
+     &if_no_ada;
+     &if_not_rtp;
+     &if_gnat_20_pre;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_cpp_linker;
    </configuration>
 
    <configuration>
