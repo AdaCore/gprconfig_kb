@@ -16,13 +16,4 @@
     <target>powerpc64-wrs-vxworks7r2</target>
   </compiler_description>
 
-  <compiler_description>
-    <name>G++-WRS7R2PPC64</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    &version_from_wrs7r2_gnu_cpp;
-    &languages_cpp;
-    &runtimes_vx7;
-    <target>powerpc64-wrs-vxworks7r2</target>
-  </compiler_description>
-
 </gprconfig>

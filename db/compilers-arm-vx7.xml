@@ -16,13 +16,4 @@
     <target>arm-wrs-vxworks7</target>
   </compiler_description>
 
-  <compiler_description>
-    <name>G++-WRS7ARM</name>
-    <executable prefix="1">c\+\+(arm)</executable>
-    &version_from_wrs7_gnu_cpp;
-    &languages_cpp;
-    &runtimes_vx7;
-    <target>arm-wrs-vxworks7</target>
-  </compiler_description>
-
 </gprconfig>

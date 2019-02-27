@@ -1380,7 +1380,6 @@
   <configuration>
     <compilers>
        <compiler name="^GCC-WRS7X86_64$"/>
-       <compiler name="^G\+\+-WRS7X86_64$"/>
     </compilers>
     <config>
    package Linker is

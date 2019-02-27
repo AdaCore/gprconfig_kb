@@ -12,30 +12,9 @@
      </version>'
    >
 
-   <!ENTITY version_from_wrs7_gnu_cpp
-    '<version>
-      <external>c++${PREFIX} --version</external>
-      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
-
-      <!--  Two gcc versions provided on vx7r1 (SR05xx):
-            * 4.3 for compat69;
-            * 4.8.1 for regular vx7.
-            We do not support the former.
-        -->
-      <must_match>4.8.1</must_match>
-     </version>'
-   >
-
    <!ENTITY version_from_wrs7r2_gnu_cc
     '<version>
       <external>cc${PREFIX} --version</external>
-      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
-     </version>'
-   >
-
-   <!ENTITY version_from_wrs7r2_gnu_cpp
-    '<version>
-      <external>c++${PREFIX} --version</external>
       <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
      </version>'
    >

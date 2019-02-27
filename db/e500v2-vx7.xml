@@ -17,12 +17,11 @@
 
 <!ENTITY if_these_cpp_compilers
     '<compilers>
-       <compiler name="^G\+\+-WRS7E500V2$" />
+       <compiler name="^G\+\+_Pro$" />
      </compilers>'>
 
 <!ENTITY if_these_gnu_wrs_compilers
     '<compilers>
-       <compiler name="^G\+\+-WRS7E500V2$" />
        <compiler name="^GCC-WRS7E500V2$" />
      </compilers>'>
 

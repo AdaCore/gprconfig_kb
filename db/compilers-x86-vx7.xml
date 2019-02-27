@@ -16,13 +16,4 @@
     <target>i586-wrs-vxworks7</target>
   </compiler_description>
 
-  <compiler_description>
-    <name>G++-WRS7X86</name>
-    <executable prefix="1">c\+\+(pentium)</executable>
-    &version_from_wrs7_gnu_cpp;
-    &languages_cpp;
-    &runtimes_vx7;
-    <target>i586-wrs-vxworks7</target>
-  </compiler_description>
-
 </gprconfig>
