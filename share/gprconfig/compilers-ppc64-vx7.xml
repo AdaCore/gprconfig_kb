@@ -7,7 +7,7 @@
 ]>
 <gprconfig>
 
-  <!-- Diab PPC64 C & C++ Compiler -->
+  <!-- Diab PPC64 C Compiler -->
   <!-- check that the version is >= 5.9.6.0 -->
   <compiler_description>
     <name>DIABC-PPC64</name>
@@ -17,7 +17,7 @@
       <grep regexp=".*dcc(.exe)? Rel ([0-9.]*)" group="2"></grep>
       <must_match>5[.]9[.][6-9].*</must_match>
     </version>
-    <languages>C,C++</languages>
+    <languages>C</languages>
     &runtimes_vx7;
     <target>powerpc64-wrs-vxworks7</target>
   </compiler_description>

@@ -16,13 +16,4 @@
     <target>e500v2-wrs-vxworks7</target>
   </compiler_description>
 
-  <compiler_description>
-    <name>G++-WRS7E500V2</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    &version_from_wrs7_gnu_cpp;
-    &languages_cpp;
-    &runtimes_vx7;
-    <target>e500v2-wrs-vxworks7</target>
-  </compiler_description>
-
 </gprconfig>

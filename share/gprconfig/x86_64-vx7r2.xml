@@ -17,7 +17,7 @@
 
 <!ENTITY if_these_cpp_compilers
     '<compilers>
-       <compiler name="^LLVMC-X86_64$" />
+       <compiler name="^G\+\+_Pro$" />
      </compilers>'>
 
 <!ENTITY if_these_gnu_wrs_compilers
