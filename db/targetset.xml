@@ -280,6 +280,12 @@
     <target>arm-wrs-vxworks7</target>
   </targetset>
 
+  <!-- arm-vx7r2 (vxworks 7.2) -->
+  <targetset canonical="arm-vx7r2">
+    <target>arm-vx7r2</target>
+    <target>arm-wrs-vxworks7r2</target>
+  </targetset>
+
   <!-- e500v2-vx7 (vxworks 7) -->
   <targetset canonical="e500v2-vx7">
     <target>e500v2-vx7</target>
@@ -292,10 +298,22 @@
     <target>powerpc-wrs-vxworks7</target>
   </targetset>
 
+  <!-- ppc-vx7r2 (vxworks 7.2) -->
+  <targetset canonical="ppc-vx7r2">
+    <target>ppc-vx7r2</target>
+    <target>powerpc-wrs-vxworks7r2</target>
+  </targetset>
+
   <!-- ppc64-vx7 (vxworks 7) -->
   <targetset canonical="ppc64-vx7">
     <target>ppc64-vx7</target>
     <target>powerpc64-wrs-vxworks7</target>
+  </targetset>
+
+  <!-- ppc64-vx7r2 (vxworks 7.2) -->
+  <targetset canonical="ppc64-vx7r2">
+    <target>ppc64-vx7r2</target>
+    <target>powerpc64-wrs-vxworks7r2</target>
   </targetset>
 
   <!-- x86-vx7-.* (vxworks 7) -->
@@ -303,6 +321,13 @@
     <target>x86-vx7</target>
     <target>x86-wrs-vxworks7</target>
     <target>i.86-wrs-vxworks7</target>
+  </targetset>
+
+  <!-- x86-vx7r2-.* (vxworks 7.2) -->
+  <targetset canonical="x86-vx7r2">
+    <target>x86-vx7r2</target>
+    <target>x86-wrs-vxworks7r2</target>
+    <target>i.86-wrs-vxworks7r2</target>
   </targetset>
 
   <!-- x86_64-vx7 (vxworks 7) -->
