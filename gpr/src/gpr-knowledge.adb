@@ -2174,6 +2174,38 @@ package body GPR.Knowledge is
       end loop;
    end Get_External_Value;
 
+   -----------------------
+   -- Get_Fallback_List --
+   -----------------------
+
+   function Get_Fallback_List
+     (Base      : Knowledge_Base;
+      On_Target : Targets_Set_Id) return String_Lists.List
+   is
+      Target : constant String :=
+        Get_Name_String_Or_Null
+          (Base.Targets_Sets.Element (On_Target).Name);
+      Fallback_List : String_Lists.List;
+      Cur           : String_Lists.Cursor;
+   begin
+      for I in Base.Fallback_Targets_Sets.First_Index ..
+        Base.Fallback_Targets_Sets.Last_Index loop
+         Fallback_List := Base.Fallback_Targets_Sets.Element (I);
+         Cur := Fallback_List.First;
+         while Cur /= String_Lists.No_Element loop
+            if String_Lists.Element (Cur) = Target then
+               --  No point to store original target, it has already been
+               --  processed.
+               Fallback_List.Delete (Cur);
+               return Fallback_List;
+            end if;
+            Next (Cur);
+         end loop;
+      end loop;
+
+      return String_Lists.Empty_List;
+   end Get_Fallback_List;
+
    ---------------
    -- Get_Words --
    ---------------
@@ -4055,40 +4087,6 @@ package body GPR.Knowledge is
       Extra_Dirs : constant String := Extra_Dirs_From_Filters (Filters);
       Found_All  : Boolean := True;
 
-      function Get_Fallback_List (On_Target : Targets_Set_Id)
-                                  return String_Lists.List;
-
-      -----------------------
-      -- Get_Fallback_List --
-      -----------------------
-
-      function Get_Fallback_List (On_Target : Targets_Set_Id)
-                                  return String_Lists.List
-      is
-         Target : constant String :=
-           Get_Name_String_Or_Null
-             (Base.Targets_Sets.Element (On_Target).Name);
-         Fallback_List : String_Lists.List;
-         Cur           : String_Lists.Cursor;
-      begin
-         for I in Base.Fallback_Targets_Sets.First_Index ..
-           Base.Fallback_Targets_Sets.Last_Index loop
-            Fallback_List := Base.Fallback_Targets_Sets.Element (I);
-            Cur := Fallback_List.First;
-            while Cur /= String_Lists.No_Element loop
-               if String_Lists.Element (Cur) = Target then
-                  --  No point to store original target, it has already been
-                  --  processed.
-                  Fallback_List.Delete (Cur);
-                  return Fallback_List;
-               end if;
-               Next (Cur);
-            end loop;
-         end loop;
-
-         return String_Lists.Empty_List;
-      end Get_Fallback_List;
-
    begin
       Iter.Filters   := Filters;
 
@@ -4121,7 +4119,7 @@ package body GPR.Knowledge is
             --  Looking for corresponding fallback set
             declare
                Fallback_List : constant String_Lists.List :=
-                 Get_Fallback_List (On_Target);
+                 Get_Fallback_List (Base, On_Target);
                Cur : String_Lists.Cursor := Fallback_List.First;
             begin
                while Cur /= String_Lists.No_Element loop

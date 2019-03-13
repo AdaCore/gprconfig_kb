@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2006-2018, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2019, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -36,6 +36,9 @@ with GNAT.Regpat;
 package GPR.Knowledge is
 
    use Ada.Strings.Unbounded;
+
+   package String_Lists is
+     new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 
    Generate_Error : exception;
    --  To be raised when an error occurs during generation of config files
@@ -107,6 +110,11 @@ package GPR.Knowledge is
      (Base : Knowledge_Base;
       Set  : Targets_Set_Id) return String;
    --  Return the normalized name for a target set
+
+   function Get_Fallback_List
+     (Base      : Knowledge_Base;
+      On_Target : Targets_Set_Id) return String_Lists.List;
+   --  Get the list of fallback targets for a given target set.
 
    ---------------
    -- Compilers --
@@ -314,9 +322,6 @@ package GPR.Knowledge is
       Target               : String;
       Selected_Targets_Set : Targets_Set_Id);
    --  Generate the configuration file for the list of selected compilers
-
-   package String_Lists is
-     new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 
    type Double_String is record
       Positive_Regexp : Unbounded_String;
