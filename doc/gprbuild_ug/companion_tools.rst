@@ -2300,7 +2300,7 @@ The switches for GPRinstall are:
   will be removed. A check is done that no manual changes have been
   applied to the files before removing.  Deletion of the files can be
   forced in this case by using the :samp:`-f` option. Note that the
-  paramater in this case is not the project name but the install name which
+  parameter in this case is not the project name but the install name which
   corresponds to the manifest file.
 
 * :samp:`--list`
