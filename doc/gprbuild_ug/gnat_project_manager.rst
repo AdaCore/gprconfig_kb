@@ -4445,6 +4445,13 @@ Project Level Attributes
 
     Index is a language name. Specify the version of a toolchain for a language.
 
+  * **Required_Toolchain_Version**: single, indexed, case-insensitive index
+
+    Index is a language name. Specify the value expected for the Toolchain_Version
+    attribute for this language, typically provided by an auto-generated configuration
+    project. If Required_Toolchain_Version and Toolchain_Version do not match, the
+    project processing aborts with an error.
+
   * **Toolchain_Description**: single, indexed, case-insensitive index
 
     Obsolescent. No longer used.

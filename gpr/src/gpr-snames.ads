@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---      Copyright (C) 2015-2018, Free Software Foundation, Inc.             --
+--      Copyright (C) 2015-2019, Free Software Foundation, Inc.             --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -318,6 +318,7 @@ package GPR.Snames is
    Name_Warning_Message                  : constant Name_Id := N + 290;
    Name_Only_Dirs_With_Sources           : constant Name_Id := N + 291;
    Name_Include_Switches_Via_Spec        : constant Name_Id := N + 292;
+   Name_Required_Toolchain_Version       : constant Name_Id := N + 293;
 
    subtype Reserved_Ada_95 is Name_Id
       range Name_Abort .. Name_Tagged;

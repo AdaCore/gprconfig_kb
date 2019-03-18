@@ -2761,6 +2761,14 @@ package body GPR.Nmsc is
                         end;
                      end if;
 
+                  elsif Current_Array.Name = Name_Required_Toolchain_Version
+                  then
+
+                     --  Attribute Required_Toolchain_Version (<language>)
+
+                     Lang_Index.Config.Required_Toolchain_Version :=
+                       Element.Value.Value;
+
                   elsif Current_Array.Name = Name_Runtime_Library_Dir then
 
                      --  Attribute Runtime_Library_Dir (<language>)
@@ -3126,6 +3134,18 @@ package body GPR.Nmsc is
 
       Lang_Index := Project.Languages;
       while Lang_Index /= No_Language_Index loop
+         if Lang_Index.Config.Required_Toolchain_Version /= No_Name
+           and then Lang_Index.Config.Toolchain_Version /=
+             Lang_Index.Config.Required_Toolchain_Version
+         then
+            Error_Msg
+              (Data.Flags,
+               "Toolchain version for language " &
+                 Get_Name_String (Lang_Index.Name) &
+               " differs from the required one",
+               No_Location, Project);
+         end if;
+
          if Lang_Index.Config.Kind = Unit_Based then
             Lang_Index.Config.Naming_Data.Casing := Casing;
             Lang_Index.Config.Naming_Data.Dot_Replacement := Dot_Replacement;

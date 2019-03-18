@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2018, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2019, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -956,6 +956,10 @@ package GPR is
       Toolchain_Version : Name_Id := No_Name;
       --  Hold the value of attribute Toolchain_Version for the language
 
+      Required_Toolchain_Version : Name_Id := No_Name;
+      --  Hold the value of attribute Required_Toolchain_Version for the
+      --  language.
+
       Toolchain_Description : Name_Id := No_Name;
       --  Hold the value of attribute Toolchain_Description for the language
 
@@ -1025,6 +1029,7 @@ package GPR is
                            Binder_Required_Switches     => No_Name_List,
                            Binder_Prefix                => No_Name,
                            Toolchain_Version            => No_Name,
+                           Required_Toolchain_Version   => No_Name,
                            Toolchain_Description        => No_Name,
                            Clean_Object_Artifacts       => No_Name_List,
                            Clean_Source_Artifacts       => No_Name_List,
