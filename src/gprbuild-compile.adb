@@ -1395,6 +1395,148 @@ package body Gprbuild.Compile is
       --  Set environment variables or switches to pass the include directories
       --  to the compiler
 
+      procedure Check_Interface_And_Indirect_Imports
+        (The_ALI      : ALI.ALI_Id;
+         Src_Data     : Queue.Source_Info;
+         Success      : in out Boolean);
+      --  From the given ALI data and the associated source Src_Data, checks
+      --  the withed units for the following error cases:
+      --    - The unit is not in the interface of the source's project
+      --    - The unit is from an indirect import and the --no-indirect-import
+      --      flag is set.
+      --  Success is set to False if those occur.
+
+      ------------------------------------------
+      -- Check_Interface_And_Indirect_Imports --
+      ------------------------------------------
+
+      procedure Check_Interface_And_Indirect_Imports
+        (The_ALI      : ALI.ALI_Id;
+         Src_Data     : Queue.Source_Info;
+         Success      : in out Boolean)
+      is
+         Sfile    : File_Name_Type;
+         Afile    : File_Name_Type;
+         Source_2 : Source_Id;
+
+      begin
+         for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+           ALI.ALIs.Table (The_ALI).Last_Unit
+         loop
+            for K in ALI.Units.Table (J).First_With ..
+              ALI.Units.Table (J).Last_With
+            loop
+               if not
+                 ALI.Withs.Table (K).Implicit_With_From_Instantiation
+               then
+                  Sfile := ALI.Withs.Table (K).Sfile;
+
+                  --  Skip generics
+
+                  if Sfile /= No_File then
+
+                     --  Look for this source
+
+                     Afile := ALI.Withs.Table (K).Afile;
+                     Source_2 := Source_Files_Htable.Get
+                       (Src_Data.Tree.Source_Files_HT, Sfile);
+
+                     while Source_2 /= No_Source loop
+                        if Is_Compilable (Source_2)
+                          and then  Source_2.Dep_Name = Afile
+                        then
+                           case Source_2.Kind is
+                              when Spec => null;
+
+                              when Impl =>
+                                 if Is_Subunit (Source_2) then
+                                    Source_2 := No_Source;
+                                 end if;
+
+                              when Sep =>
+                                 Source_2 := No_Source;
+                           end case;
+
+                           exit;
+                        end if;
+
+                        Source_2 := Source_2.Next_With_File_Name;
+                     end loop;
+
+                     --  If it is the source of a project that is not the
+                     --  project of the source just compiled, check if it
+                     --  is allowed to be imported.
+
+                     if Source_2 /= No_Source then
+                        if not Project_Extends
+                          (Src_Data.Id.Project, Source_2.Project)
+                          and then
+                            not Project_Extends
+                              (Source_2.Project, Src_Data.Id.Project)
+                        then
+                           if not Indirect_Imports
+                             and then not Directly_Imports
+                               (Src_Data.Id.Project, Source_2.Project)
+                           then
+                              --  It is in a project that is not directly
+                              --  imported. Report an error and
+                              --  invalidate the compilation.
+
+                              Put ("Unit """);
+                              Put
+                                (Get_Name_String
+                                   (Src_Data.Id.Unit.Name));
+                              Put (""" cannot import unit """);
+                              Put
+                                (Get_Name_String (Source_2.Unit.Name));
+                              Put_Line (""":");
+
+                              Put ("  """);
+                              Put
+                                (Get_Name_String
+                                   (Src_Data.Id.Project.Display_Name));
+                              Put
+                                (""" does not directly"
+                                 & " import project """);
+                              Put
+                                (Get_Name_String
+                                   (Source_2.Project.Display_Name));
+                              Put_Line ("""");
+
+                              Success := False;
+
+                           elsif not Source_2.In_Interfaces then
+                              --  It is not an interface of its project.
+                              --  Report an error and invalidate the
+                              --  compilation.
+
+                              Put ("Unit """);
+                              Put
+                                (Get_Name_String
+                                   (Src_Data.Id.Unit.Name));
+                              Put (""" cannot import unit """);
+                              Put
+                                (Get_Name_String (Source_2.Unit.Name));
+                              Put_Line (""":");
+
+                              Put
+                                ("  it is not part of the "
+                                 & "interfaces of its project """);
+                              Put
+                                (Get_Name_String
+                                   (Source_2.Project.Display_Name));
+                              Put_Line ("""");
+
+                              Success := False;
+                           end if;
+                        end if;
+                     end if;
+                  end if;
+               end if;
+            end loop;
+         end loop;
+      end Check_Interface_And_Indirect_Imports;
+
       ----------------------------
       -- Add_Config_File_Switch --
       ----------------------------
@@ -1838,9 +1980,6 @@ package body Gprbuild.Compile is
                               (File_Name_Type (Src_Data.Id.Dep_Path),
                                Src_Data.Id.Dep_TS'Access);
          The_ALI        : ALI.ALI_Id := ALI.No_ALI_Id;
-         Sfile          : File_Name_Type;
-         Afile          : File_Name_Type;
-         Source_2       : Source_Id;
 
          procedure Check_Source (Sfile : File_Name_Type);
          --  Check if source Sfile is in the same project file as the Src_Data
@@ -1890,120 +2029,10 @@ package body Gprbuild.Compile is
                  Read_Lines    => "DW");
 
             if The_ALI /= ALI.No_ALI_Id then
-               for J in ALI.ALIs.Table (The_ALI).First_Unit ..
-                 ALI.ALIs.Table (The_ALI).Last_Unit
-               loop
-                  for K in ALI.Units.Table (J).First_With ..
-                    ALI.Units.Table (J).Last_With
-                  loop
-                     if not
-                       ALI.Withs.Table (K).Implicit_With_From_Instantiation
-                     then
-                        Sfile := ALI.Withs.Table (K).Sfile;
-
-                        --  Skip generics
-
-                        if Sfile /= No_File then
-
-                           --  Look for this source
-
-                           Afile := ALI.Withs.Table (K).Afile;
-                           Source_2 := Source_Files_Htable.Get
-                             (Src_Data.Tree.Source_Files_HT, Sfile);
-
-                           while Source_2 /= No_Source loop
-                              if Is_Compilable (Source_2)
-                                and then  Source_2.Dep_Name = Afile
-                              then
-                                 case Source_2.Kind is
-                                 when Spec => null;
-
-                                 when Impl =>
-                                    if Is_Subunit (Source_2) then
-                                       Source_2 := No_Source;
-                                    end if;
-
-                                 when Sep =>
-                                    Source_2 := No_Source;
-                                 end case;
-
-                                 exit;
-                              end if;
-
-                              Source_2 := Source_2.Next_With_File_Name;
-                           end loop;
-
-                           --  If it is the source of a project that is not the
-                           --  project of the source just compiled, check if it
-                           --  is allowed to be imported.
-
-                           if Source_2 /= No_Source then
-                              if not Project_Extends
-                                (Src_Data.Id.Project, Source_2.Project)
-                                and then
-                                  not Project_Extends
-                                    (Source_2.Project, Src_Data.Id.Project)
-                              then
-                                 if not Indirect_Imports
-                                   and then not Directly_Imports
-                                     (Src_Data.Id.Project, Source_2.Project)
-                                 then
-                                    --  It is in a project that is not directly
-                                    --  imported. Report an error and
-                                    --  invalidate the compilation.
-
-                                    Put ("Unit """);
-                                    Put
-                                      (Get_Name_String
-                                         (Src_Data.Id.Unit.Name));
-                                    Put (""" cannot import unit """);
-                                    Put
-                                      (Get_Name_String (Source_2.Unit.Name));
-                                    Put_Line (""":");
-
-                                    Put ("  """);
-                                    Put
-                                      (Get_Name_String
-                                         (Src_Data.Id.Project.Display_Name));
-                                    Put
-                                      (""" does not directly"
-                                       & " import project """);
-                                    Put
-                                      (Get_Name_String
-                                         (Source_2.Project.Display_Name));
-                                    Put_Line ("""");
-
-                                    Compilation_OK := False;
-
-                                 elsif not Source_2.In_Interfaces then
-                                    --  It is not an interface of its project.
-                                    --  Report an error and invalidate the
-                                    --  compilation.
-
-                                    Put ("Unit """);
-                                    Put
-                                      (Get_Name_String
-                                         (Src_Data.Id.Unit.Name));
-                                    Put (""" cannot import unit """);
-                                    Put
-                                      (Get_Name_String (Source_2.Unit.Name));
-                                    Put_Line (""":");
-
-                                    Put
-                                      ("  it is not part of the "
-                                       & "interfaces of its project """);
-                                    Put
-                                      (Get_Name_String
-                                         (Source_2.Project.Display_Name));
-                                    Put_Line ("""");
-                                    Compilation_OK := False;
-                                 end if;
-                              end if;
-                           end if;
-                        end if;
-                     end if;
-                  end loop;
-               end loop;
+               Check_Interface_And_Indirect_Imports
+                 (The_ALI      => The_ALI,
+                  Src_Data     => Src_Data,
+                  Success      => Compilation_OK);
 
                if Opt.No_Split_Units then
 
@@ -3402,6 +3431,23 @@ package body Gprbuild.Compile is
                The_ALI        => The_ALI,
                Object_Check   => Object_Checked,
                Always_Compile => Always_Compile);
+
+            if The_ALI /= ALI.No_ALI_Id then
+               declare
+                  Success : Boolean := True;
+               begin
+                  Check_Interface_And_Indirect_Imports
+                    (The_ALI      => The_ALI,
+                     Src_Data     => Source,
+                     Success      => Success);
+
+                  if not Success then
+                     Fail_Program
+                       (Source.Tree, "*** compilation phase failed",
+                        No_Message => Opt.No_Exit_Message);
+                  end if;
+               end;
+            end if;
 
             if Compilation_Needed and then Opt.Keep_Going then
                --  When in Keep_Going mode first check that we did not already
