@@ -2288,6 +2288,12 @@ The switches for GPRinstall are:
   project directly or indirectly. Without this switch, GPRinstall only
   installs the main project.
 
+* :samp:`--no-manifest`
+
+  Prevent the manifest file from being created. Note that using this
+  option will make it impossible to uninstall the project using
+  GPRinstall. See option `--uninstall`.
+
 * :samp:`--uninstall`
 
   Uninstall mode, files installed for a given project or install name
