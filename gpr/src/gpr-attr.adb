@@ -140,6 +140,7 @@ package body GPR.Attr is
    "SVseparate_run_path_options#" &
    "Satoolchain_version#" &
    "Satoolchain_description#" &
+   "Satoolchain_name#" &
    "Saobject_generated#" &
    "Saobjects_linked#" &
    "SVtargetDtarget_value#" &

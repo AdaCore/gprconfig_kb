@@ -237,6 +237,23 @@ package GPR.Conf is
    function Runtime_Name_Set_For (Language : Name_Id) return Boolean;
    --  Returns True only if Set_Runtime_For has been called for the Language
 
+   ----------------
+   -- Toolchains --
+   ----------------
+
+   procedure Set_Toolchain_For (Language : Name_Id; Toolchain_Name : String);
+   --  Specifies the toolchain to use for a specific language. This results in
+   --  a specific component passed to gprconfig's --config switch when
+   --  automatically generating a configuration file.
+
+   function Toolchain_Name_For (Language : Name_Id) return String;
+   --  Returns the toolchain name for a language. Returns the value set by the
+   --  last call to Set_Toolchain_For, if any, otherwise returns an empty
+   --  string.
+
+   function Toolchain_Name_Set_For (Language : Name_Id) return Boolean;
+   --  Returns True only if Set_Toolchain_For has been called for the Language
+
    ------------------------
    -- Auto-configuration --
    ------------------------

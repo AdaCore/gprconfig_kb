@@ -319,6 +319,7 @@ package GPR.Snames is
    Name_Only_Dirs_With_Sources           : constant Name_Id := N + 291;
    Name_Include_Switches_Via_Spec        : constant Name_Id := N + 292;
    Name_Required_Toolchain_Version       : constant Name_Id := N + 293;
+   Name_Toolchain_Name                   : constant Name_Id := N + 294;
 
    subtype Reserved_Ada_95 is Name_Id
       range Name_Abort .. Name_Tagged;

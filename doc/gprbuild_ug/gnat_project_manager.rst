@@ -4481,7 +4481,7 @@ Project Level Attributes
 
     Index is a language name. Indicates the runtime directory that is to be used
     when using the compiler of the language. Taken into account only in the main
-    project.
+    project, or its extended projects if any.
 
     Note that when the runtime is specified for a language on the command line
     (usually with a switch --RTS), the value of attribute reference 'Runtime
@@ -4517,6 +4517,12 @@ Project Level Attributes
 
     Index is a language name. Value is library version for the language. This
     attribute is not normally declared.
+
+  * **Toolchain_Name**: single, indexed, case-insensitive index
+
+    Index is a language name. Indicates the toolchain name that is to be used
+    when using the compiler of the language. Taken into account only in the main
+    project, or its extended projects if any.
 
 * **Configuration - Libraries**
 

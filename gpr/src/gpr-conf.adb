@@ -92,6 +92,15 @@ package body GPR.Conf is
    --  Stores the runtime names for the various languages. This is in general
    --  set from a --RTS command line option.
 
+   package Toolchain_Languages is new GNAT.HTable.Simple_HTable
+     (Header_Num => GPR.Header_Num,
+      Element    => Name_Id,
+      No_Element => No_Name,
+      Key        => Name_Id,
+      Hash       => GPR.Hash,
+      Equal      => "=");
+   --  Stores the toolchain names for the various languages
+
    package Db_Switch_Args is new GNAT.Table
      (Table_Component_Type => Name_Id,
       Table_Index_Type     => Integer,
@@ -592,6 +601,10 @@ package body GPR.Conf is
       --  Get the various Runtime (<lang>) in the project file or any project
       --  it extends, if any are specified.
 
+      procedure Get_Project_Toolchains;
+      --  Get the various Toolchain_Name (<lang>) in the project file or any
+      --  project it extends, if any are specified.
+
       function Get_Config_Switches return Argument_List_Access;
       --  Return the --config switches to use for gprconfig
 
@@ -790,6 +803,37 @@ package body GPR.Conf is
             Proj := Proj.Extends;
          end loop;
       end Get_Project_Runtimes;
+
+      ----------------------------
+      -- Get_Project_Toolchains --
+      ----------------------------
+
+      procedure Get_Project_Toolchains is
+         Element : Array_Element;
+         Id      : Array_Element_Id;
+         Lang    : Name_Id;
+         Proj    : Project_Id;
+
+      begin
+         Proj := Project;
+         while Proj /= No_Project loop
+            Id := Value_Of (Name_Toolchain_Name, Proj.Decl.Arrays, Shared);
+            while Id /= No_Array_Element loop
+               Element := Shared.Array_Elements.Table (Id);
+               Lang := Element.Index;
+
+               if not Toolchain_Name_Set_For (Lang) then
+                  Set_Toolchain_For
+                    (Lang,
+                     Toolchain_Name => Get_Name_String (Element.Value.Value));
+               end if;
+
+               Id := Element.Next;
+            end loop;
+
+            Proj := Proj.Extends;
+         end loop;
+      end Get_Project_Toolchains;
 
       -----------------------
       -- Default_File_Name --
@@ -1273,7 +1317,10 @@ package body GPR.Conf is
                   Config_Command : constant String :=
                     "--config=" & Get_Name_String (Name);
 
-                  Runtime_Name : constant String := Runtime_Name_For (Name);
+                  Runtime_Name   : constant String :=
+                                     Runtime_Name_For (Name);
+                  Toolchain_Name : constant String :=
+                                     Toolchain_Name_For (Name);
 
                begin
                   --  In CodePeer mode, we do not take into account any
@@ -1284,8 +1331,8 @@ package body GPR.Conf is
                     or else Length_Of_Name (Variable.Value) = 0
                   then
                      Result (Count) :=
-                       new String'(Config_Command & ",," & Runtime_Name);
-
+                       new String'(Config_Command & ",," & Runtime_Name
+                                   & ",," & Toolchain_Name);
                   else
                      At_Least_One_Compiler_Command := True;
 
@@ -1350,6 +1397,7 @@ package body GPR.Conf is
 
       Get_Project_Target;
       Get_Project_Runtimes;
+      Get_Project_Toolchains;
       Check_Builder_Switches;
 
       --  Makes the Ada RTS absolute if it is not a base name and check if the
@@ -2385,6 +2433,39 @@ package body GPR.Conf is
       Name_Buffer (1 .. Name_Len) := RTS_Name;
       RTS_Languages.Set (Language, Name_Find);
    end Set_Runtime_For;
+
+   ------------------------
+   -- Toolchain_Name_For --
+   ------------------------
+
+   function Toolchain_Name_For (Language : Name_Id) return String is
+   begin
+      if Toolchain_Languages.Get (Language) /= No_Name then
+         return Get_Name_String (Toolchain_Languages.Get (Language));
+      else
+         return "";
+      end if;
+   end Toolchain_Name_For;
+
+   ----------------------------
+   -- Toolchain_Name_Set_For --
+   ----------------------------
+
+   function Toolchain_Name_Set_For (Language : Name_Id) return Boolean is
+   begin
+      return Toolchain_Languages.Get (Language) /= No_Name;
+   end Toolchain_Name_Set_For;
+
+   -----------------------
+   -- Set_Toolchain_For --
+   -----------------------
+
+   procedure Set_Toolchain_For (Language : Name_Id; Toolchain_Name : String) is
+   begin
+      Name_Len := Toolchain_Name'Length;
+      Name_Buffer (1 .. Name_Len) := Toolchain_Name;
+      Toolchain_Languages.Set (Language, Name_Find);
+   end Set_Toolchain_For;
 
    ----------------------------
    -- Look_For_Project_Paths --
