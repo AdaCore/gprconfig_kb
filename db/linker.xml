@@ -101,27 +101,11 @@
 
   <configuration>
     <targets>
+      <target name="^i686.*-linux.*$" />
       <target name="^x86_64.*-linux.*" />
     </targets>
     <hosts>
       <host name="^x86_64.*-linux.*" />
-    </hosts>
-    <config>
-   for Object_Lister use ("nm", "-g");
-   for Object_Lister_Matcher use " [TDRB] (.*)";
-
-   package Linker is
-      for Export_File_Format use "GNU";
-      for Export_File_Switch use "-Wl,--version-script=";
-   end Linker;
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="^i686.*-linux.*$" />
-    </targets>
-    <hosts>
       <host name="^i686.*-linux.*$" />
     </hosts>
     <config>
@@ -737,23 +721,10 @@
   <configuration>
     <targets>
       <target name="^i.86-.*linux.*" />
-    </targets>
-    <hosts>
-      <host name="^i.86-.*linux.*" />
-    </hosts>
-    <config>
-   for Archive_Builder  use ("ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
       <target name="^x86_64-.*linux.*" />
     </targets>
     <hosts>
+      <host name="^i.86-.*linux.*" />
       <host name="^x86_64-.*linux.*" />
     </hosts>
     <config>
