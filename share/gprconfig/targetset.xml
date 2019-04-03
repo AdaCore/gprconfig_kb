@@ -45,6 +45,11 @@
     <target>arm-linux-gnueabi</target>
   </targetset>
 
+  <targetset canonical="armhf-linux">
+    <target>armhf-linux</target>
+    <target>arm-linux-gnueabihf</target>
+  </targetset>
+
   <targetset canonical="e500v2-linux">
     <target>e500v2-linux</target>
     <target>e500v2-gnu-linux</target>
