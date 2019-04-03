@@ -133,7 +133,7 @@
   <!--  G++ compilers for GNAT Pro  -->
   <compiler_description>
     <name>G++_Pro</name>
-    <executable prefix="1">(.*-wrs-.*|.*-linux-gnu-)?g\+\+</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-linux-gnu.*-)?g\+\+</executable>
     <version>
       <external>${PREFIX}g++ -v</external>
 
