@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2018, AdaCore                     --
+--                     Copyright (C) 2006-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -49,6 +49,10 @@ private
    --  Set to True when switch -n is specified. When True, no file is deleted.
    --  gnatclean only lists the files that would have been deleted if the
    --  switch -n had not been specified.
+
+   Remove_Empty_Dir : Boolean := False;
+   --  Set to True when switch -p is specified. When True, the empty directory
+   --  where the artefact files was deleted will be deleted too.
 
    File_Deleted : Boolean := False;
    --  Set to True if at least one file has been deleted

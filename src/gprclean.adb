@@ -16,6 +16,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Directories;           use Ada.Directories;
 with Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -56,6 +57,16 @@ package body Gprclean is
       Project_Tree : Project_Tree_Ref);
    --  Delete the library file in a library directory and any ALI file
    --  of a source of the project in a library ALI directory.
+
+   procedure Delete_Directory (Dir : String);
+   --  Remove directory if it is not empty.
+   --  Issue warning if directoty is not empty or can't be removed in some
+   --  other reason.
+
+   procedure Delete_Directory (Dir : Path_Information);
+   --  Remove directory if it is defined and not empty.
+   --  If --subdirs parameter is defined and the Dir simple name is equal to
+   --  --subdirs parameter, try to remove the upper level directory too.
 
    procedure Delete_Binder_Generated_Files
      (Main_Project : Project_Id;
@@ -1055,6 +1066,14 @@ package body Gprclean is
       --  Change back to previous directory
 
       Change_Dir (Current_Dir);
+
+      if Remove_Empty_Dir then
+         Delete_Directory (Project.Object_Directory);
+         Delete_Directory (Project.Exec_Directory);
+         Delete_Directory (Project.Library_Dir);
+         Delete_Directory (Project.Library_ALI_Dir);
+         Delete_Directory (Project.Library_Src_Dir);
+      end if;
    end Clean_Project;
 
    ------------
@@ -1114,6 +1133,51 @@ package body Gprclean is
          end if;
       end if;
    end Delete;
+
+   ----------------------
+   -- Delete_Directory --
+   ----------------------
+
+   procedure Delete_Directory (Dir : Path_Information) is
+   begin
+      if Dir /= No_Path_Information then
+         declare
+            Folder : constant String := Get_Name_String (Dir.Display_Name);
+            Last   : Natural := Folder'Last;
+         begin
+            Delete_Directory (Folder);
+
+            if Subdirs /= null then
+               --  If subdirs is defined try to remove the parent one
+
+               if GPR.Osint.Is_Directory_Separator (Folder (Last)) then
+                  Last := Last - 1;
+               end if;
+
+               if Simple_Name (Folder (1 .. Last)) = Subdirs.all then
+                  Delete_Directory (Containing_Directory (Folder (1 .. Last)));
+               end if;
+            end if;
+         end;
+      end if;
+   end Delete_Directory;
+
+   procedure Delete_Directory (Dir : String) is
+      Search : Search_Type;
+   begin
+      if Is_Directory (Dir) then
+         Remove_Dir (Dir);
+      end if;
+   exception
+      when E : Directory_Error =>
+         if not Quiet_Output then
+            Start_Search (Search, Dir, "");
+            Put_Line
+              ("warning: Directory """ & Dir & """ could not be removed"
+               & (if More_Entries (Search) then " because it is not empty"
+                 else "") & '.');
+         end if;
+   end Delete_Directory;
 
    -----------------------------------
    -- Delete_Binder_Generated_Files --

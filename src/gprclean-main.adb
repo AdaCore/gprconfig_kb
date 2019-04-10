@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2018, AdaCore                     --
+--                     Copyright (C) 2011-2019, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -609,6 +609,13 @@ procedure Gprclean.Main is
 
             Do_Nothing := True;
 
+         when 'p' =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            Remove_Empty_Dir := True;
+
          when 'P' =>
             if In_Package_Clean then
                Bad_Switch;
@@ -790,6 +797,7 @@ procedure Gprclean.Main is
                    & "in brief error messages");
          Put_Line ("  -h       Display this message");
          Put_Line ("  -n       Nothing to do: only list files to delete");
+         Put_Line ("  -p       Remove empty build directories");
          Put_Line ("  -P<proj> Use Project File <proj>");
          Put_Line ("  -q       Be quiet/terse");
          Put_Line ("  -r       Clean all projects recursively");
