@@ -75,7 +75,7 @@
    </configuration>
 
   <!--     GCC -I parameter passing
-   Starting with 4.1, we use spec file to avoid line length limitations
+   Starting with 4.5, we use spec file to avoid line length limitations
    -->
    <configuration>
      <compilers>
@@ -84,7 +84,7 @@
    <compilers negate="true">
      <compiler version="^2\.\d+" />
      <compiler version="^3\.\d+" />
-     <compiler version="^4\.0" />
+     <compiler version="^4\.[01234]" />
    </compilers>
      <config>
    package Compiler is
@@ -104,7 +104,7 @@
    <compilers>
      <compiler version="^2\.\d+" />
      <compiler version="^3\.\d+" />
-     <compiler version="^4\.0" />
+     <compiler version="^4\.[01234]" />
    </compilers>
      <config>
    package Compiler is
