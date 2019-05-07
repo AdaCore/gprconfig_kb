@@ -1169,7 +1169,7 @@ package body Gprclean is
          Remove_Dir (Dir);
       end if;
    exception
-      when E : Directory_Error =>
+      when Directory_Error =>
          if not Quiet_Output then
             Start_Search (Search, Dir, "");
             Put_Line
