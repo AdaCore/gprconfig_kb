@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---       Copyright (C) 2015-2018, Free Software Foundation, Inc.           --
+--        Copyright (C) 2015-2019, Free Software Foundation, Inc.           --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1296,9 +1296,11 @@ package body Scanner is
                   --  approved AI. ESC was added to the AI in June 93.
 
                   elsif Source (Scan_Ptr) in Upper_Half_Character
-                     or else Source (Scan_Ptr) = ASCII.ESC
+                                             | ASCII.ESC | ASCII.DEL
                   then
                      Scan_Ptr := Scan_Ptr + 1;
+                  else
+                     Error_Illegal_Character;
                   end if;
                end loop;
 
