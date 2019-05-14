@@ -1068,11 +1068,33 @@ package body Gprclean is
       Change_Dir (Current_Dir);
 
       if Remove_Empty_Dir then
-         Delete_Directory (Project.Object_Directory);
-         Delete_Directory (Project.Exec_Directory);
-         Delete_Directory (Project.Library_Dir);
-         Delete_Directory (Project.Library_ALI_Dir);
-         Delete_Directory (Project.Library_Src_Dir);
+         declare
+            procedure Delete_If_Not_Project (Dir : Path_Information);
+            --  Delete the directory if it is not the directory where the
+            --  project is resided.
+
+            procedure Delete_If_Not_Project (Dir : Path_Information) is
+            begin
+               if Dir /= Project.Directory then
+                  Delete_Directory (Dir);
+               end if;
+            end Delete_If_Not_Project;
+
+         begin
+            Delete_If_Not_Project (Project.Object_Directory);
+
+            if Project.Exec_Directory /= Project.Object_Directory then
+               Delete_If_Not_Project (Project.Exec_Directory);
+            end if;
+
+            Delete_If_Not_Project (Project.Library_Dir);
+
+            if Project.Library_Dir /= Project.Library_ALI_Dir then
+               Delete_If_Not_Project (Project.Library_ALI_Dir);
+            end if;
+
+            Delete_If_Not_Project (Project.Library_Src_Dir);
+         end;
       end if;
    end Clean_Project;
 
