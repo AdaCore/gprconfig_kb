@@ -615,6 +615,7 @@ procedure Gprclean.Main is
             end if;
 
             Remove_Empty_Dir := True;
+            Opt.Directories_Must_Exist_In_Projects := False;
 
          when 'P' =>
             if In_Package_Clean then
