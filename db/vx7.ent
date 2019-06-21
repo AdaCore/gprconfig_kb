@@ -20,7 +20,7 @@
    >
 
    <!ENTITY runtimes_vx7
-    '<runtimes>kernel,rtp</runtimes>'
+    '<runtimes>kernel,rtp,kernel-large,rtp-large</runtimes>'
    >
 
   <!ENTITY config_vsb_dir

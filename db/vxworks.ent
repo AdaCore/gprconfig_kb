@@ -209,6 +209,12 @@
      </config>'
   >
 
+  <!ENTITY if_large_rts
+    '<compilers>
+      <compiler runtime="-large$" />
+     </compilers>'
+  >
+
   <!ENTITY config_no_builtin
   '
      <config>
@@ -238,6 +244,35 @@
         Compiler &apos; Leading_Required_Switches ("C++")
         &amp; ("-te500v2", "-fno-implicit-fp");
    end Compiler;
+     </config>'
+  >
+
+  <!ENTITY config_x86_64_cmodel_large_flags
+    '<config>
+   package Compiler is
+      for Leading_Required_Switches ("Ada") use
+        Compiler &apos; Leading_Required_Switches ("Ada")
+        &amp; ("-mcmodel=large");
+
+      for Leading_Required_Switches ("C") use
+        Compiler &apos; Leading_Required_Switches ("C")
+        &amp; ("-mcmodel=large");
+
+      for Leading_Required_Switches ("C++") use
+        Compiler &apos; Leading_Required_Switches ("C++")
+        &amp; ("-mcmodel=large");
+   end Compiler;
+   package Linker is
+      for Leading_Switches ("Ada") use
+        Linker &apos; Leading_Switches ("Ada")
+        &amp; ("-mcmodel=large");
+      for Leading_Switches ("C") use
+        Linker &apos; Leading_Switches ("C")
+        &amp; ("-mcmodel=large");
+      for Leading_Switches ("C++") use
+        Linker &apos; Leading_Switches ("C++")
+        &amp; ("-mcmodel=large");
+   end Linker;
      </config>'
   >
 
@@ -444,5 +479,13 @@
      <!-- vx6, vx7 and vx6cert -->
 
      &config_c_partial_link;
+   </configuration>
+
+   <configuration>
+     &if_large_rts;
+     &if_this_target;
+     <!-- vx6, vx7 and vx6cert -->
+
+     &config_x86_64_cmodel_large_flags;
    </configuration>
   '>
