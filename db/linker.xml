@@ -961,11 +961,12 @@
     </config>
   </configuration>
 
-  <!-- linux, QNX -->
+  <!-- linux, freebsd, QNX -->
   <configuration>
     <targets>
        <target name="^.*linux.*$" />
        <target name="^.*qnx[0-9]*$" />
+       <target name="^.*freebsd.*$" />
     </targets>
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
@@ -1048,16 +1049,6 @@
     </targets>
     <config>
     for Library_Rpath_Options ("C++") use ("-print-file-name=libstdc++.so");
-    </config>
-  </configuration>
-
-  <!-- freebsd -->
-  <configuration>
-    <targets>
-       <target name="^.*freebsd.*$" />
-    </targets>
-    <config>
-   for Run_Path_Option  use ("-Wl,-rpath,");
     </config>
   </configuration>
 
