@@ -616,12 +616,12 @@
 
   <configuration>
     <targets>
-      <target name="^arm-sysgo-pikeos4.2$" />
+      <target name="^arm-sysgo-pikeos4$" />
     </targets>
     <config>
-   for Archive_Builder  use ("arm-sysgo-pikeos4.2-ar", "cr");
+   for Archive_Builder  use ("arm-sysgo-pikeos4-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("arm-sysgo-pikeos4.2-ranlib");
+   for Archive_Indexer  use ("arm-sysgo-pikeos4-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
