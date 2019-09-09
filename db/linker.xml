@@ -305,6 +305,18 @@
 
   <configuration>
     <targets>
+      <target name="^m68k-elf$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("m68k-elf-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("m68k-elf-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^powerpc-elf$" />
     </targets>
     <config>
@@ -697,6 +709,7 @@
       <target name="^visium-elf$"/>
       <target name="^riscv64-elf$"/>
       <target name="^riscv32-elf$"/>
+      <target name="^m68k-elf$"/>
       <target name="^powerpc-elf$"/>
       <target name="^powerpc-elf-lynxos$" />
       <target name="^powerpc-xcoff-lynxos178$" />
@@ -781,6 +794,7 @@
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
+       <target name="^m68k-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1382,6 +1396,7 @@
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
+       <target name="^m68k-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1432,6 +1447,7 @@
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
+       <target name="^m68k-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1465,6 +1481,7 @@
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
+       <target name="^m68k-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
