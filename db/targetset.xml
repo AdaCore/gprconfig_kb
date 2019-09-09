@@ -297,6 +297,12 @@
     <target>e500v2-wrs-vxworks7</target>
   </targetset>
 
+  <!-- e500v2-vx7 (vxworks 7) -->
+  <targetset canonical="e500v2-vx7r2">
+    <target>e500v2-vx7r2</target>
+    <target>e500v2-wrs-vxworks7r2</target>
+  </targetset>
+
   <!-- ppc-vx7 (vxworks 7) -->
   <targetset canonical="ppc-vx7">
     <target>ppc-vx7</target>

@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
+<!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
+
+<!-- Local target-specific conditions -->
+
+<!ENTITY this_target 'e500v2-wrs-vxworks7r2'>
+
+<!ENTITY if_these_c_compilers
+    '<compilers>
+       <compiler name="^GCC_Pro$" />
+       <compiler name="^GCC-WRS7R2E500V2$" />
+     </compilers>'>
+
+<!ENTITY if_these_cpp_compilers
+    '<compilers>
+       <compiler name="^G\+\+_Pro$" />
+     </compilers>'>
+
+<!ENTITY if_these_gnu_wrs_compilers
+    '<compilers>
+       <compiler name="^G\+\+-WRS7R2E500V2$" />
+       <compiler name="^GCC-WRS7R2E500V2$" />
+     </compilers>'>
+
+<!ENTITY this_wrs_rtp_base '0x80000000'>
+]>
+<gprconfig>
+
+  &environment;
+
+  &configurations_vxworks_gpp;
+
+  &configurations_vx7;
+
+  &configurations_gnat_ar;
+
+</gprconfig>

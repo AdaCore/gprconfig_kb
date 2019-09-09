@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
+<!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
+]>
+<gprconfig>
+
+  <compiler_description>
+    <name>GCC-WRS7R2E500V2</name>
+    <executable prefix="1">cc(ppc)</executable>
+    &version_from_wrs7r2_gnu_cc;
+    &languages_c;
+    &runtimes_vx7;
+    <target>e500v2-wrs-vxworks7r2</target>
+  </compiler_description>
+
+</gprconfig>
