@@ -301,6 +301,23 @@
     <target>dotnet</target>
   </compiler_description>
 
+  <!--  JGNAT -->
+
+  <compiler_description>
+    <name>JGNAT</name>
+    <executable prefix="1">(.*jvm-)gnatls</executable>
+    <version>
+      <external>${PREFIX}gnatls -v</external>
+      <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <runtimes default="default">
+       <directory group="default" >\.\./lib/jgnat/adalib/</directory>
+       <directory group="1" >\.\./lib/jgnat/rts-(.*)/adalib/</directory>
+    </runtimes>
+    <target>jvm</target>
+  </compiler_description>
+
   <!--    G77  -->
   <compiler_description>
     <name>G77</name>

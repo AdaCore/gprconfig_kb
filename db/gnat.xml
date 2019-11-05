@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE gprconfig [
-  <!ENTITY filter_gnat '<compilers><compiler name="^GNAT$" /><compiler name="^GNAT_DOTNET$" /><compiler name="^GNAT_CODEPEER$" /><compiler name="^GNAT_C$" /><compiler name="^GNAT_LLVM$" /></compilers>'>
+  <!ENTITY filter_gnat '<compilers><compiler name="^GNAT$" /><compiler name="^GNAT_DOTNET$" /><compiler name="^JGNAT$" /><compiler name="^GNAT_CODEPEER$" /><compiler name="^GNAT_C$" /><compiler name="^GNAT_LLVM$" /></compilers>'>
 ] >
 
 <gprconfig>
@@ -93,6 +93,18 @@
    package Compiler is
       for Object_File_Suffix       ("Ada") use ".il";
       for Driver                   ("Ada") use "${PATH(ada)}${PREFIX(ada)}gnatcompile";
+   end Compiler;
+   </config>
+  </configuration>
+
+  <!-- JGNAT -->
+  <configuration>
+   <compilers>
+    <compiler name="^JGNAT$"/>
+   </compilers>
+   <config>
+   package Compiler is
+      for Object_File_Suffix       ("Ada") use ".class";
    end Compiler;
    </config>
   </configuration>
@@ -246,6 +258,7 @@
       <target name="^.*dec-osf.*$" />
       <target name="^.*vms.*$" />
       <target name="^.*dotnet.*$" />
+      <target name="^.*jvm.*$" />
    </targets>
    <config>
    package Compiler is

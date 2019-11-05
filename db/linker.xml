@@ -844,6 +844,16 @@
     </config>
   </configuration>
 
+  <!-- JGNAT -->
+  <configuration>
+    <targets>
+       <target name="jvm" />
+    </targets>
+    <config>
+   for Library_Support use "none";
+    </config>
+  </configuration>
+
   <!-- Symbolic links supported everywhere except on mingw and VMS -->
 
   <configuration>
@@ -1246,6 +1256,7 @@
     <targets negate="true">
        <target name="aamp" />
        <target name="dotnet" />
+       <target name="jvm" />
        <target name="^.*-sysgo-pikeos.*$" />
        <target name="^.*-wrs-vxworks.*$" />
     </targets>

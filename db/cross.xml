@@ -204,6 +204,7 @@
      <compilers>
        <compiler name="^GNAT$" />
        <compiler name="^GNAT_DOTNET$" />
+       <compiler name="^JGNAT$" />
        <compiler name="^GNAT_C$" />
        <compiler name="^GNAT_CODEPEER$" />
        <compiler name="^GNAT_LLVM$" />
