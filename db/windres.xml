@@ -9,7 +9,7 @@
      <config>
    package Compiler is
       for Driver ("WinRes") use "${PREFIX(WinRes)}windres";
-      for Leading_Required_Switches ("WinRes") use ("-i");
+      for Trailing_Required_Switches ("WinRes") use ("-i");
       for Object_File_Suffix ("WinRes") use ".coff";
       for Object_File_Switches ("WinRes") use ("-o", "");
    end Compiler;
