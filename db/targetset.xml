@@ -505,6 +505,13 @@
     <target>arm-.*-pikeos4.2</target>
   </targetset>
 
+  <!-- arm-pikeos5  -->
+
+  <targetset canonical="arm-pikeos5">
+    <target>arm-pikeos5</target>
+    <target>arm-.*-pikeos5</target>
+  </targetset>
+
   <!-- ppc-pikeos  -->
 
   <targetset canonical="ppc-pikeos">

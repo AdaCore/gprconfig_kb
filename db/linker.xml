@@ -640,6 +640,18 @@
 
   <configuration>
     <targets>
+      <target name="^arm-sysgo-pikeos5$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("arm-sysgo-pikeos5-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("arm-sysgo-pikeos5-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^i586-sysgo-pikeos$" />
     </targets>
     <config>
