@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<gprconfig>
+   <!--  This package provides the default standard options for binary image embedding -->
+
+   <configuration>
+     <compilers>
+       <compiler name="^LD$" language="Bin_Img" />
+     </compilers>
+     <config>
+   package Naming is
+      for Implementation_Suffix ("Bin_Img") use "";
+   end Naming;
+
+   package Compiler is
+      for Driver            ("Bin_Img") use "${PATH(bin_img)}${PREFIX(bin_img)}ld";
+      for Leading_Required_Switches ("Bin_Img") use
+         Compiler'Leading_Required_Switches ("Bin_Img") &amp;
+         ("-r", "-b", "binary");
+      for Object_File_Suffix ("Bin_Img") use ".o";
+      for Object_File_Switches ("Bin_Img") use ("-o", "");
+   end Compiler;
+     </config>
+   </configuration>
+
+</gprconfig>

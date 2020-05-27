@@ -162,6 +162,21 @@
     </target>
   </compiler_description>
 
+  <!--  Binary image -->
+  <compiler_description>
+    <name>LD</name>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-generic-linux-gnu-|.*-pc-mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|aarch64-linux-gnu-|.*-qnx.*)?ld</executable>
+    <version>
+      <external>${PREFIX}ld -v</external>
+      <grep regexp="^GNU ld.* (\S+)" group="1"></grep>
+    </version>
+    <languages>Bin_Img</languages>
+    <target>
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
    <!--   GNAT
     To find the list of supported runtimes, we check the contents of
     the directory. To be compatible with older versions of GNAT (3.16
