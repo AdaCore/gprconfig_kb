@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+
+<gprconfig>
+
+  <!--  ASIS -->
+
+  <compiler_description>
+    <name>ASIS</name>
+    <executable>asis-gcc</executable>
+    <version>
+     <external>asis-gcc -v</external>
+     <grep  regexp=".*for GNAT Pro.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <runtimes default="default">
+       <directory group="default" >\.\./lib/gcc/(.*)/(.*)/adalib/</directory>
+    </runtimes>
+    <target>asis</target>
+  </compiler_description>
+
+  <configuration>
+   <compilers>
+    <compiler name="^ASIS$" />
+   </compilers>
+   <config>
+   package Compiler is
+      for Driver                   ("Ada") use "${PATH(ada)}asis-gcc";
+      for Language_Kind            ("Ada") use "unit_based";
+      for Dependency_Kind          ("Ada") use "ALI_File";
+      for Leading_Required_Switches ("Ada") use ("-c", "-x", "ada", "-gnatct");
+      for Config_File_Switches     ("Ada") use ("-gnatec=");
+      for Object_File_Suffix       ("Ada") use ".adt";
+      for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
+   end Compiler;
+
+   for Toolchain_Version ("Ada") use "GNAT ${VERSION(ada)}";
+   for Runtime_Dir       ("Ada") use "${RUNTIME_DIR(ada)}";
+   </config>
+  </configuration>
+
+</gprconfig>
