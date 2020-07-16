@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<gprconfig>
+
+  <!--  ASIS tree generator  -->
+
+  <compiler_description>
+    <name>ASIS</name>
+    <executable>asis-gcc</executable>
+    <version>
+     <external>asis-gcc -v</external>
+     <grep  regexp=".*for GNAT Pro.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <runtimes default="default">
+       <directory group="default" >\.\./lib/gcc/(.*)/(.*)/adalib/</directory>
+    </runtimes>
+    <target>asis</target>
+  </compiler_description>
+
+</gprconfig>
