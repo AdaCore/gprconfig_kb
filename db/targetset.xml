@@ -470,6 +470,21 @@
     <target>arm-elf</target>
     <target>arm-elf-linux</target>
     <target>arm-eabi</target>
+    <target>arm-none-eabi</target>
+  </targetset>
+
+  <!-- riscv32-elf-.*  -->
+  <targetset canonical="riscv32-elf">
+    <target>riscv32-elf</target>
+    <target>riscv32-none-elf</target>
+    <target>riscv32-unknown-elf</target>
+  </targetset>
+
+  <!-- riscv64-elf-.*  -->
+  <targetset canonical="riscv64-elf">
+    <target>riscv64-elf</target>
+    <target>riscv64-none-elf</target>
+    <target>riscv64-unknown-elf</target>
   </targetset>
 
   <!-- x86-elf-.*  -->
