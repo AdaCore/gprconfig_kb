@@ -472,6 +472,12 @@
     <target>arm-eabi</target>
   </targetset>
 
+  <!-- x86-elf-.*  -->
+  <targetset canonical="x86-elf">
+    <target>x86-elf</target>
+    <target>i686-elf</target>
+  </targetset>
+
   <!-- avr -->
   <targetset canonical="avr-elf">
     <target>avr-elf</target>

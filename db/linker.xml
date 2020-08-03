@@ -300,6 +300,18 @@
 
   <configuration>
     <targets>
+      <target name="^i686-elf$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("i686-elf-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^visium-elf$" />
     </targets>
     <config>
@@ -765,6 +777,7 @@
   <configuration>
     <targets negate="true">
       <target name="^x86_64-elf$"/>
+      <target name="^i686-elf$"/>
       <target name="^.*-wrs-vxworks.*$" />
       <target name="^visium-elf$"/>
       <target name="^riscv64-elf$"/>
@@ -852,6 +865,7 @@
        <target name="^.*aix.*$" />
        <target name="^.*lynxos.*$" />
        <target name="^x86_64-elf$" />
+       <target name="^i686-elf$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
@@ -1466,6 +1480,7 @@
        <target name="^.*-wrs-vxworks.*$" />
        <target name="^.*-elf-lynx.*$" />
        <target name="^x86_64-elf$" />
+       <target name="^i686-elf$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
@@ -1518,6 +1533,7 @@
        <target name="^.*wrs-vxworks.*$" />
        <target name="^.*-elf-lynx.*$" />
        <target name="^x86_64-elf$" />
+       <target name="^i686-elf$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
@@ -1553,6 +1569,7 @@
        <target name="^.*wrs-vxworks.*$" />
        <target name="^.*-elf-lynx.*$" />
        <target name="^x86_64-elf$" />
+       <target name="^i686-elf$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />

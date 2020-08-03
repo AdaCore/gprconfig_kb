@@ -31,6 +31,7 @@
    <configuration>
      <targets>
        <target name="^x86_64-elf$" />
+       <target name="^i686-elf$" />
        <target name="^visium-elf$" />
        <target name="^riscv64-elf$" />
        <target name="^riscv32-elf$" />
