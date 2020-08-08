@@ -1124,7 +1124,7 @@
        <compiler name="^GNAT$" />
     </compilers>
     <compilers>
-       <compiler name="^GCC$" />
+       <compiler name="GCC" language="c"/>
     </compilers>
     <targets>
        <target name="linux" except="androideabi" />
