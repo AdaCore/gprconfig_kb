@@ -29,6 +29,16 @@
      </config>'
   >
 
+  <!ENTITY config_nostdlib
+    '<config>
+     package Linker is
+        for Required_Switches use
+          Linker &apos; Required_Switches
+          &amp; ("-nostdlib");
+     end Linker;
+     </config>'
+  >
+
   <!ENTITY configurations_vx7
   '
    <configuration>
@@ -42,5 +52,13 @@
      &if_this_target;
 
      &config_wrs_rtp_base;
-   </configuration>'
+   </configuration>
+
+   <configuration>
+     &if_cert_based;
+     &if_this_target;
+     <!-- vx7r2cert -->
+
+     &config_nostdlib;
+  </configuration>'
   >
