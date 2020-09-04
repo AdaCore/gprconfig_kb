@@ -245,6 +245,7 @@
     </variable>
     <runtimes default="default,native">
        <directory group="default" >\.\./lib/rts-native/adalib/</directory>
+       <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>llvm</target>
   </compiler_description>
