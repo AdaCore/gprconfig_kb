@@ -372,4 +372,20 @@
      </config>
    </configuration>
 
+   <!-- GNAT including 7.2.2 and older does not support dependence on
+        configuration pragma files -->
+
+   <configuration>
+   &filter_gnat;
+   <compilers>
+     <compiler language="Ada" version="^7\.[012]\.*" />
+     <compiler language="Ada" version="^[3456]\.*" />
+   </compilers>
+   <config>
+     package Compiler is
+        for Config_File_Dependency_Support ("Ada") use "False";
+     end Compiler;
+   </config>
+  </configuration>
+
 </gprconfig>
