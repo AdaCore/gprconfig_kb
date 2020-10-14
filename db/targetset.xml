@@ -512,6 +512,13 @@
     <target>arm-linux-androideabi</target>
   </targetset>
 
+  <!-- aarch64-pikeos5  -->
+
+  <targetset canonical="aarch64-pikeos5">
+    <target>aarch64-pikeos5</target>
+    <target>aarch64-.*-pikeos5</target>
+  </targetset>
+
   <!-- arm-pikeos  -->
 
   <targetset canonical="arm-pikeos">
@@ -538,6 +545,13 @@
   <targetset canonical="ppc-pikeos">
     <target>ppc-pikeos</target>
     <target>powerpc-.*-pikeos</target>
+  </targetset>
+
+  <!-- ppc-pikeos5  -->
+
+  <targetset canonical="ppc-pikeos5">
+    <target>ppc-pikeos5</target>
+    <target>powerpc-.*-pikeos5</target>
   </targetset>
 
   <!-- x86-pikeos  -->
