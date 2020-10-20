@@ -1140,6 +1140,43 @@
   </configuration>
 
   <!-- Settings for Library_Partial_Linker -->
+
+  <!-- The partial linking option (-r) conflicts with -pie. Recent GNU/Linux
+       distributions tune GCC to automatically pass -pie, so we need to pass
+       -no-pie for partial linking. GNAT started supporting -no-pie flag only
+       for the 17.1 release: leave -r alone for earlier versions and hope for
+       the best. -->
+  <configuration>
+    <compilers>
+       <compiler name="^GNAT$" />
+       <compiler name="GCC" />
+    </compilers>
+    <compilers>
+      <compiler version="^3\." />
+      <compiler version="^5\." />
+      <compiler version="^6\." />
+      <compiler version="^7\." />
+    </compilers>
+    <config>
+        GCC_No_Pie := ();
+    </config>
+  </configuration>
+  <configuration>
+    <compilers>
+       <compiler name="^GNAT$" />
+       <compiler name="GCC" />
+    </compilers>
+    <compilers negate="true">
+      <compiler version="^3\." />
+      <compiler version="^5\." />
+      <compiler version="^6\." />
+      <compiler version="^7\." />
+    </compilers>
+    <config>
+        GCC_No_Pie := ("-no-pie");
+    </config>
+  </configuration>
+
   <configuration>
     <compilers>
        <compiler name="^GNAT$" />
@@ -1152,7 +1189,9 @@
     </targets>
     <config>
    for Library_Partial_Linker use
-         ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
+     ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib")
+      &amp; GCC_No_Pie
+      &amp; ("-Wl,-r", "-o");
     </config>
   </configuration>
 
@@ -1171,7 +1210,9 @@
     </targets>
     <config>
    for Library_Partial_Linker use
-         ("${PATH(c)}${PREFIX(c)}gcc", "-nostdlib", "-Wl,-r", "-o");
+     ("${PATH(c)}${PREFIX(c)}gcc", "-nostdlib")
+      &amp; GCC_No_Pie
+      &amp; ("-Wl,-r", "-o");
     </config>
   </configuration>
 
