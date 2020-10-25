@@ -219,4 +219,18 @@
      </config>
    </configuration>
 
+   <!--  Set prefix of gnatbind for CCG -->
+   <configuration>
+     <compilers>
+       <compiler name="^GNAT_CCG$" />
+     </compilers>
+     <config>
+   package Binder is
+      for Required_Switches ("Ada") use
+          Binder'Required_Switches ("Ada") &amp;
+          ("gnatbind_prefix=llvm-");
+   end Binder;
+     </config>
+   </configuration>
+
 </gprconfig>
