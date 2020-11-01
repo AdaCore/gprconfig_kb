@@ -1,4 +1,27 @@
 <?xml version="1.0" ?>
+<!--
+  Knowledge base for configuring GPRBuild and GPR2 projects.
+  Copyright (C) 2006-2020, AdaCore
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  As a special exception under Section 7 of GPL version 3, you are
+  granted additional permissions described in the GCC Runtime Library
+  Exception, version 3.1, as published by the Free Software Foundation.
+
+  You should have received a copy of the GNU General Public License and
+  a copy of the GCC Runtime Library Exception along with this program;
+  see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+  <http://www.gnu.org/licenses/>.
+-->
 <!DOCTYPE gprconfig [
   <!ENTITY filter_gnat '<compilers><compiler name="^GNAT$" /><compiler name="^GNAT_DOTNET$" /><compiler name="^JGNAT$" /><compiler name="^GNAT_CODEPEER$" /><compiler name="^GNAT_C$" /><compiler name="^GNAT_CCG$" /><compiler name="^GNAT_LLVM$" /></compilers>'>
 ] >
