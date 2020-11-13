@@ -288,6 +288,10 @@
   <!-- arm-vx7r2 (vxworks 7.2) -->
   <targetset canonical="arm-vx7r2">
     <target>arm-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>arm-vx7r2cert</target>
     <target>arm-wrs-vxworks7r2</target>
   </targetset>
 
@@ -300,6 +304,10 @@
   <!-- e500v2-vx7 (vxworks 7) -->
   <targetset canonical="e500v2-vx7r2">
     <target>e500v2-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>e500v2-vx7r2cert</target>
     <target>e500v2-wrs-vxworks7r2</target>
   </targetset>
 
@@ -312,6 +320,10 @@
   <!-- ppc-vx7r2 (vxworks 7.2) -->
   <targetset canonical="ppc-vx7r2">
     <target>ppc-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>ppc-vx7r2cert</target>
     <target>powerpc-wrs-vxworks7r2</target>
   </targetset>
 
@@ -324,6 +336,10 @@
   <!-- ppc64-vx7r2 (vxworks 7.2) -->
   <targetset canonical="ppc64-vx7r2">
     <target>ppc64-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>ppc64-vx7r2cert</target>
     <target>powerpc64-wrs-vxworks7r2</target>
   </targetset>
 
@@ -337,6 +353,10 @@
   <!-- x86-vx7r2-.* (vxworks 7.2) -->
   <targetset canonical="x86-vx7r2">
     <target>x86-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>x86-vx7r2cert</target>
     <target>x86-wrs-vxworks7r2</target>
     <target>i.86-wrs-vxworks7r2</target>
   </targetset>
@@ -350,6 +370,10 @@
   <!-- x86_64-vx7r2 (vxworks 7.2) -->
   <targetset canonical="x86_64-vx7r2">
     <target>x86_64-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>x86_64-vx7r2cert</target>
     <target>x86_64-wrs-vxworks7r2</target>
   </targetset>
 
@@ -424,6 +448,10 @@
   <!-- aarch64-vx7r2 (vxworks 7.2) -->
   <targetset canonical="aarch64-vx7r2">
     <target>aarch64-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>aarch64-vx7r2cert</target>
     <target>aarch64-wrs-vxworks7r2</target>
   </targetset>
 
