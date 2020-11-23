@@ -558,7 +558,7 @@
 
   <targetset canonical="arm-pikeos4.2">
     <target>arm-pikeos4.2</target>
-    <target>arm-.*-pikeos4.2</target>
+    <target>arm-.*-pikeos4</target>
   </targetset>
 
   <!-- arm-pikeos5  -->
