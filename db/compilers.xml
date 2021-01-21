@@ -271,8 +271,8 @@
     <version>
       <external>clang++ --version</external>
 
-      <!--  'clang version 6.0.0 ...'  -->
-      <grep regexp="^clang version (\S+) " group="1"></grep>
+      <!--  '...clang version 6.0.0...'  -->
+      <grep regexp="clang version (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>llvm</target>
