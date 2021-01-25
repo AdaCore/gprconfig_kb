@@ -916,7 +916,7 @@
        <target name="^aarch64-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^arm-apple-darwin.*$" />
-       <target name="^.*wrs-vxworks.*$" />
+       <target name="^(arm|aarch64|ppc|x86|x86_64).*wrs-vxworks.*$" />
        <target name="^avr$" />
        <target name="^.*-pikeos.*$" />
        <target name="^c$" />
@@ -1090,6 +1090,23 @@
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
    for Shared_Library_Minimum_Switches use ("-shared");
+   for Library_Version_Switches use ("-Wl,-soname,");
+
+   for Shared_Library_Suffix use ".so";
+   for Library_Auto_Init_Supported use "true";
+    </config>
+  </configuration>
+
+  <!-- VxWorks7r2 -->
+  <configuration>
+    <targets>
+       <target name="^powerpc64-wrs-vxworks7r2" />
+    </targets>
+    <config>
+   for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
+   for Library_Support  use "full";
+   for Shared_Library_Prefix use "lib";
+   for Shared_Library_Minimum_Switches use ("-shared", "-mrtp");
    for Library_Version_Switches use ("-Wl,-soname,");
 
    for Shared_Library_Suffix use ".so";
