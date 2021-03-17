@@ -921,6 +921,7 @@
        <target name="^.*-pikeos.*$" />
        <target name="^c$" />
        <target name="^llvm$" />
+       <target name="^cuda$" />
     </targets>
     <config>
    for Library_Support  use "static_only";

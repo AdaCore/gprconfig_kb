@@ -219,10 +219,11 @@
      </config>
    </configuration>
 
-   <!--  Set prefix of gnatbind for CCG -->
+   <!--  Set prefix of gnatbind for LLVM (CCG, CUDA) targets -->
    <configuration>
      <compilers>
        <compiler name="^GNAT_CCG$" />
+       <compiler name="^GNAT_CUDA$" />
      </compilers>
      <config>
    package Binder is

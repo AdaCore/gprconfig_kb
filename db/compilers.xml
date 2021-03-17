@@ -321,6 +321,28 @@
     <target>ccg</target>
   </compiler_description>
 
+  <!--  GNAT CUDA Target -->
+
+  <compiler_description>
+    <name>GNAT_CUDA</name>
+    <executable prefix="1">llvm-gnatls</executable>
+    <version>
+      <external>llvm-gnatls -v</external>
+      <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <variable name="gcc_version">
+      <external>cuda-gcc -v</external>
+      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+    </variable>
+    <runtimes default="default,device-cuda">
+       <directory group="default" >\.\./lib/rts-device-cuda/adalib/</directory>
+       <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
+    </runtimes>
+    <target>cuda</target>
+  </compiler_description>
+
+
   <!--  GNAT_DOTNET -->
 
   <compiler_description>
