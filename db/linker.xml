@@ -916,7 +916,7 @@
        <target name="^aarch64-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^arm-apple-darwin.*$" />
-       <target name="^(arm|aarch64|ppc|x86|x86_64).*wrs-vxworks.*$" />
+       <target name="^(arm|aarch64|powerpc|i586|x86_64)-wrs-vxworks.*$" />
        <target name="^avr$" />
        <target name="^.*-pikeos.*$" />
        <target name="^c$" />
