@@ -234,4 +234,27 @@
      </config>
    </configuration>
 
+  <!--  Set mcmodel large for x86_64-vx7r2 for kernel rts -->
+  <configuration>
+     <compilers>
+         <compiler name="GNAT" runtime="default" />
+         <compiler name="GNAT" runtime="kernel" />
+     </compilers>
+     <targets>
+       <target name="^x86_64-wrs-vxworks7r2.*$" />
+     </targets>
+     <config>
+        package Compiler is
+           for Required_Switches ("Ada") use
+               Compiler'Required_Switches ("Ada") &amp;
+               ("-mcmodel=large");
+        end Compiler;
+        package Linker is
+           for Required_Switches use
+               Linker'Required_Switches &amp;
+               ("-mcmodel=large");
+        end Linker;
+     </config>
+  </configuration>
+
 </gprconfig>
