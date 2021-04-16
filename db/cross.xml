@@ -234,19 +234,33 @@
      </config>
    </configuration>
 
-  <!--  Set mcmodel large for x86_64-vx7r2 for kernel rts -->
+  <!--  Set mcmodel large for x86_64-vx7r2 for kernel-large rts -->
   <configuration>
      <compilers>
-         <compiler name="GNAT" runtime="default" />
-         <compiler name="GNAT" runtime="kernel" />
+         <compiler runtime="kernel-large" />
      </compilers>
      <targets>
        <target name="^x86_64-wrs-vxworks7r2.*$" />
      </targets>
      <config>
         package Compiler is
-           for Required_Switches ("Ada") use
-               Compiler'Required_Switches ("Ada") &amp;
+           for Required_Switches ("Ada")  use
+               Compiler'Required_Switches  ("Ada") &amp;
+               ("-mcmodel=large");
+           for Required_Switches ("C")  use
+               Compiler'Required_Switches  ("C") &amp;
+               ("-mcmodel=large");
+           for Required_Switches ("C++")  use
+               Compiler'Required_Switches  ("C++") &amp;
+               ("-mcmodel=large");
+           for Required_Switches ("Asm")  use
+               Compiler'Required_Switches  ("Asm") &amp;
+               ("-mcmodel=large");
+           for Required_Switches ("Asm2")  use
+               Compiler'Required_Switches  ("Asm2") &amp;
+               ("-mcmodel=large");
+           for Required_Switches ("Asm_Cpp")  use
+               Compiler'Required_Switches  ("Asm_Cpp") &amp;
                ("-mcmodel=large");
         end Compiler;
         package Linker is
