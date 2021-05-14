@@ -17,6 +17,11 @@
    package Naming is
       for Body_Suffix ("WinRes") use ".rc";
    end Naming;
+
+   package Linker is
+      for Unconditional_Linking ("WinRes") use "True";
+   end Linker;
+
      </config>
    </configuration>
 
