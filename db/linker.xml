@@ -618,6 +618,18 @@
 
   <configuration>
     <targets>
+      <target name="^aarch64-rtems.*$"/>
+    </targets>
+    <config>
+   for Archive_Builder  use ("aarch64-rtems6-gcc-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("aarch64-rtems6-gcc-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^e500v2-gnu-linux$" />
     </targets>
     <config>
@@ -840,6 +852,7 @@
       <target name="^.*-gnueabi$" />
       <target name="^c$" />
       <target name="^.*-qnx[0-9]*$"/>
+      <target name="^.*-rtems.*$"/>
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
@@ -922,6 +935,7 @@
        <target name="^c$" />
        <target name="^llvm$" />
        <target name="^cuda$" />
+       <target name="^.*-rtems.*$"/>
     </targets>
     <config>
    for Library_Support  use "static_only";
