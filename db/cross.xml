@@ -73,7 +73,7 @@
      </config>
    </configuration>
 
-   <!-- Forbid mixing cert, kernel and rtp.  -->
+   <!-- Forbid mixing restricted rts with full rts.  -->
    <!-- Watch out: "ravenscar-cert-rtp" matches both "rtp" and "cert" -->
    <configuration>
      <compilers><compiler runtime="rtp" /></compilers>
@@ -88,7 +88,19 @@
    </configuration>
 
    <configuration>
+     <compilers><compiler runtime="light" /></compilers>
+     <compilers><compiler runtime="kernel" /></compilers>
+     <config></config>
+   </configuration>
+
+   <configuration>
      <compilers><compiler runtime="cert" /></compilers>
+     <compilers><compiler runtime="^rtp$" /></compilers>
+     <config></config>
+   </configuration>
+
+   <configuration>
+     <compilers><compiler runtime="light" /></compilers>
      <compilers><compiler runtime="^rtp$" /></compilers>
      <config></config>
    </configuration>
@@ -96,6 +108,12 @@
    <configuration>
      <compilers><compiler runtime="rtp" /></compilers>
      <compilers><compiler runtime="^ravenscar-cert$" /></compilers>
+     <config></config>
+   </configuration>
+
+   <configuration>
+     <compilers><compiler runtime="rtp" /></compilers>
+     <compilers><compiler runtime="^light-tasking$" /></compilers>
      <config></config>
    </configuration>
 
