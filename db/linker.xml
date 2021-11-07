@@ -1092,13 +1092,15 @@
     </config>
   </configuration>
 
-  <!-- linux, freebsd, Irix, OpenBSD, QNX -->
+  <!-- linux, freebsd, Irix, OpenBSD, NetBSD, Dragonfly BSD, QNX -->
   <configuration>
     <targets>
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*irix.*$" />
        <target name="^.*openbsd.*$" />
+       <target name="^.*netbsd.*$" />
+       <target name="^.*dragonfly.*$" />
        <target name="^.*qnx[0-9]*$" />
     </targets>
     <config>
@@ -1131,13 +1133,15 @@
     </config>
   </configuration>
 
-  <!-- linux, freebsd, OpenBSD, QNX -->
+  <!-- linux, freebsd, OpenBSD, NetBSD, Dragonfly BSD, QNX -->
   <configuration>
     <targets>
        <target name="^.*linux.*$" />
        <target name="^.*qnx[0-9]*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*openbsd.*$" />
+       <target name="^.*netbsd.*$" />
+       <target name="^.*dragonfly.*$" />
     </targets>
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
@@ -1616,6 +1620,8 @@
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*openbsd.*$" />
+       <target name="^.*netbsd.*$" />
+       <target name="^.*dragonfly.*$" />
        <target name="^.*-qnx[0-9]*"/>
      </targets>
     <config>
@@ -1665,6 +1671,8 @@
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*openbsd.*$" />
+       <target name="^.*netbsd.*$" />
+       <target name="^.*dragonfly.*$" />
      </targets>
     <config>
    package Linker is
@@ -1702,6 +1710,8 @@
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*openbsd.*$" />
+       <target name="^.*netbsd.*$" />
+       <target name="^.*dragonfly.*$" />
      </targets>
     <config>
    package Linker is
