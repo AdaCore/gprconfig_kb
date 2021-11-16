@@ -140,9 +140,10 @@
      </compilers>'
   >
 
-  <!ENTITY if_cert_based
+  <!ENTITY if_restricted_rts
     '<compilers>
        <compiler runtime="cert" />
+       <compiler runtime="light" />
      </compilers>'
   >
 

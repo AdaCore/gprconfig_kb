@@ -59,7 +59,7 @@
    </configuration>
 
    <configuration>
-     &if_cert_based;
+     &if_restricted_rts;
      &if_this_target;
 
      &config_no_builtin;

@@ -255,7 +255,7 @@
    </configuration>
 
    <configuration>
-     &if_cert_based;
+     &if_restricted_rts;
      &if_this_target;
      <!-- vx6cert -->
 
@@ -301,7 +301,7 @@
    </configuration>
 
    <configuration>
-     &if_cert_based;
+     &if_restricted_rts;
      &if_this_target;
     <!-- vx6cert -->
 
