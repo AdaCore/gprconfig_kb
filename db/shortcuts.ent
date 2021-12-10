@@ -17,12 +17,6 @@
     </compilers>'
    >
 
-   <!ENTITY if_adacore_c
-   '<compilers>
-       <compiler name="^GCC_Pro$" />
-    </compilers>'
-   >
-
    <!ENTITY if_cpp
    '<compilers>
        <compiler language="C++" />
@@ -32,12 +26,6 @@
    <!ENTITY if_no_cpp
    '<compilers negate="true">
        <compiler language="C++" />
-    </compilers>'
-   >
-
-   <!ENTITY if_adacore_cpp
-   '<compilers>
-       <compiler name="^G\+\+_Pro$" />
     </compilers>'
    >
 
