@@ -228,6 +228,59 @@
     <target>amd64-.*freebsd.*</target>
   </targetset>
 
+  <!-- x86 NetBSD -->
+  <targetset canonical="x86-netbsd">
+    <target>x86-netbsd</target>
+    <target>x86_32-netbsd</target>
+    <target>i.86-.*netbsd.*</target>
+  </targetset>
+
+  <!-- x86_64 NetBSD -->
+  <targetset canonical="x86_64-netbsd">
+    <target>x86_64-netbsd</target>
+    <target>x86_64-.*netbsd.*</target>
+    <target>amd64-.*netbsd.*</target>
+  </targetset>
+
+  <!-- arm* NetBSD support -->
+  <targetset canonical="aarch64-netbsd">
+    <target>aarch64-netbsd</target>
+    <target>aarch64-.*netbsd.*</target>
+  </targetset>
+
+  <targetset canonical="arm7-netbsd">
+    <target>arm7-netbsd</target>
+    <target>arm7-.*netbsd.*</target>
+  </targetset>
+
+  <targetset canonical="arm7eb-netbsd">
+    <target>arm7eb-netbsd</target>
+    <target>arm7eb-.*netbsd.*</target>
+  </targetset>
+
+  <!-- Other arm* NetBSD support -->
+  <targetset canonical="aarch64-netbsd">
+    <target>arm*-.*netbsd.*</target>
+  </targetset>
+
+  <!-- RISC-V NetBSD support -->
+  <targetset canonical="riscv32-netbsd">
+    <target>riscv32-netbsd</target>
+    <target>riscv32-.*netbsd.*</target>
+  </targetset>
+
+  <targetset canonical="riscv64-netbsd">
+    <target>riscv64-netbsd</target>
+    <target>riscv64-.*netbsd.*</target>
+  </targetset>
+
+  <!-- x86_64 DragonflyBSD -->
+  <targetset canonical="x86_64-dragonfly">
+    <target>x86_64-dragonfly</target>
+    <target>x86_64-.*dragonlfy.*</target>
+    <target>amd64-.*dragonfly.*</target>
+  </targetset>
+
 <!-- Cross Ports -->
 <!-- *********** -->
 

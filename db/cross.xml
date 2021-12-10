@@ -55,6 +55,8 @@
        <target name="^arm-linux-gnueabihf" />
        <target name="^aarch64-linux-gnu" />
        <target name="^e500v2-gnu-linux" />
+       <target name="^.*-netbsd.*$" />
+       <target name="^.*-dragonfly.*$" />
      </targets>
      <config>
    package Builder is
