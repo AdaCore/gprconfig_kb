@@ -37,4 +37,58 @@
 
   &configurations_gnat_ar;
 
+  <!--
+   __aarch64_swp1_acq is provided by libgcc, but we want to avoid that
+   dependency since we don't want users to link with libgcc when using
+   restricted runtimes (this would introduce issues with certification).
+  -->
+
+  <configuration>
+    &if_ada;
+    &if_restricted_rts;
+    &if_this_target;
+
+    <!-- vx7r2cert -->
+
+   <config>
+   package Compiler is
+      for Leading_Required_Switches   ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada")
+        &amp; ("-mno-outline-atomics");
+   end Compiler;
+   </config>
+  </configuration>
+
+  <configuration>
+    &if_adacore_c;
+    &if_restricted_rts;
+    &if_this_target;
+
+    <!-- vx7r2cert -->
+
+   <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-mno-outline-atomics");
+   end Compiler;
+   </config>
+  </configuration>
+
+  <configuration>
+    &if_adacore_cpp;
+    &if_restricted_rts;
+    &if_this_target;
+
+    <!-- vx7r2cert -->
+
+   <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-mno-outline-atomics");
+   end Compiler;
+   </config>
+  </configuration>
+
 </gprconfig>
