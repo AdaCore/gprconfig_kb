@@ -165,7 +165,7 @@
   <!--  Binary image -->
   <compiler_description>
     <name>LD</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-generic-linux-gnu-|.*mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|aarch64-linux-gnu-|.*-qnx.*|.*-rtems.*)?ld</executable>
+    <executable prefix="1">(.*-wrs.*-|.*-sysgo.*-|.*-elf.*-|.*-eabi.*-|.*-eabispe.*-|avr.*-|.*-elinos-linux.*-|.*-generic-linux-gnu-|.*mingw32.*-|.*-xcoff.*-|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|aarch64-linux-gnu-|.*-qnx.*-|.*-rtems.*-)?ld</executable>
     <version>
       <external>${PREFIX}ld -v</external>
       <grep regexp="^(GNU ld.*|LLD) (\S+)" group="2"></grep>
