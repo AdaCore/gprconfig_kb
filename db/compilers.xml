@@ -336,7 +336,6 @@
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,device-cuda">
-       <directory group="default" >\.\./lib/rts-device-cuda/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>cuda</target>
