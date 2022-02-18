@@ -14,7 +14,7 @@
       for Leading_Required_Switches ("Fortran") use
          Compiler'Leading_Required_Switches ("Fortran") &amp;
          ("-c", "-fno-underscoring");
-      for Include_Path      ("Fortran") use "CPATH";
+      for Include_Switches  ("Fortran") use ("-I");
    end Compiler;
      </config>
    </configuration>
@@ -33,7 +33,7 @@
      </config>
    </configuration>
 
-   <!-- Configuration for GFortran: the GCC fortran 95 compiler -->
+   <!-- Configuration for GFortran: the GCC Fortran 95 compiler -->
 
    <configuration>
      <compilers>
@@ -46,7 +46,7 @@
       for Leading_Required_Switches ("Fortran") use
          Compiler'Leading_Required_Switches ("Fortran") &amp;
          ("-c", "-fno-underscoring");
-      for Include_Path      ("Fortran") use "CPATH";
+      for Include_Switches  ("Fortran") use ("-I");
    end Compiler;
      </config>
    </configuration>
