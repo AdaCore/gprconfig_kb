@@ -230,6 +230,7 @@
        <compiler name="^GNAT_C$" />
        <compiler name="^GNAT_CODEPEER$" />
        <compiler name="^GNAT_LLVM$" />
+       <compiler name="^GNAT_CCG$" />
      </compilers>
      <config>
    package Binder is
@@ -240,10 +241,9 @@
      </config>
    </configuration>
 
-   <!--  Set prefix of gnatbind for LLVM (CCG, CUDA) targets -->
+   <!--  Set prefix of gnatbind for CUDA -->
    <configuration>
      <compilers>
-       <compiler name="^GNAT_CCG$" />
        <compiler name="^GNAT_CUDA$" />
      </compilers>
      <config>

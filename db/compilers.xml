@@ -304,14 +304,14 @@
 
   <compiler_description>
     <name>GNAT_CCG</name>
-    <executable>llvm-gnatls</executable>
+    <executable prefix="1">(c-|llvm-)gnatls</executable>
     <version>
-      <external>llvm-gnatls -v</external>
+      <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
     </version>
     <languages>Ada</languages>
     <variable name="gcc_version">
-      <external>llvm-gcc -v</external>
+      <external>${PREFIX}gcc -v</external>
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,ccg">
