@@ -285,6 +285,21 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^arm-nto-qnx$" />
+    </targets>
+    <config>
+   for Object_Lister use ("arm-nto-qnx-nm", "-g");
+   for Object_Lister_Matcher use " [TDRBS] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  Archiver.  -->
   <configuration>
     <targets>
@@ -612,6 +627,18 @@
    for Archive_Builder  use ("aarch64-nto-qnx-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("aarch64-nto-qnx-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^arm-nto-qnx$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("arm-nto-qnx-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("arm-nto-qnx-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
