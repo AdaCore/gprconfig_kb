@@ -952,7 +952,6 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
-       <target name="^aarch64-apple-darwin.*$" />
        <target name="^aarch64-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^arm-apple-darwin.*$" />
@@ -1041,6 +1040,7 @@
        <target name="^i.86-.*darwin.*$" />
        <target name="^powerpc-.*darwin.*$" />
        <target name="^x86_64-.*darwin.*$" />
+       <target name="^aarch64-.*darwin.*$" />
     </targets>
     <config>
    for Library_Builder use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
