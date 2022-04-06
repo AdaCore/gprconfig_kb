@@ -45,7 +45,12 @@
       for Object_Artifact_Extensions ("C++") use (".s", "ci", ".gcno", ".su");
    end Clean;
 
-     </config>
+   package Binder is
+      for Bindfile_Option_Substitution ("-static") use ("-static-libgcc");
+      for Bindfile_Option_Substitution ("-shared") use ("-shared-libgcc");
+   end Binder;
+
+      </config>
    </configuration>
 
 </gprconfig>
