@@ -91,6 +91,7 @@
    </compilers>
    <config>
    package Compiler is
+      for Object_File_Suffix       ("Ada") use ".cubin";
       for Driver                   ("Ada") use "${PATH(ada)}cuda-gcc";
    end Compiler;
    </config>

@@ -337,6 +337,17 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^cuda$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("cuda-gcc", "-v");
+   for Archive_Indexer  use ("");
+   for Archive_Suffix   use ".fatbin.o";
+    </config>
+  </configuration>
+
   <!-- This is the Ada version of this rule using ${PREFIX(Ada)} -->
   <configuration>
     <compilers>
@@ -880,6 +891,7 @@
       <target name="^c$" />
       <target name="^.*-qnx[0-9]*$"/>
       <target name="^.*-rtems.*$"/>
+      <target name="^cuda$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
