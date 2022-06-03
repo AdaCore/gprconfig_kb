@@ -729,6 +729,18 @@
 
   <configuration>
     <targets>
+      <target name="^.*alpine-linux-musl.*$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^avr$" />
     </targets>
     <config>
