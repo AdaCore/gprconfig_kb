@@ -326,7 +326,6 @@
      <compiler name="^GNAT$" />
      <compiler name="^GNAT_CODEPEER$" />
      <compiler name="^GNAT_LLVM$" />
-     <compiler name="^GNAT_CUDA$" />
    </compilers>
    <compilers negate="true">
      <compiler runtime="default" />
@@ -344,10 +343,11 @@
    </config>
   </configuration>
 
-  <!-- Always add switch __RTS= to the compiler and binder for GNAT CCG -->
+  <!-- Always add switch __RTS= to the compiler and binder for GNAT CCG and CUDA -->
   <configuration>
    <compilers>
      <compiler name="^GNAT_CCG$" />
+     <compiler name="^GNAT_CUDA$" />
    </compilers>
    <config>
    package Compiler is
