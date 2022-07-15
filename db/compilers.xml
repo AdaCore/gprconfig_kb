@@ -20,15 +20,15 @@
   <!--    GCC 3.x & 4.x (not for GNAT Pro)-->
   <compiler_description>
     <name>GCC</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-)?gcc</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-)?gcc(-\d+)?</executable>
     <version>
-      <external>${PREFIX}gcc -v</external>
+      <external>$EXEC -v</external>
       <nogrep regexp="for GNAT Pro"></nogrep>
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
-      <external>${PREFIX}gcc -dumpmachine</external>
+      <external>$EXEC -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
@@ -105,15 +105,15 @@
   <!--  G++ compilers (not for GNAT Pro)  -->
   <compiler_description>
     <name>G++</name>
-    <executable>g\+\+</executable>
+    <executable>g\+\+(-\d+)?</executable>
     <version>
-      <external>g++ -v</external>
+      <external>$EXEC -v</external>
       <nogrep regexp="for GNAT Pro"></nogrep>
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
-      <external>g++ -dumpmachine</external>
+      <external>$EXEC -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
@@ -138,14 +138,14 @@
   <!--  Assembler -->
   <compiler_description>
     <name>GCC-ASM</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-qnx.*|.*-rtems.*)?gcc</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-qnx.*|.*-rtems.*)?gcc(-\d+)?</executable>
     <version>
-      <external>${PREFIX}gcc -v</external>
+      <external>$EXEC -v</external>
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>Asm,Asm_Cpp,Asm2</languages>
     <target>
-      <external>${PREFIX}gcc -dumpmachine</external>
+      <external>$EXEC -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
@@ -383,14 +383,14 @@
   <!--    GFortran  -->
   <compiler_description>
     <name>GFORTRAN</name>
-    <executable>gfortran</executable>
+    <executable>gfortran(-\d+)?</executable>
     <version>
-      <external>gfortran -v</external>
+      <external>$EXEC -v</external>
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>Fortran</languages>
     <target>
-      <external>gfortran -dumpmachine</external>
+      <external>$EXEC -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>

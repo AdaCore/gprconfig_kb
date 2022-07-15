@@ -14,7 +14,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C") use "${PATH(c)}${PREFIX(c)}gcc";
+      for Driver              ("C") use "${PATH(c)}${EXEC(c)}";
    end Compiler;
      </config>
    </configuration>
