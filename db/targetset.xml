@@ -647,4 +647,10 @@
     <target>i.86-.*-pikeos</target>
   </targetset>
 
+  <!-- C  -->
+  <targetset canonical="c">
+    <target>c</target>
+    <target>ccg</target>
+  </targetset>
+
 </gprconfig>

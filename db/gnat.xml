@@ -72,16 +72,15 @@
    </config>
   </configuration>
 
-  <!-- C Target -->
+  <!-- C Target common settings -->
   <configuration>
    <compilers>
      <compiler name="^GNAT_C$"/>
+     <compiler name="^GNAT_CCG$"/>
    </compilers>
    <config>
    package Compiler is
       for Object_File_Suffix        ("Ada") use ".c";
-      for Leading_Required_Switches ("Ada") use
-        Compiler'Leading_Required_Switches ("Ada") &amp; ("-gnatceg");
    end Compiler;
    package Clean is
       for Object_Artifact_Extensions ("Ada") use (".h");
@@ -89,20 +88,16 @@
    </config>
   </configuration>
 
-  <!-- CCG Target -->
+  <!-- Old C Target using -gnatceg -->
   <configuration>
    <compilers>
-     <compiler name="^GNAT_CCG$"/>
+     <compiler name="^GNAT_C$"/>
    </compilers>
    <config>
    package Compiler is
-      for Object_File_Suffix        ("Ada") use ".c";
       for Leading_Required_Switches ("Ada") use
-        Compiler'Leading_Required_Switches ("Ada") &amp; ("-emit-c");
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("-gnatceg");
    end Compiler;
-   package Clean is
-      for Object_Artifact_Extensions ("Ada") use (".h");
-   end Clean;
    </config>
   </configuration>
 

@@ -306,7 +306,7 @@
        <directory group="default" >\.\./lib/rts-ccg/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
     </runtimes>
-    <target>ccg</target>
+    <target>c</target>
   </compiler_description>
 
   <!--  GNAT CUDA Target -->
