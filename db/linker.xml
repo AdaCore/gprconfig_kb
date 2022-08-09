@@ -1143,6 +1143,9 @@
 
   <!-- VxWorks7r2 -->
   <configuration>
+    <compilers>
+       <compiler runtime="^rtp$" />
+    </compilers>
     <targets>
        <target name="^powerpc64-wrs-vxworks7r2" />
        <target name="^aarch64-wrs-vxworks7r2" />
@@ -1159,6 +1162,22 @@
    for Library_Auto_Init_Supported use "true";
     </config>
   </configuration>
+
+  <configuration>
+    <compilers negate="true">
+       <compiler runtime="^rtp$" />
+    </compilers>
+    <targets>
+       <target name="^powerpc64-wrs-vxworks7r2" />
+       <target name="^aarch64-wrs-vxworks7r2" />
+       <target name="^x86_64-wrs-vxworks7r2" />
+    </targets>
+    <config>
+   for Library_Support  use "static_only";
+   for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
+    </config>
+  </configuration>
+
 
   <!-- linux, freebsd, OpenBSD, NetBSD, Dragonfly BSD, QNX -->
   <configuration>
