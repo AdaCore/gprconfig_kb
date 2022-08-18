@@ -14,5 +14,5 @@ gprconfig_kb is used by that project.
 Doc & Examples
 --------------
 
-The documentation for this knowledge base  is available
+The documentation for this knowledge base is available
 [online](http://docs.adacore.com/gprbuild-docs/html/gprbuild_ug/companion_tools.html#the-gprconfig-knowledge-base).
