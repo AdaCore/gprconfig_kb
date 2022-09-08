@@ -12,7 +12,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C++") use "${PATH(c++)}${PREFIX(c++)}g++";
+      for Driver              ("C++") use "${PATH(c++)}${EXEC(c++)}";
    end Compiler;
      </config>
    </configuration>

@@ -42,7 +42,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver            ("Fortran") use "${PATH(fortran)}${PREFIX(fortran)}gfortran";
+      for Driver            ("Fortran") use "${PATH(fortran)}${EXEC(fortran)}";
       for Leading_Required_Switches ("Fortran") use
          Compiler'Leading_Required_Switches ("Fortran") &amp;
          ("-c", "-fno-underscoring");
