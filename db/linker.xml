@@ -973,7 +973,6 @@
        <target name="^.*-pikeos.*$" />
        <target name="^c$" />
        <target name="^llvm$" />
-       <target name="^cuda$" />
        <target name="^.*-rtems.*$"/>
     </targets>
     <config>
