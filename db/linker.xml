@@ -345,7 +345,7 @@
    for Archive_Builder  use ("cuda-gcc");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("");
-   for Archive_Suffix   use ".fatbin.o";
+   for Archive_Suffix   use ".tgz";
     </config>
   </configuration>
 
@@ -1443,6 +1443,7 @@
     <config>
    for Library_Support use "full";
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
+   for Shared_Library_Suffix use ".fatbin.o";
     </config>
   </configuration>
 
