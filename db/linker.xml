@@ -345,7 +345,7 @@
    for Archive_Builder  use ("cuda-gcc");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("");
-   for Archive_Suffix   use ".tgz";
+   for Archive_Suffix   use ".a";
     </config>
   </configuration>
 
