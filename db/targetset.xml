@@ -560,6 +560,12 @@
     <target>arm-none-eabi</target>
   </targetset>
 
+  <!-- aarch64-elf-.*  -->
+  <targetset canonical="aarch64-elf">
+    <target>aarch64-elf</target>
+    <target>aarch64-unknown-unknown-elf</target>
+  </targetset>
+
   <!-- riscv32-elf-.*  -->
   <targetset canonical="riscv32-elf">
     <target>riscv32-elf</target>
