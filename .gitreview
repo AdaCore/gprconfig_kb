@@ -1,5 +1,0 @@
-[gerrit]
-host = git.adacore.com
-project = gprconfig_kb
-defaultbranch = master
-defaultremote = origin
