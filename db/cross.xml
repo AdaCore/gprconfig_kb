@@ -218,6 +218,7 @@
        <compiler name="^GNAT_C$" />
        <compiler name="^GNAT_CODEPEER$" />
        <compiler name="^GNAT_LLVM$" />
+       <compiler name="^GNAT_LLVM_NATIVE$" />
        <compiler name="^GNAT_CCG$" />
      </compilers>
      <config>
