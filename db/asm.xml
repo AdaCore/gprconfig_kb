@@ -7,6 +7,7 @@
      <compilers>
        <compiler name="^GCC-ASM$" language="Asm_Cpp" />
        <compiler name="^LLVM$" language="Asm_Cpp" />
+       <compiler name="^GNAT_LLVM_ASM$" language="Asm_Cpp" />
      </compilers>
      <config>
    package Compiler is
@@ -26,6 +27,7 @@
      <compilers>
        <compiler name="^GCC-ASM$" language="Asm" />
        <compiler name="^LLVM$" language="Asm" />
+       <compiler name="^GNAT_LLVM_ASM$" language="Asm" />
      </compilers>
      <config>
    package Compiler is
@@ -44,6 +46,7 @@
      <compilers>
        <compiler name="^GCC-ASM$" language="Asm2" />
        <compiler name="^LLVM$" language="Asm2" />
+       <compiler name="^GNAT_LLVM_ASM$" language="Asm2" />
      </compilers>
      <config>
    package Compiler is

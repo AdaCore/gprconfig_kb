@@ -266,6 +266,22 @@
     </target>
   </compiler_description>
 
+  <!--  Architecture-specific GNAT-LLVM assembler  -->
+
+  <compiler_description>
+    <name>GNAT_LLVM_ASM</name>
+    <executable prefix="1">(llvm-(aarch64-elf-)?)gcc</executable>
+    <version>
+      <external>$EXEC -v</external>
+      <grep regexp="^llvm-.*gcc.+GNAT Pro (\S+)" group="1"></grep>
+    </version>
+    <languages>Asm,Asm_Cpp,Asm2</languages>
+    <target>
+      <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
   <!--  Generic C compiler for LLVM  -->
   <compiler_description>
     <name>C_LLVM</name>
