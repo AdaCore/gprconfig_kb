@@ -135,17 +135,33 @@
     </target>
   </compiler_description>
 
-  <!--  Assembler -->
+  <!--  Assembler (not for GNAT Pro) -->
   <compiler_description>
     <name>GCC-ASM</name>
     <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-qnx.*|.*-rtems.*)?gcc(-\d+)?</executable>
     <version>
       <external>$EXEC -v</external>
+      <nogrep regexp="for GNAT Pro"></nogrep>
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>Asm,Asm_Cpp,Asm2</languages>
     <target>
       <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!--  Assembler (for GNAT Pro) -->
+  <compiler_description>
+    <name>GCC-ASM_Pro</name>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-qnx.*|.*-rtems.*)?gcc</executable>
+    <version>
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^gcc \S+ (\S+) \d+ (\(prerelease\) )?\(?for GNAT Pro" group="1"></grep>
+    </version>
+    <languages>Asm,Asm_Cpp,Asm2</languages>
+    <target>
+      <external>${PREFIX}gcc -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
