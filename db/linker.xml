@@ -287,6 +287,21 @@
 
   <configuration>
     <targets>
+      <target name="^aarch64-thales-fastos$" />
+    </targets>
+    <config>
+   for Object_Lister use ("aarch64-thales-fastos-nm", "-g");
+   for Object_Lister_Matcher use " [TDRBS] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^arm-nto-qnx$" />
     </targets>
     <config>
@@ -633,6 +648,18 @@
 
   <configuration>
     <targets>
+      <target name="^aarch64-thales-fastos$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("aarch64-thales-fastos-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("aarch64-thales-fastos-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^aarch64-nto-qnx$" />
     </targets>
     <config>
@@ -887,6 +914,7 @@
       <target name="^.*pc-mingw32$" />
       <target name="^.*-pikeos.*$" />
       <target name="^.*-linux.*" />
+      <target name="^.*-fastos.*$" />
       <target name="^.*-gnueabihf$" />
       <target name="^.*-gnueabi$" />
       <target name="^c$" />
@@ -1126,6 +1154,7 @@
        <target name="^.*openbsd.*$" />
        <target name="^.*netbsd.*$" />
        <target name="^.*dragonfly.*$" />
+       <target name="^.*-fastos.*$" />
        <target name="^.*qnx[0-9]*$" />
     </targets>
     <config>
@@ -1183,6 +1212,7 @@
     <targets>
        <target name="^.*linux.*$" />
        <target name="^.*qnx[0-9]*$" />
+       <target name="^.*-fastos.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*openbsd.*$" />
        <target name="^.*netbsd.*$" />
@@ -1206,6 +1236,7 @@
     </compilers>
      <targets>
        <target name="^.*-linux.*$" />
+       <target name="^.*-fastos.*$" />
        <target name="^.*-qnx[0-9]*"/>
      </targets>
     <config>
@@ -1266,6 +1297,7 @@
        <compiler name="^GNAT$" />
     </compilers>
     <targets>
+       <target name="^.*-fastos.*$" />
        <target name="linux" except="androideabi" />
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
@@ -1287,6 +1319,7 @@
        <compiler name="GCC" language="c"/>
     </compilers>
     <targets>
+       <target name="^.*-fastos.*$" />
        <target name="linux" except="androideabi" />
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
@@ -1671,6 +1704,7 @@
        <target name="^.*wrs-vxworks.*$" />
        <target name="^powerpc-xcoff-lynxos178$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-fastos.*$" />
        <target name="^.*-generic-linux-gnu$" />
        <target name="^.*-wrs-linux$" />
        <target name="^.*-pikeos.*$" />

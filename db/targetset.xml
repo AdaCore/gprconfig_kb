@@ -486,6 +486,12 @@
     <target>e500v2-wrs-vxworksae</target>
   </targetset>
 
+  <!-- aarch64-fastos  -->
+  <targetset canonical="aarch64-fastos">
+    <target>aarch64-fastos</target>
+    <target>aarch64-thales-fastos</target>
+  </targetset>
+
   <!-- aarch64-qnx  -->
   <targetset canonical="aarch64-qnx">
     <target>aarch64-qnx</target>
