@@ -514,12 +514,6 @@
     <target>aarch64-wrs-vxworks7r2</target>
   </targetset>
 
-  <!-- arm-deos-.*  -->
-  <targetset canonical="arm-deos">
-    <target>arm-deos</target>
-    <target>arm-eabi</target>
-  </targetset>
-
   <!-- ppc-elf-.*  -->
   <targetset canonical="ppc-elf">
     <target>ppc-elf</target>
