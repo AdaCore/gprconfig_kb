@@ -256,6 +256,7 @@
       <target name="^powerpc-.*darwin.*$" />
       <target name="^x86_64-.*darwin.*$" />
       <target name="^.*android.*$" />
+      <target name="^.*-fastos.*$" />
       <target name="^.*-qnx[0-9]*$" />
       <target name="^.*netbsd.*$" />
       <target name="^.*dragonfly.*$" />

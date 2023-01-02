@@ -34,6 +34,7 @@
        <target name="^aarch64-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-fastos.*$" />
        <target name="^.*-generic-linux-gnu$" />
        <target name="^.*-pikeos.*$" />
        <target name="^.*-qnx[0-9]*$" />
