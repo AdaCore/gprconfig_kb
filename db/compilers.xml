@@ -528,17 +528,47 @@
     </target>
   </compiler_description>
 
-  <!-- LLVM Compiler -->
+  <!-- Clang C compiler -->
   <compiler_description>
-    <name>LLVM</name>
-    <executable>clang</executable>
+    <name>CLANG_C</name>
+    <executable prefix="1">((aarch64-elf-)?)clang</executable>
     <version>
-      <external>clang -v</external>
+      <external>$EXEC -v</external>
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
     </version>
-    <languages>C,C++,Asm,Asm_Cpp,Asm2</languages>
+    <languages>C</languages>
     <target>
-      <external>clang -dumpmachine</external>
+      <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!-- Clang++ C++ compiler -->
+  <compiler_description>
+    <name>CLANG_C++</name>
+    <executable prefix="1">((aarch64-elf-)?)clang\+\+</executable>
+    <version>
+      <external>$EXEC -v</external>
+      <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
+    </version>
+    <languages>C++</languages>
+    <target>
+      <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!-- Clang assembler -->
+  <compiler_description>
+    <name>CLANG_ASM</name>
+    <executable prefix="1">((aarch64-elf-)?)clang</executable>
+    <version>
+      <external>$EXEC -v</external>
+      <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
+    </version>
+    <languages>Asm,Asm_Cpp,Asm2</languages>
+    <target>
+      <external>$EXEC -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
