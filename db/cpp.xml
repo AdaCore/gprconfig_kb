@@ -47,11 +47,12 @@
 
    <configuration>
      <compilers>
+       <compiler name="CLANG_C\+\+" language="C++" />
        <compiler name="LLVM" language="C++" />
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C++") use "${PATH(c++)}clang++";
+      for Driver              ("C++") use "${PATH(c++)}${PREFIX(c++)}clang++";
    end Compiler;
      </config>
    </configuration>
@@ -84,6 +85,7 @@
 
    <configuration>
      <compilers>
+        <compiler name="CLANG_C\+\+" language="C++" />
         <compiler name="LLVM" language="C++" />
      </compilers>
      <config>
