@@ -1187,7 +1187,6 @@
    for Library_Version_Switches use ("-Wl,-soname,");
 
    for Shared_Library_Suffix use ".so";
-   for Library_Auto_Init_Supported use "true";
     </config>
   </configuration>
 
@@ -1206,6 +1205,14 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^.*-wrs-vxworks7r2" />
+    </targets>
+    <config>
+   for Library_Auto_Init_Supported use "true";
+    </config>
+  </configuration>
 
   <!-- linux, freebsd, OpenBSD, NetBSD, Dragonfly BSD, QNX -->
   <configuration>
