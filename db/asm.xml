@@ -8,6 +8,7 @@
        <compiler name="^GCC-ASM$" language="Asm_Cpp" />
        <compiler name="^GCC-ASM_Pro$" language="Asm_Cpp" />
        <compiler name="^LLVM$" language="Asm_Cpp" />
+       <compiler name="^CLANG$" language="Asm_Cpp" />
        <compiler name="^GNAT_LLVM_ASM$" language="Asm_Cpp" />
      </compilers>
      <config>
@@ -29,6 +30,7 @@
        <compiler name="^GCC-ASM$" language="Asm" />
        <compiler name="^GCC-ASM_Pro$" language="Asm" />
        <compiler name="^LLVM$" language="Asm" />
+       <compiler name="^CLANG$" language="Asm" />
        <compiler name="^GNAT_LLVM_ASM$" language="Asm" />
      </compilers>
      <config>
@@ -49,6 +51,7 @@
        <compiler name="^GCC-ASM$" language="Asm2" />
        <compiler name="^GCC-ASM_Pro$" language="Asm2" />
        <compiler name="^LLVM$" language="Asm2" />
+       <compiler name="^CLANG$" language="Asm2" />
        <compiler name="^GNAT_LLVM_ASM$" language="Asm2" />
      </compilers>
      <config>
