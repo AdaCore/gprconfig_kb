@@ -65,7 +65,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="CLANG" language="C" />
+       <compiler name="CLANG-C" language="C" />
        <compiler name="LLVM" language="C" />
      </compilers>
      <config>
@@ -137,7 +137,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="CLANG" language="C" />
+       <compiler name="CLANG-C" language="C" />
        <compiler name="LLVM" language="C" />
      </compilers>
      <config>
@@ -169,6 +169,7 @@
 
    <configuration>
      <compilers>
+       <compiler name="^CLANG-C$" language="C" />
        <compiler name="^GCC$" language="C" />
        <compiler name="^GCC_Pro$" language="C" />
        <compiler name="^GCC-CYGMING$" language="C" />
@@ -236,6 +237,7 @@
 
    <configuration>
      <compilers>
+       <compiler name="^CLANG-C$" language="C" />
        <compiler name="^GCC$" language="C" />
        <compiler name="^GCC_Pro$" language="C" />
        <compiler name="^GCC-28$" language="C" />

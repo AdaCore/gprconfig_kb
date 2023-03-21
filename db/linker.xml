@@ -744,7 +744,7 @@
 
   <configuration>
     <targets>
-      <target name="^aarch64-elf$" />
+      <target name="^aarch64(-unknown-unknown)?-elf$" />
     </targets>
     <config>
    for Archive_Builder  use ("aarch64-elf-ar", "cr");
@@ -908,7 +908,7 @@
       <target name="^leon-elf$"/>
       <target name="^leon3-elf$"/>
       <target name="^arm(-none)?-eabi$"/>
-      <target name="^aarch64-elf$"/>
+      <target name="^aarch64(-unknown-unknown)?-elf$"/>
       <target name="^.*aix.*$" />
       <target name="^.*ia64.*hpux.*$" />
       <target name="^.*pc-mingw32$" />
@@ -993,7 +993,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
-       <target name="^aarch64-elf$" />
+       <target name="^aarch64(-unknown-unknown)?-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^arm-apple-darwin.*$" />
        <target name="^(arm|powerpc|i586)-wrs-vxworks.*$" />
@@ -1704,7 +1704,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
-       <target name="^aarch64-elf$" />
+       <target name="^aarch64(-unknown-unknown)?-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^arm-elf$" />
        <target name="^avr$" />
@@ -1798,7 +1798,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
-       <target name="^aarch64-elf$" />
+       <target name="^aarch64(-unknown-unknown)?-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^arm-elf$" />
        <target name="^avr$" />

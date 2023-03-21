@@ -31,7 +31,7 @@
        <target name="^avr$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
-       <target name="^aarch64-elf$" />
+       <target name="^aarch64(-unknown-unknown)?-elf$" />
        <target name="^arm(-none)?-eabi$" />
        <target name="^.*-elinos-linux$" />
        <target name="^.*-fastos.*$" />

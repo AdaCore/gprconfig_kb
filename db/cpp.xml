@@ -47,7 +47,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="CLANG_C\+\+" language="C++" />
+       <compiler name="CLANG-C\+\+" language="C++" />
        <compiler name="LLVM" language="C++" />
      </compilers>
      <config>
@@ -85,7 +85,7 @@
 
    <configuration>
      <compilers>
-        <compiler name="CLANG_C\+\+" language="C++" />
+        <compiler name="CLANG-C\+\+" language="C++" />
         <compiler name="LLVM" language="C++" />
      </compilers>
      <config>

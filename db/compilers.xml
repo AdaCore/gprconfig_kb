@@ -530,7 +530,7 @@
 
   <!-- Clang C compiler -->
   <compiler_description>
-    <name>CLANG_C</name>
+    <name>CLANG-C</name>
     <executable prefix="1">((aarch64-elf-)?)clang</executable>
     <version>
       <external>$EXEC -v</external>
@@ -545,7 +545,7 @@
 
   <!-- Clang++ C++ compiler -->
   <compiler_description>
-    <name>CLANG_C++</name>
+    <name>CLANG-C++</name>
     <executable prefix="1">((aarch64-elf-)?)clang\+\+</executable>
     <version>
       <external>$EXEC -v</external>
@@ -560,7 +560,7 @@
 
   <!-- Clang assembler -->
   <compiler_description>
-    <name>CLANG_ASM</name>
+    <name>CLANG-ASM</name>
     <executable prefix="1">((aarch64-elf-)?)clang</executable>
     <version>
       <external>$EXEC -v</external>
