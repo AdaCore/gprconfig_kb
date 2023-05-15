@@ -262,7 +262,7 @@
 
   <compiler_description>
     <name>GNAT_LLVM</name>
-    <executable prefix="1">(llvm-(aarch64-elf-)?)gnatls</executable>
+    <executable prefix="1">((aarch64-elf-)?llvm-)gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
@@ -286,7 +286,7 @@
 
   <compiler_description>
     <name>GNAT_LLVM_ASM</name>
-    <executable prefix="1">(llvm-(aarch64-elf-)?)gcc</executable>
+    <executable prefix="1">((aarch64-elf-)?llvm-)gcc</executable>
     <version>
       <external>$EXEC -v</external>
       <grep regexp="^llvm-.*gcc.+GNAT Pro (\S+)" group="1"></grep>
