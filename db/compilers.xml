@@ -275,6 +275,7 @@
     <runtimes default="default,native">
        <directory group="default" >\.\./lib/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
+       <directory group="2" >\.\./$TARGET/lib(32|64)?/gnat-llvm/(.*)/adalib/</directory>
     </runtimes>
     <target>
       <external>${PREFIX}gcc -dumpmachine</external>
