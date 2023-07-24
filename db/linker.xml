@@ -1547,12 +1547,21 @@
     </config>
   </configuration>
 
+  <!-- On most platforms, g++ would use shared-libstdc++ by default:
+       some features (e.g. thread cancellation) are known to be broken
+       with static linking for C/C++. On the other hand, Ada uses
+       -static-libgcc by default. This static/shared mix would not work.
+       In order to fix that, we follow the choice of C++ (shared libs)
+       when C++ is in the partition.
+       For more details, see eng/gpr/gpr-issues#93 and P918-005.  -->
+
   <configuration>
     <compilers>
        <compiler language="C++" />
     </compilers>
     <targets>
       <target name="^.*linux.*$" />
+      <target name="^.*fastos.*$" />
       <target name="^.*sunos.*$" />
       <target name="^.*solaris.*$" />
       <target name="^.*mingw.*$" />
