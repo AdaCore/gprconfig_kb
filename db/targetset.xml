@@ -665,4 +665,9 @@
     <target>ccg</target>
   </targetset>
 
+  <targetset canonical="codepeer">
+    <target>gnatsas</target>
+    <target>codepeer</target>
+  </targetset>
+
 </gprconfig>
