@@ -219,7 +219,7 @@
 
   <compiler_description>
     <name>GNAT_CODEPEER</name>
-    <executable prefix="1">(.*gnsa-|.*codepeer-)gnatls</executable>
+    <executable prefix="1">(.*gnatsas-|.*gnsa-|.*codepeer-)gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
