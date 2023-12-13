@@ -393,6 +393,7 @@
       <compiler language="Ada" />
     </compilers>
     <targets>
+      <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
       <target name="^arm(-none)?-eabi$" />
     </targets>
@@ -410,6 +411,7 @@
       <compiler language="c" />
     </compilers>
     <targets>
+      <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
       <target name="^arm(-none)?-eabi$" />
     </targets>
@@ -427,6 +429,7 @@
       <compiler language="c++" />
     </compilers>
     <targets>
+      <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
       <target name="^arm(-none)?-eabi$" />
     </targets>
@@ -940,6 +943,7 @@
       <target name="^i686-elf$"/>
       <target name="^.*-wrs-vxworks.*$" />
       <target name="^visium-elf$"/>
+      <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
       <target name="^m68020-elf$"/>
       <target name="^powerpc-elf$"/>
@@ -1029,6 +1033,7 @@
        <target name="^x86_64-elf$" />
        <target name="^i686-elf$" />
        <target name="^visium-elf$" />
+       <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
        <target name="^powerpc-elf$" />
@@ -1749,6 +1754,7 @@
        <target name="^x86_64-elf$" />
        <target name="^i686-elf$" />
        <target name="^visium-elf$" />
+       <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
        <target name="^powerpc-elf$" />
@@ -1805,6 +1811,7 @@
        <target name="^x86_64-elf$" />
        <target name="^i686-elf$" />
        <target name="^visium-elf$" />
+       <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
        <target name="^powerpc-elf$" />
@@ -1843,6 +1850,7 @@
        <target name="^x86_64-elf$" />
        <target name="^i686-elf$" />
        <target name="^visium-elf$" />
+       <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
        <target name="^powerpc-elf$" />
