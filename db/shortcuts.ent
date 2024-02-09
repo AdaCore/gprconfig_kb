@@ -103,6 +103,12 @@
       <compiler name="^GNAT-LLVM-&this_target;$" />'
   >
 
+  <!ENTITY gnat_post_26
+     '<compiler language="Ada" version="2[6-9]|3[0-9]" />
+      <compiler name="^GCC_Pro$" language="C" version="([1-9][2-9]).*" />
+      <compiler name="^G\+\+_Pro$" language="C++" version="([1-9][2-9]).*" />'
+  >
+
   <!ENTITY if_gnat_20_pre
    '<compilers negate="true" >
       &gnat_post_20;
@@ -112,5 +118,18 @@
   <!ENTITY if_gnat_20_and_later
    '<compilers>
       &gnat_post_20;
+    </compilers>'
+  >
+
+  <!ENTITY if_gnat_26_pre
+   '<compilers negate="true" >
+      &gnat_post_26;
+    </compilers>'
+  >
+
+
+ <!ENTITY if_gnat_26_and_later
+   '<compilers>
+      &gnat_post_26;
     </compilers>'
   >
