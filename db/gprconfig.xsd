@@ -142,7 +142,7 @@
    <xsd:complexType name="Tdirectory">
       <xsd:simpleContent>
          <xsd:extension base="xsd:string">
-            <xsd:attribute name="group" type="TpositiveOrDefault" />
+            <xsd:attribute name="group" type="xsd:string" />
             <xsd:attribute name="contents" type="xsd:string" />
          </xsd:extension>
       </xsd:simpleContent>
