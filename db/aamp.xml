@@ -82,6 +82,7 @@
    end Linker;
 
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
+   for Runtime_Dir           ("Ada") use "${RUNTIME_DIR(ada)}";
    for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}/adalib/";
    for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/adainclude/";
     </config>
