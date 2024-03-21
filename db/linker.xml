@@ -393,9 +393,10 @@
       <compiler language="Ada" />
     </compilers>
     <targets>
+      <target name="^arm(-none)?-eabi$" />
+      <target name="^morello-elf$" />
       <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
-      <target name="^arm(-none)?-eabi$" />
     </targets>
     <config>
    for Archive_Builder  use ("${PREFIX(Ada)}ar", "cr");
@@ -411,9 +412,10 @@
       <compiler language="c" />
     </compilers>
     <targets>
+      <target name="^arm(-none)?-eabi$" />
+      <target name="^morello-elf$" />
       <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
-      <target name="^arm(-none)?-eabi$" />
     </targets>
     <config>
    for Archive_Builder  use ("${PREFIX(c)}ar", "cr");
@@ -429,9 +431,10 @@
       <compiler language="c++" />
     </compilers>
     <targets>
+      <target name="^arm(-none)?-eabi$" />
+      <target name="^morello-elf$" />
       <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
-      <target name="^arm(-none)?-eabi$" />
     </targets>
     <config>
    for Archive_Builder  use ("${PREFIX(c++)}ar", "cr");
@@ -946,6 +949,7 @@
       <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
       <target name="^m68020-elf$"/>
+      <target name="^morello-elf$"/>
       <target name="^powerpc-elf$"/>
       <target name="^powerpc-elf-lynxos$" />
       <target name="^powerpc-xcoff-lynxos178$" />
@@ -1036,6 +1040,7 @@
        <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
+       <target name="^morello-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1757,6 +1762,7 @@
        <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
+       <target name="^morello-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1814,6 +1820,7 @@
        <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
+       <target name="^morello-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
@@ -1853,6 +1860,7 @@
        <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
+       <target name="^morello-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
