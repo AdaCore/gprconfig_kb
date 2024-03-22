@@ -572,6 +572,13 @@
     <target>aarch64-unknown-unknown-elf</target>
   </targetset>
 
+  <!-- morello-elf-.*  -->
+  <targetset canonical="morello-elf">
+    <target>morello-elf</target>
+    <target>morello-none-elf</target>
+    <target>morello-unknown-elf</target>
+  </targetset>
+
   <!-- r7-elf-.*  -->
   <targetset canonical="r7-elf">
     <target>r7-elf</target>
