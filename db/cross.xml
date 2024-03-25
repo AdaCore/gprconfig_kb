@@ -24,7 +24,7 @@
        <target name="^r7-elf$" />
        <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
-       <target name="^morello-elf$" />
+       <target name="^morello(-unknown-unknown)?-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-elf-lynxos5$" />
        <target name="^.*-elf-lynxos178e$" />

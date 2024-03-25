@@ -577,6 +577,7 @@
     <target>morello-elf</target>
     <target>morello-none-elf</target>
     <target>morello-unknown-elf</target>
+    <target>morello-unknown-unknown-elf</target>
   </targetset>
 
   <!-- r7-elf-.*  -->
