@@ -122,6 +122,9 @@
     <!--  known targets: x86_64-pc-mingw32 -->
     <target>x86_64-windows</target>
     <target>x86_64-.*mingw32.*</target>
+    <!-- canonical LLVM target for MinGW -->
+    <!-- x86_64-{pc,w64}-windows-gnu for our Windows triplets -->
+    <target>x86_64-.*windows-gnu</target>
   </targetset>
 
   <!-- aarch64-darwin (iOS 64bit) -->
