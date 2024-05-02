@@ -262,7 +262,7 @@
 
   <compiler_description>
     <name>GNAT_LLVM</name>
-    <executable prefix="1">((.*-elf-)?llvm-)gnatls</executable>
+    <executable prefix="1">((.*-elf-|.*-linux-gnu-)?llvm-)gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
@@ -287,7 +287,7 @@
 
   <compiler_description>
     <name>GNAT_LLVM_ASM</name>
-    <executable prefix="1">((.*-elf-)?llvm-)gcc</executable>
+    <executable prefix="1">((.*-elf-|.*-linux-gnu-)?llvm-)gcc</executable>
     <version>
       <external>$EXEC -v</external>
       <grep regexp="^llvm-.*gcc.+GNAT Pro (\S+)" group="1"></grep>
@@ -532,7 +532,7 @@
   <!-- Clang C compiler -->
   <compiler_description>
     <name>CLANG-C</name>
-    <executable prefix="1">((.*-elf-)?)clang</executable>
+    <executable prefix="1">((.*-elf-|.*-linux-gnu-)?)clang</executable>
     <version>
       <external>$EXEC -v</external>
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
@@ -547,7 +547,7 @@
   <!-- Clang++ C++ compiler -->
   <compiler_description>
     <name>CLANG-C++</name>
-    <executable prefix="1">((.*-elf-)?)clang\+\+</executable>
+    <executable prefix="1">((.*-elf-|.*-linux-gnu-)?)clang\+\+</executable>
     <version>
       <external>$EXEC -v</external>
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
@@ -562,7 +562,7 @@
   <!-- Clang assembler -->
   <compiler_description>
     <name>CLANG-ASM</name>
-    <executable prefix="1">((.*-elf-)?)clang</executable>
+    <executable prefix="1">((.*-elf-|.*-linux-gnu-)?)clang</executable>
     <version>
       <external>$EXEC -v</external>
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
