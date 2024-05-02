@@ -38,6 +38,7 @@
   <targetset canonical="aarch64-linux">
     <target>aarch64-linux</target>
     <target>aarch64-linux-gnu</target>
+    <target>aarch64-unknown-linux-gnu</target>
   </targetset>
 
   <targetset canonical="arm-linux">
