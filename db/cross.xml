@@ -44,7 +44,7 @@
        <target name="^arm-linux-androideabi" />
        <target name="^arm-linux-gnueabi" />
        <target name="^arm-linux-gnueabihf" />
-       <target name="^aarch64-linux-gnu" />
+       <target name="^aarch64-.*linux-gnu" />
        <target name="^e500v2-gnu-linux" />
        <target name="^.*-netbsd.*$" />
        <target name="^.*-dragonfly.*$" />
@@ -282,6 +282,45 @@
                ("-mcmodel=large");
         end Linker;
      </config>
+  </configuration>
+
+  <!--  Forward the sysroot from ENV_PREFIX to Clang  -->
+  <configuration>
+    <compilers>
+      <compiler name="^CLANG-.*$" />
+    </compilers>
+    <targets>
+      <target name="^aarch64-unknown-linux-gnu$" />
+    </targets>
+    <hosts negate="true">
+      <host name="^aarch64-linux-gnu$" />
+    </hosts>
+    <config>
+   Env_Prefix := External ("ENV_PREFIX", "");
+
+   package Compiler is
+      case Env_Prefix is
+         when "" =>
+            null;
+         when others =>
+            for Required_Switches ("C") use
+              Compiler'Required_Switches ("C") &amp;
+              ("--sysroot=" &amp; Env_Prefix);
+            for Required_Switches ("C++") use
+              Compiler'Required_Switches ("C++") &amp;
+              ("--sysroot=" &amp; Env_Prefix);
+            for Required_Switches ("Asm") use
+              Compiler'Required_Switches ("Asm") &amp;
+              ("--sysroot=" &amp; Env_Prefix);
+            for Required_Switches ("Asm2") use
+              Compiler'Required_Switches ("Asm2") &amp;
+              ("--sysroot=" &amp; Env_Prefix);
+            for Required_Switches ("Asm_Cpp") use
+              Compiler'Required_Switches ("Asm_Cpp") &amp;
+              ("--sysroot=" &amp; Env_Prefix);
+      end case;
+   end Compiler;
+    </config>
   </configuration>
 
 </gprconfig>

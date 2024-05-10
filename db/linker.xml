@@ -179,7 +179,7 @@
   <configuration>
     <!-- aarch64-linux - cross compiler. -->
     <targets>
-      <target name="^aarch64-linux-gnu$" />
+      <target name="^aarch64-.*linux-gnu$" />
     </targets>
     <hosts negate="true">
       <host name="^aarch64-linux-gnu$" />
@@ -691,7 +691,7 @@
   <configuration>
     <!-- aarch64-linux - cross compiler. -->
     <targets>
-      <target name="^aarch64-linux-gnu$" />
+      <target name="^aarch64-.*linux-gnu$" />
     </targets>
     <hosts negate="true">
       <host name="^aarch64-linux-gnu$" />
