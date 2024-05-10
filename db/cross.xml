@@ -7,6 +7,8 @@
      <targets>
        <target name="dotnet" />
        <target name="mingw" />
+       <!-- LLVM version of the "mingw" triplet -->
+       <target name="windows" />
      </targets>
      <config>
    package Builder is
