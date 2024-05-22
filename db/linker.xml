@@ -102,6 +102,8 @@
   <configuration>
     <targets>
       <target name="^x86_64-.*-mingw32$" />
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^x86_64-.*-windows-gnu$" />
     </targets>
     <hosts>
       <host name="^i686-.*-mingw32$" />
@@ -579,6 +581,8 @@
   <configuration>
     <targets>
       <target name="^x86_64-.*-mingw32$" />
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^x86_64-.*-windows-gnu$" />
     </targets>
     <hosts>
       <host name="^i686-.*-mingw32$" />
@@ -1472,6 +1476,8 @@
   <configuration>
     <targets>
       <target name="^.*mingw.*$" />
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^.*-windows-gnu$" />
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
@@ -1584,6 +1590,8 @@
       <target name="^.*sunos.*$" />
       <target name="^.*solaris.*$" />
       <target name="^.*mingw.*$" />
+      <!-- LLVM version of the "mingw" triplet -->
+      <target name="^.*windows.*$" />
     </targets>
     <config>
      package Linker is
