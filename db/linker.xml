@@ -1797,6 +1797,8 @@
        <target name="^.*-wrs-linux$" />
        <target name="^.*-pikeos.*$" />
        <target name="^.*mingw.*$" />
+       <!-- LLVM version of the "mingw" triplet -->
+       <target name="^.*windows.*$" />
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*openbsd.*$" />
