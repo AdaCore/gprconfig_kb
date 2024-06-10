@@ -976,6 +976,7 @@
       <target name="^.*aix.*$" />
       <target name="^.*ia64.*hpux.*$" />
       <target name="^.*pc-mingw32$" />
+      <target name="^.*w64-mingw32$" />
       <target name="^.*-pikeos.*$" />
       <target name="^.*-linux.*" />
       <target name="^.*-fastos.*$" />
