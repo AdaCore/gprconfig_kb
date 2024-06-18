@@ -524,6 +524,16 @@
     <target>aarch64-wrs-vxworks7r2</target>
   </targetset>
 
+  <!-- morello-vx7r2 (vxworks 7.2) -->
+  <targetset canonical="morello-vx7r2">
+    <target>morello-vx7r2</target>
+    <!-- vx7r2cert platforms use the same target triplet as
+         the corresponding vx7r2 (non-cert) platform.
+         Add them to the same targetset as well (see TB12-012). -->
+    <target>morello-vx7r2cert</target>
+    <target>morello-wrs-vxworks7r2</target>
+  </targetset>
+
   <!-- ppc-elf-.*  -->
   <targetset canonical="ppc-elf">
     <target>ppc-elf</target>
