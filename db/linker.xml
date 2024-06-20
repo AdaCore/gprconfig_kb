@@ -1244,6 +1244,7 @@
     <targets>
        <target name="^powerpc64-wrs-vxworks7r2" />
        <target name="^aarch64-wrs-vxworks7r2" />
+       <target name="^morello-wrs-vxworks7r2" />
        <target name="^x86_64-wrs-vxworks7r2" />
     </targets>
     <config>
@@ -1264,6 +1265,7 @@
     <targets>
        <target name="^powerpc64-wrs-vxworks7r2" />
        <target name="^aarch64-wrs-vxworks7r2" />
+       <target name="^morello-wrs-vxworks7r2" />
        <target name="^x86_64-wrs-vxworks7r2" />
     </targets>
     <config>

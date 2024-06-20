@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
+<!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
+
+<!-- Local target-specific conditions -->
+
+<!ENTITY this_target 'morello-wrs-vxworks7r2'>
+
+<!ENTITY if_these_c_compilers
+    '<compilers>
+       <compiler name="^GCC_Pro$" />
+       <compiler name="^LLVMC-AARCH64$" />
+     </compilers>'>
+
+<!ENTITY if_these_cpp_compilers
+    '<compilers>
+       <compiler name="^G\+\+_Pro$" />
+     </compilers>'>
+
+<!ENTITY if_these_gnu_wrs_compilers
+    '<compilers>
+       <compiler name="^LLVMC-AARCH64$" />
+     </compilers>'>
+
+<!ENTITY this_wrs_rtp_base '0x80000000'>
+]>
+<gprconfig>
+
+  &environment;
+
+  &configurations_vxworks_gpp;
+
+  &configurations_vx7;
+
+  &configurations_gnat_ar;
+
+  <!--
+   __aarch64_swp1_acq is provided by libgcc, but we want to avoid that
+   dependency since we don't want users to link with libgcc when using
+   restricted runtimes (this would introduce issues with certification).
+  -->
+
+  <configuration>
+    &if_ada;
+    &if_restricted_rts;
+    &if_this_target;
+
+    <!-- vx7r2cert -->
+
+   <config>
+   package Compiler is
+      for Leading_Required_Switches   ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada")
+        &amp; ("-mno-outline-atomics");
+   end Compiler;
+   </config>
+  </configuration>
+
+  <configuration>
+    &if_adacore_c;
+    &if_restricted_rts;
+    &if_this_target;
+
+    <!-- vx7r2cert -->
+
+   <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-mno-outline-atomics");
+   end Compiler;
+   </config>
+  </configuration>
+
+  <configuration>
+    &if_adacore_cpp;
+    &if_restricted_rts;
+    &if_this_target;
+
+    <!-- vx7r2cert -->
+
+   <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-mno-outline-atomics");
+   end Compiler;
+   </config>
+  </configuration>
+
+</gprconfig>
