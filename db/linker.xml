@@ -1354,7 +1354,9 @@
   <configuration>
     <compilers>
        <compiler name="^GNAT$" />
+       <compiler name="^GNAT_LLVM$" />
        <compiler name="GCC" />
+       <compiler name="CLANG" />
     </compilers>
     <compilers negate="true">
       <compiler version="^3\." />
@@ -1370,6 +1372,7 @@
   <configuration>
     <compilers>
        <compiler name="^GNAT$" />
+       <compiler name="^GNAT_LLVM$" />
     </compilers>
     <targets>
        <target name="^.*-fastos.*$" />
@@ -1377,6 +1380,8 @@
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
        <target name="mingw" />
+       <!-- LLVM version of the "mingw" triplet -->
+       <target name="windows" />
     </targets>
     <config>
    for Library_Partial_Linker use
@@ -1389,9 +1394,11 @@
   <configuration>
     <compilers negate="true">
        <compiler name="^GNAT$" />
+       <compiler name="^GNAT_LLVM$" />
     </compilers>
     <compilers>
        <compiler name="GCC" language="c"/>
+       <compiler name="CLANG" language="c"/>
     </compilers>
     <targets>
        <target name="^.*-fastos.*$" />
@@ -1399,6 +1406,8 @@
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
        <target name="mingw" />
+       <!-- LLVM version of the "mingw" triplet -->
+       <target name="windows" />
     </targets>
     <config>
    for Library_Partial_Linker use
