@@ -1354,9 +1354,7 @@
   <configuration>
     <compilers>
        <compiler name="^GNAT$" />
-       <compiler name="^GNAT_LLVM$" />
        <compiler name="GCC" />
-       <compiler name="CLANG" />
     </compilers>
     <compilers negate="true">
       <compiler version="^3\." />
@@ -1372,16 +1370,15 @@
   <configuration>
     <compilers>
        <compiler name="^GNAT$" />
-       <compiler name="^GNAT_LLVM$" />
     </compilers>
     <targets>
        <target name="^.*-fastos.*$" />
+       <!-- The Android exception was added in OA23-038 due to a conflict with
+            -pie; is it still valid? -->
        <target name="linux" except="androideabi" />
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
        <target name="mingw" />
-       <!-- LLVM version of the "mingw" triplet -->
-       <target name="windows" />
     </targets>
     <config>
    for Library_Partial_Linker use
@@ -1394,14 +1391,14 @@
   <configuration>
     <compilers negate="true">
        <compiler name="^GNAT$" />
-       <compiler name="^GNAT_LLVM$" />
     </compilers>
     <compilers>
        <compiler name="GCC" language="c"/>
-       <compiler name="CLANG" language="c"/>
     </compilers>
     <targets>
        <target name="^.*-fastos.*$" />
+       <!-- The Android exception was added in OA23-038 due to a conflict with
+            -pie; is it still valid? -->
        <target name="linux" except="androideabi" />
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
@@ -1414,6 +1411,38 @@
      ("${PATH(c)}${PREFIX(c)}gcc", "-nostdlib")
       &amp; GCC_No_Pie
       &amp; ("-Wl,-r", "-o");
+    </config>
+  </configuration>
+
+  <!-- Clang automatically disables -pie when the driver gets the -r option
+       (which is forwarded to the linker). The same applies to GNAT-LLVM
+       because it uses Clang for linking. -->
+  <configuration>
+    <compilers>
+       <compiler name="^GNAT_LLVM$" />
+    </compilers>
+    <targets>
+       <target name="linux" />
+       <!-- LLVM version of the "mingw" triplet -->
+       <target name="windows" />
+    </targets>
+    <config>
+   for Library_Partial_Linker use
+     ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-r", "-o");
+    </config>
+  </configuration>
+  <configuration>
+    <compilers>
+       <compiler name="CLANG" language="c"/>
+    </compilers>
+    <targets>
+       <target name="linux" />
+       <!-- LLVM version of the "mingw" triplet -->
+       <target name="windows" />
+    </targets>
+    <config>
+   for Library_Partial_Linker use
+     ("${PATH(c)}${PREFIX(c)}clang", "-nostdlib", "-r", "-o");
     </config>
   </configuration>
 
