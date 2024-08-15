@@ -218,14 +218,20 @@
     <target>pent.*-cygwin.*</target>
   </targetset>
 
-  <!-- x86 Freebsd -->
+  <!-- aarch64 FreeBSD -->
+  <targetset canonical="aarch64-freebsd">
+    <target>aarch64-freebsd</target>
+    <target>aarch64-.*freebsd.*</target>
+  </targetset>
+
+  <!-- x86 FreeBSD -->
   <targetset canonical="x86-freebsd">
     <target>x86-freebsd</target>
     <target>x86_32-freebsd</target>
     <target>i.86-.*freebsd.*</target>
   </targetset>
 
-  <!-- x86_64 Freebsd -->
+  <!-- x86_64 FreeBSD -->
   <targetset canonical="x86_64-freebsd">
     <target>x86_64-freebsd</target>
     <target>x86_64-.*freebsd.*</target>
