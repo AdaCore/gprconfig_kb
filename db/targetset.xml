@@ -578,6 +578,7 @@
     <target>arm-elf-linux</target>
     <target>arm-eabi</target>
     <target>arm-none-eabi</target>
+    <target>arm-freertos</target>
   </targetset>
 
   <!-- aarch64-elf-.*  -->
