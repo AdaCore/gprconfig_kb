@@ -258,6 +258,7 @@
       <target name="^.*android.*$" />
       <target name="^.*-fastos.*$" />
       <target name="^.*-qnx[0-9]*$" />
+      <target name="^.*freebsd.*$" />
       <target name="^.*netbsd.*$" />
       <target name="^.*dragonfly.*$" />
       <target name="^.*cuda.*$" />
