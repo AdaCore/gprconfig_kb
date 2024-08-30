@@ -647,6 +647,12 @@
     <target>arm-linux-androideabi</target>
   </targetset>
 
+  <!-- aarch64-android  -->
+  <targetset canonical="aarch64-android">
+    <target>aarch64-android</target>
+    <target>aarch64-linux-android</target>
+  </targetset>
+
   <!-- aarch64-pikeos5  -->
 
   <targetset canonical="aarch64-pikeos5">

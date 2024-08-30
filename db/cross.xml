@@ -46,6 +46,7 @@
        <target name="^arm-linux-androideabi" />
        <target name="^arm-linux-gnueabi" />
        <target name="^arm-linux-gnueabihf" />
+       <target name="^aarch64-linux-android" />
        <target name="^aarch64-.*linux-gnu" />
        <target name="^e500v2-gnu-linux" />
        <target name="^.*-netbsd.*$" />
