@@ -21,6 +21,8 @@
 
       for Body_Suffix ("Fortran") use ".f";
 
+      for Body_Suffix ("Rust") use ".rs";
+
       for Casing use "lowercase";
       for Dot_Replacement use "-";
 
