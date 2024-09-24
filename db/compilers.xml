@@ -272,7 +272,7 @@
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
-    <runtimes default="default,native">
+    <runtimes default="default,native,kernel,rtp">
        <directory group="default" >\.\./lib/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
        <directory group="2" >\.\./$TARGET/lib(32|64)?/gnat-llvm/(.*)/adalib/</directory>

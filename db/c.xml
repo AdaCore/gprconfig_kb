@@ -68,6 +68,9 @@
        <compiler name="CLANG-C" language="C" />
        <compiler name="LLVM" language="C" />
      </compilers>
+     <targets negate="true">
+       <target name="^.*wrs-vxworks.*$" />
+     </targets>
      <config>
    package Compiler is
       for Driver              ("C") use "${PATH(c)}${PREFIX(c)}clang";
@@ -140,6 +143,9 @@
        <compiler name="CLANG-C" language="C" />
        <compiler name="LLVM" language="C" />
      </compilers>
+     <targets negate="true">
+       <target name="^.*wrs-vxworks.*$" />
+     </targets>
      <config>
    package Compiler is
       for Leading_Required_Switches   ("C") use
@@ -169,7 +175,25 @@
 
    <configuration>
      <compilers>
-       <compiler name="^CLANG-C$" language="C" />
+       <compiler name="^CLANG-C-AARCH64-VX7R2$" language="C" runtime="^kernel$" />
+       <compiler name="LLVM" language="C" />
+     </compilers>
+     <targets>
+       <target name="^.*wrs-vxworks.*$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Driver              ("C") use "${PATH(c)}${PREFIX(c)}clang";
+      for Dependency_Switches ("C") use ("-MMG", "-MF", "");
+      for Leading_Required_Switches   ("C") use
+         ("-c", "-x", "c") &amp; Compiler'Leading_Required_Switches ("C");
+      for Include_Switches   ("C") use ("-I");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="^GCC$" language="C" />
        <compiler name="^GCC_Pro$" language="C" />
        <compiler name="^GCC-CYGMING$" language="C" />
