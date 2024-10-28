@@ -116,6 +116,7 @@
     <target>mingw32</target>
     <target>i.86-.*mingw32.*</target>
     <target>pentium-.*mingw32.*</target>
+    <target>i.86-.*windows.*</target>
   </targetset>
 
   <!-- x86_64-windows (mingw) -->
