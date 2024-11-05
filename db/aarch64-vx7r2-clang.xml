@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+
+<!-- Local target-specific conditions -->
+
+<!ENTITY runtimes_vx7
+   '<runtimes>kernel,rtp</runtimes>'
+>
+
+<!ENTITY config_vsb_dir
+  '<config>
+ VSB_Dir := external ("VSB_DIR");
+   </config>'
+>
+
+<!ENTITY configurations_vx7r2
+'
+ <configuration>
+   &if_this_target;
+
+   &config_vsb_dir;
+ </configuration>'
+>
+
+<!ENTITY this_target 'aarch64-wrs-vxworks7r2'>
+
+<!ENTITY if_these_c_compilers
+    '<compilers>
+       <compiler name="^CLANG-C-AARCH64-VX7R2$" />
+     </compilers>'>
+]>
+
+<gprconfig>
+
+  &environment;
+
+  &configurations_vx7r2;
+
+</gprconfig>

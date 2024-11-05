@@ -169,7 +169,28 @@
 
    <configuration>
      <compilers>
-       <compiler name="^CLANG-C$" language="C" />
+       <compiler name="^CLANG-C-AARCH64-VX7R2$" language="C" runtime="^kernel$" />
+       <compiler name="LLVM" language="C" />
+     </compilers>
+     <targets>
+       <target name="^.*wrs-vxworks.*$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Dependency_Switches ("C") use ("-MMG", "-MF", "");
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-I" &amp; VSB_Dir &amp; "/h",
+               "-I" &amp; VSB_Dir &amp; "/share/h",
+               "-I" &amp; VSB_Dir &amp; "/krnl/h/system",
+               "-I" &amp; VSB_Dir &amp; "/krnl/h/public",
+               "-D_WRS_KERNEL");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="^GCC$" language="C" />
        <compiler name="^GCC_Pro$" language="C" />
        <compiler name="^GCC-CYGMING$" language="C" />
