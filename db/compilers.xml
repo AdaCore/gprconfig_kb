@@ -530,6 +530,9 @@
   </compiler_description>
 
   <!-- Clang C compiler -->
+  <!-- ??? Note <target> ... <must_match>. This is a temporary fix for
+       excluding the vxworks7r2 target from matching, pending an enhancement
+       to <grep> to be able to exclude (e.g except="regexp") ??? -->
   <compiler_description>
     <name>CLANG-C</name>
     <executable prefix="1">((.*-elf-|.*-linux-gnu-|.*-xcoff-.*-|.*mingw32.*)?)clang</executable>
@@ -541,6 +544,7 @@
     <target>
       <external>$EXEC -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
+      <must_match>(^.*-linux.*$)|(^.*-windows.*$)</must_match>
     </target>
   </compiler_description>
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE gprconfig [
-  <!ENTITY filter_gnat '<compilers><compiler name="^GNAT$" /><compiler name="^GNAT_DOTNET$" /><compiler name="^JGNAT$" /><compiler name="^GNAT_CODEPEER$" /><compiler name="^GNAT_C$" /><compiler name="^GNAT_CCG$" /><compiler name="^GNAT_CUDA$" /><compiler name="^GNAT_LLVM$" /><compiler name="^GNAT_LLVM_NATIVE$" /></compilers>'>
+  <!ENTITY filter_gnat '<compilers><compiler name="^GNAT$" /><compiler name="^GNAT_DOTNET$" /><compiler name="^JGNAT$" /><compiler name="^GNAT_CODEPEER$" /><compiler name="^GNAT_C$" /><compiler name="^GNAT_CCG$" /><compiler name="^GNAT_CUDA$" /><compiler name="^GNAT_LLVM$" /><compiler name="^GNAT_LLVM_VXWORKS$" /><compiler name="^GNAT_LLVM-.*$" /><compiler name="^GNAT_LLVM_NATIVE$" /></compilers>'>
 ] >
 
 <gprconfig>
@@ -274,6 +274,8 @@
      <compiler name="^GNAT$" />
      <compiler name="^GNAT_CODEPEER$" />
      <compiler name="^GNAT_LLVM$" />
+     <compiler name="^GNAT_LLVM_VXWORKS*$" />
+     <compiler name="^GNAT_LLVM-.*$" />
      <compiler name="^GNAT_LLVM_NATIVE$" />
    </compilers>
    <compilers negate="true">

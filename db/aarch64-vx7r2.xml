@@ -4,6 +4,7 @@
 <!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
 <!ENTITY % vxworks.ent SYSTEM "vxworks.ent"> %vxworks.ent;
 <!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
+<!ENTITY % vx7r2.ent SYSTEM "vx7r2.ent"> %vx7r2.ent;
 
 <!-- Local target-specific conditions -->
 
@@ -13,6 +14,16 @@
     '<compilers>
        <compiler name="^GCC_Pro$" />
        <compiler name="^LLVMC-AARCH64$" />
+     </compilers>'>
+
+<!ENTITY if_these_clang_c_compilers
+    '<compilers>
+       <compiler name="^CLANG-C-&this_target;$" />
+     </compilers>'>
+
+<!ENTITY if_these_gnat_llvm_compilers
+    '<compilers>
+       <compiler name="^GNAT_LLVM-&this_target;$" />
      </compilers>'>
 
 <!ENTITY if_these_cpp_compilers
@@ -34,6 +45,11 @@
   &configurations_vxworks_gpp;
 
   &configurations_vx7;
+
+  &configurations_vx7r2_clang;
+  &configurations_vx7r2_clang_kernel;
+  &configurations_vx7r2_clang_rtp;
+  &configurations_vx7r2_gnat_llvm;
 
   &configurations_gnat_ar;
 
