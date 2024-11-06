@@ -873,6 +873,18 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^i586-elf-lynxos178v111$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("i586-elf-lynxos178v111-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("i586-elf-lynxos178v111-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
 <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
     <targets>
