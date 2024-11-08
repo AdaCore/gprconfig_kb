@@ -15,6 +15,7 @@
     </version>
     &languages_c;
     <target>aarch64-wrs-vxworks7r2</target>
+    <runtimes>kernel,rtp</runtimes>
   </compiler_description>
 
 </gprconfig>

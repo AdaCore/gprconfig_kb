@@ -13,6 +13,7 @@
     '<compilers>
        <compiler name="^GCC_Pro$" />
        <compiler name="^LLVMC-AARCH64$" />
+       <compiler name="^CLANG-C-AARCH64-VX7R2$" />
      </compilers>'>
 
 <!ENTITY if_these_cpp_compilers
