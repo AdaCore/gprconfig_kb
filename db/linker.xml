@@ -493,6 +493,7 @@
   <configuration>
     <targets>
       <target name="^powerpc-xcoff-lynxos178$" />
+      <target name="^powerpc-unknown-lynxos178-xcoff$" />
     </targets>
     <config>
    for Archive_Builder  use ("powerpc-xcoff-lynxos178-ar", "cr");
@@ -979,6 +980,7 @@
       <target name="^powerpc-elf$"/>
       <target name="^powerpc-elf-lynxos$" />
       <target name="^powerpc-xcoff-lynxos178$" />
+      <target name="^powerpc-unknown-lynxos178-xcoff$" />
       <target name="^powerpc-eabispe$"/>
       <target name="^avr$"/>
       <target name="^erc32-elf$"/>
