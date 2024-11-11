@@ -541,6 +541,12 @@
     <target>morello-wrs-vxworks7r2</target>
   </targetset>
 
+  <!-- morello-freebsd -->
+  <targetset canonical="morello-freebsd">
+    <target>morello-freebsd</target>
+    <target>morello-.*freebsd.*</target>
+  </targetset>
+
   <!-- ppc-elf-.*  -->
   <targetset canonical="ppc-elf">
     <target>ppc-elf</target>
