@@ -39,6 +39,7 @@
        <target name="^arm(-none)?-eabi$" />
        <target name="^.*-elinos-linux$" />
        <target name="^.*-fastos.*$" />
+       <target name="^.*-freebsd.*$" />
        <target name="^.*-generic-linux-gnu$" />
        <target name="^.*-pikeos.*$" />
        <target name="^.*-qnx[0-9]*$" />

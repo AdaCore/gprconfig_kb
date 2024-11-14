@@ -469,6 +469,18 @@
 
   <configuration>
     <targets>
+      <target name="^morello-freebsd\d+$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("${PREFIX(ada)}ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("${PREFIX(ada)}ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^powerpc-elf$" />
     </targets>
     <config>
@@ -976,6 +988,7 @@
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
       <target name="^m68020-elf$"/>
       <target name="^morello(-unknown-unknown)?-elf$"/>
+      <target name="^morello-freebsd\d+$"/>
       <target name="^powerpc-elf$"/>
       <target name="^powerpc-elf-lynxos$" />
       <target name="^powerpc-xcoff-lynxos178$" />
