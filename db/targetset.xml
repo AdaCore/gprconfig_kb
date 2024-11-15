@@ -328,6 +328,7 @@
     <target>ppc-xcoff-lynxos</target>
     <target>ppc-xcoff-lynxos178.*</target>
     <target>powerpc-xcoff-lynxos178.*</target>
+    <target>powerpc-unknown-lynxos178-xcoff</target>
   </targetset>
 
   <!-- x86-lynx178elf -->
