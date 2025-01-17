@@ -1154,7 +1154,7 @@
 
    for Run_Path_Option  use ("-Wl,-rpath,");
    for Separate_Run_Path_Options use "true";
-   for Run_Path_Origin use "@executable_path";
+   for Run_Path_Origin use "@loader_path";
    for Library_Install_Name_Option use "-Wl,-install_name,@rpath";
 
    for Shared_Library_Suffix use ".dylib";
