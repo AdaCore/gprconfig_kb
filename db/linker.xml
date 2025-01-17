@@ -1603,6 +1603,7 @@
     </targets>
     <config>
    for Library_Support use "full";
+   for Library_Auto_Init_Supported use "true";
    for Library_Builder use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
     </config>
   </configuration>
