@@ -1325,7 +1325,7 @@
   <!-- linux, freebsd, OpenBSD, NetBSD, Dragonfly BSD, QNX -->
   <configuration>
     <targets>
-       <target name="^.*linux.*$" />
+       <target name="^.*linux.*$" except="linux-android" />
        <target name="^.*qnx[0-9]*$" />
        <target name="^.*-fastos.*$" />
        <target name="^.*freebsd.*$" />
@@ -1335,6 +1335,29 @@
     </targets>
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
+   for Run_Path_Origin use "$$ORIGIN";
+   for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
+
+   package Linker is
+      for Map_File_Option         use "-Wl,-Map,";
+   end Linker;
+    </config>
+  </configuration>
+
+  <!-- linux-android
+
+       This would be identical to the generic linux block above, but for
+       the dynamic linker on old versions of Android which raises warnings
+       on the executable flag set by ld -z origin, claiming it does
+       not know about it. The loader processes $ORIGIN regardless, so
+       this custom block simply prevents the warning by not passing -z
+       origin in Run_Path_Option.  -->
+  <configuration>
+    <targets>
+       <target name="^.*linux-android.*$" />
+    </targets>
+    <config>
+   for Run_Path_Option  use ("-Wl,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
 
