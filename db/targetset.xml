@@ -74,6 +74,7 @@
     <target>x86-linux</target>
     <target>x86_32-linux</target>
     <target>i.86-.*linux.*</target>
+    <target>x86_64-.*linux-gnum32.*</target>
   </targetset>
 
   <!-- x86_64-linux -->
