@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+
+<gprconfig>
+
+  <!--  GNAT_LLVM on Vxworks7r2 for building the runtimes -->
+  <compiler_description>
+    <name>GNAT_LLVM_VXWORKS</name>
+    <executable prefix="1">(llvm-)gnatls</executable>
+    <version>
+      <external>${PREFIX}gnatls -v</external>
+      <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <variable name="gcc_version">
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+    </variable>
+    <runtimes default="default,kernel,rtp">
+       <directory group="default" >\.\./lib/rts-kernel/adalib/</directory>
+       <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
+    </runtimes>
+    <target>
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp=".*-wrs-vxworks7r2"></grep>
+    </target>
+  </compiler_description>
+
+</gprconfig>

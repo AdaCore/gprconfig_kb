@@ -98,7 +98,9 @@
   <!ENTITY gnat_post_20
      '<compiler language="Ada" version="[2-3][0-9]" />
       <compiler name="^GCC_Pro$" language="C" version="([8-9]|1[0-9]).*" />
-      <compiler name="^G\+\+_Pro$" language="C++" version="([8-9]|1[0-9]).*" />'
+      <compiler name="^G\+\+_Pro$" language="C++" version="([8-9]|1[0-9]).*" />
+      <compiler name="^CLANG-C-&this_target;$" />
+      <compiler name="^GNAT-LLVM-&this_target;$" />'
   >
 
   <!ENTITY if_gnat_20_pre

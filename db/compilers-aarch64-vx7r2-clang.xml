@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vx7.ent SYSTEM "vx7.ent"> %vx7.ent;
+<!ENTITY % vx7r2.ent SYSTEM "vx7r2.ent"> %vx7r2.ent;
+<!ENTITY this_target 'aarch64-wrs-vxworks7r2'>
+]>
+<gprconfig>
+  &compiler_description_clang_c;
+  &compiler_description_gnat_llvm;
+</gprconfig>
