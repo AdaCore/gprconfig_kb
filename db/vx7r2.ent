@@ -8,8 +8,8 @@
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
     </version>
     &languages_c;
-    <target>&this_target;</target>
     <runtimes>kernel,rtp</runtimes>
+    <target>&this_target;</target>
   </compiler_description>
 '>
 
@@ -169,7 +169,17 @@
       &if_this_target;
 
       &config_common_vx7r2_switches;
+   </configuration>
+   <configuration>
+      &if_these_clang_c_compilers;
+      &if_this_target;
+
       &config_llvm_common_vx7r2_switches;
+   </configuration>
+   <configuration>
+      &if_these_clang_c_compilers;
+      &if_this_target;
+
       &config_target_vx7r2_switches;
     </configuration>
 '>
@@ -182,8 +192,14 @@
      &if_this_target;
 
      &config_kernel_vx7r2_switches;
+   </configuration>
+   <configuration>
+     &if_not_rtp;
+     &if_these_clang_c_compilers;
+     &if_this_target;
+
      &config_llvm_dkm_linker;
-    </configuration>
+   </configuration>
 '>
 
 <!ENTITY configurations_vx7r2_clang_rtp
@@ -192,7 +208,6 @@
      &if_rtp;
      &if_these_clang_c_compilers;
      &if_this_target;
-     &if_rtp;
 
      &config_rtp_vx7r2_switches;
     </configuration>
