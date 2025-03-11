@@ -544,7 +544,7 @@
     <target>
       <external>$EXEC -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
-      <must_match>(^.*-linux.*$)|(^.*-windows.*$)</must_match>
+      <must_match>(^.*-linux.*$)|(^.*-windows.*$)|(^.*-elf.*$)</must_match>
     </target>
   </compiler_description>
 
