@@ -335,6 +335,12 @@
     <target>i586-elf-lynxos178e</target>
   </targetset>
 
+  <!-- x86-lynx178v111 -->
+  <targetset canonical="x86-lynx178v111">
+    <target>x86-lynx178v111</target>
+    <target>i586-elf-lynxos178v111</target>
+  </targetset>
+
   <!-- x86-lynx5-.* -->
   <targetset canonical="x86-lynx5">
     <target>x86-lynx5</target>
