@@ -99,7 +99,7 @@
   </config>
 '>
 
-<!ENTITY config_target_vx7r2_switches
+<!ENTITY config_target_vx7r2_llvm_switches
 '
   <config>
     package Compiler is
@@ -107,22 +107,39 @@
           when "aarch64-wrs-vxworks7r2" =>
              for Leading_Required_Switches ("C") use
                 Compiler &apos; Leading_Required_Switches ("C")
-                &amp; ("-D_VX_CPU=_VX_ARMARCH8A",
-                       "-DARMEL");
+                   &amp; ("-D_VX_CPU=_VX_ARMARCH8A",
+                          "-DARMEL",
+                          "-ffixed-x18");
           when "x86_64-wrs-vxworks7r2" =>
              for Leading_Required_Switches ("C") use
                 Compiler &apos; Leading_Required_Switches ("C")
-                &amp; ("-D_VX_CPU=X86_64",
-                       "-D_VX_CPU_FAMILY=_VX_I80X86",
-                       "-D_VX_ARCH_DIR=I86");
+                   &amp; ("-D_VX_CPU=X86_64",
+                          "-D_VX_CPU_FAMILY=_VX_I80X86",
+                          "-D_VX_ARCH_DIR=I86");
           when "powerpc64-wrs-vxworks7r2" =>
              for Leading_Required_Switches ("C") use
                 Compiler &apos; Leading_Required_Switches ("C")
-                &amp; ("-D_VX_CPU=PPC604",
-                       "-D__PPC__",
-                       "-D__powerpc__",
-                       "-D__PPC64__",
-                       "-D__powerpc64__");
+                   &amp; ("-D_VX_CPU=PPC604",
+                          "-D__PPC__",
+                          "-D__powerpc__",
+                          "-D__PPC64__",
+                          "-D__powerpc64__");
+          when others =>
+             null;
+       end case;
+     end Compiler;
+   </config>
+'>
+
+<!ENTITY config_target_ada_vx7r2_llvm_switches
+'
+  <config>
+    package Compiler is
+       case TARGET_ADA is
+          when "aarch64-wrs-vxworks7r2" =>
+             for Leading_Required_Switches ("Ada") use
+                Compiler &apos; Leading_Required_Switches ("Ada")
+                   &amp; ("-mreserve-x18");
           when others =>
              null;
        end case;
@@ -158,6 +175,12 @@
       &if_these_gnat_llvm_compilers;
       &if_this_target;
 
+      &config_target_ada_vx7r2_llvm_switches;
+    </configuration>
+    <configuration>
+      &if_these_gnat_llvm_compilers;
+      &if_this_target;
+
       &config_llvm_dkm_linker;
     </configuration>
 '>
@@ -180,7 +203,8 @@
       &if_these_clang_c_compilers;
       &if_this_target;
 
-      &config_target_vx7r2_switches;
+      &config_target_vx7r2_llvm_switches;
+      &config_target_ada_vx7r2_llvm_switches;   <!-- Needed for runtime build -->
     </configuration>
 '>
 
