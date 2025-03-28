@@ -204,6 +204,11 @@
       &if_this_target;
 
       &config_target_vx7r2_llvm_switches;
+    </configuration>
+   <configuration>
+      &if_these_clang_c_compilers;
+      &if_this_target;
+
       &config_target_ada_vx7r2_llvm_switches;   <!-- Needed for runtime build -->
     </configuration>
 '>
