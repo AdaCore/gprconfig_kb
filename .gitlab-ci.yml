@@ -1,0 +1,31 @@
+include:
+- project: eng/gpr/gpr-issues
+  file: /.gitlab/.gitlab-ci-shared.yml
+
+stages:
+- build
+- test
+- post
+
+.gpr2_test_template:
+  extends: .test_template
+  cache:
+  - key: $CI_COMMIT_REF_SLUG
+    fallback_keys:
+    - main
+    policy: pull
+    paths:
+    - cache
+
+linux_gpr2_kb_tests:
+  extends: .gpr2_test_template
+  needs: []
+  script:
+  - exec anod build gpr2
+  - run_testsuite gpr2 "" test_gpr2
+  artifacts:
+    when: always
+    paths:
+    - testgpr2_result.xml
+    reports:
+      junit: testgpr2_result.xml
