@@ -13,6 +13,22 @@
       <compiler language="Ada" version="6.3" />
       <compiler language="Ada" version="6.4" />'
    >
+
+   <!ENTITY if_not_vx7r2_llvm_compiler
+   '
+      <compilers negate="true">
+         <compiler name="^CLANG-C-*;$" />
+         <compiler name="^GNAT_LLVM-*;$" />
+      </compilers>
+   '>
+
+   <!ENTITY if_vx7r2_llvm_compiler
+   '
+      <compilers>
+         <compiler name="^CLANG-C-*;$" />
+         <compiler name="^GNAT_LLVM-*;$" />
+      </compilers>
+   '>
 ]>
 
 <gprconfig>
@@ -1744,6 +1760,7 @@
 
   <!-- cross targets that use GNU ld -->
   <configuration>
+    &if_not_vx7r2_llvm_compiler;
     <targets>
        <target name="^.*-vxworks.*$" />
        <target name="^.*-lynxos.*$" />
@@ -1756,6 +1773,18 @@
     <config>
      package Linker is
         for Map_File_Option use "-Wl,-Map,";
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    &if_vx7r2_llvm_compiler;
+    <targets>
+       <target name="^.*-vxworks7r2$" />
+    </targets>
+    <config>
+     package Linker is
+        for Map_File_Option use "-Map,";
      end Linker;
     </config>
   </configuration>

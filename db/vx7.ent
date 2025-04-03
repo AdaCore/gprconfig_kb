@@ -49,6 +49,7 @@
 
    <configuration>
      &if_rtp;
+     &if_not_llvm_compiler;
      &if_this_target;
 
      &config_wrs_rtp_base;

@@ -38,18 +38,43 @@
 
 <!ENTITY this_wrs_rtp_base '0x80000000'>
 ]>
+
+<!-- The environment entities must be called first to define and 
+     initialize some variables used later. For example in
+     "vx7r2_environment" the variable VxLink_Required_Switches
+     is defined.
+
+     ??? This configuration relies on the ordering that gprconfig picks
+     to instantiate the config bits, and this is not a documented
+     property.
+
+     Note also entity "environment" may have this same problem, is
+     widely used, and assumed to be processed first.
+
+     We may eventually refactor these config bits to use macros for
+     config contents instead. Something like:
+
+     ENTITY config_llvm_common_vx7r2_switches
+        <config>
+           &config_content_where_variable_foo_is_defined;
+           &config_content_where_variable_foo_is_used;
+        </config>
+
+     eng/gpr/gpr-issues#661 has been opened to investigate that option.  -->
+
 <gprconfig>
 
   &environment;
+  &vx7r2_environment;
 
   &configurations_vxworks_gpp;
 
   &configurations_vx7;
 
+  &configurations_vx7r2_gnat_llvm;
   &configurations_vx7r2_clang;
   &configurations_vx7r2_clang_kernel;
   &configurations_vx7r2_clang_rtp;
-  &configurations_vx7r2_gnat_llvm;
 
   &configurations_gnat_ar;
 

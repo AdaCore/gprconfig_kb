@@ -1,3 +1,23 @@
+<!-- The TARGET_C_SWITCHES Variable is set to the target specific C
+     switches below and then appended to VxLink_Required_Switches for the
+     DKM ctdt.c compilation, and independently appended to
+     Leading_Required_Switches ("C"). It's done this way to avoid
+     duplication of switches in the case where the project gprconfig
+     has specified both a "C" and an Ada toolchain. -->
+
+<!ENTITY vx7r2_environment
+'
+  <configuration>
+    &if_this_target;
+
+    <config>
+       VxLink_Required_Switches := "";
+       TARGET_C_SWITCHES := ("");
+    </config>
+  </configuration>
+'
+>
+
 <!ENTITY compiler_description_clang_c
 '
   <compiler_description>
@@ -8,7 +28,7 @@
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
     </version>
     &languages_c;
-    <runtimes>kernel,rtp</runtimes>
+    <runtimes default="kernel,rtp">kernel,rtp</runtimes>
     <target>&this_target;</target>
   </compiler_description>
 '>
@@ -46,18 +66,6 @@
 '
    <config>
      package Compiler is
-       for Leading_Required_Switches ("C") use
-         Compiler &apos; Leading_Required_Switches ("C")
-         &amp; ("-DTOOL_FAMILY=llvm",
-                "-DTOOL=llvm");
-     end Compiler;
-     </config>
-'>
-
-<!ENTITY config_common_vx7r2_switches
-'
-   <config>
-     package Compiler is
        for Dependency_Switches ("C") use ("-MMD", "-MF", "");
        for Leading_Required_Switches ("C") use
          Compiler &apos; Leading_Required_Switches ("C")
@@ -66,7 +74,9 @@
                 "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;",
                 "-D_IS_WRS",
                 "-D__vxworks",
-                "-D__VXWORKS__");
+                "-D__VXWORKS__",
+                "-DTOOL_FAMILY=llvm",
+                "-DTOOL=llvm");
      end Compiler;
      </config>
 '>
@@ -85,6 +95,31 @@
   </config>
 '>
 
+<!-- ??? For gcc, we only apply mcmodel=large to runtime builds.
+     We would like to do the same thing for gnat-llvm, and that
+     cannot be done from gprconfig; so this configuration bit
+     should eventually be moved to gnat-llvm's anod specs.
+     See eng/gpr/gprconfig_kb#67 for details. -->
+
+<!ENTITY config_target_vx7r2_default_switches
+'
+  <config>
+    package Compiler is
+      case TARGET is
+         when "aarch64-wrs-vxworks7r2" =>
+            for Leading_Required_Switches ("C") use
+              Compiler &apos; Leading_Required_Switches ("C")
+              &amp; ("-mcmodel=large");
+            for Leading_Required_Switches ("Ada") use
+              Compiler &apos; Leading_Required_Switches ("Ada")
+              &amp; ("-mcmodel=large");
+         when others =>
+            null;
+       end case;
+     end Compiler;
+  </config>
+'>
+
 <!ENTITY config_rtp_vx7r2_switches
 '
   <config>
@@ -99,39 +134,61 @@
   </config>
 '>
 
-<!ENTITY config_target_vx7r2_llvm_switches
+<!ENTITY config_target_vx7r2_llvm_c_switches
 '
   <config>
     package Compiler is
-       case TARGET_C is
+       AARCH64_C_SWITCHES := ("-D_VX_CPU=_VX_ARMARCH8A", "-DARMEL", "-ffixed-x18");
+       X86_64_C_SWITCHES := ("-D_VX_CPU=X86_64", "-D_VX_CPU_FAMILY=_VX_I80X86", "-D_VX_ARCH_DIR=I86");
+       PPC64_C_SWITCHES :=  ("-D_VX_CPU=PPC604", "-D__PPC__", "-D__powerpc__", "-D__PPC64__", "-D__powerpc64__");
+       case TARGET is
           when "aarch64-wrs-vxworks7r2" =>
-             for Leading_Required_Switches ("C") use
-                Compiler &apos; Leading_Required_Switches ("C")
-                   &amp; ("-D_VX_CPU=_VX_ARMARCH8A",
-                          "-DARMEL",
-                          "-ffixed-x18");
+             TARGET_C_SWITCHES := AARCH64_C_SWITCHES;
           when "x86_64-wrs-vxworks7r2" =>
-             for Leading_Required_Switches ("C") use
-                Compiler &apos; Leading_Required_Switches ("C")
-                   &amp; ("-D_VX_CPU=X86_64",
-                          "-D_VX_CPU_FAMILY=_VX_I80X86",
-                          "-D_VX_ARCH_DIR=I86");
+             TARGET_C_SWITCHES := X86_64_C_SWITCHES;
           when "powerpc64-wrs-vxworks7r2" =>
-             for Leading_Required_Switches ("C") use
-                Compiler &apos; Leading_Required_Switches ("C")
-                   &amp; ("-D_VX_CPU=PPC604",
-                          "-D__PPC__",
-                          "-D__powerpc__",
-                          "-D__PPC64__",
-                          "-D__powerpc64__");
+             TARGET_C_SWITCHES := PPC64_C_SWITCHES;
           when others =>
              null;
        end case;
+
      end Compiler;
    </config>
 '>
 
-<!ENTITY config_target_ada_vx7r2_llvm_switches
+<!ENTITY config_target_vx7r2_llvm_vxlink_switches
+'
+  <config>
+    package Compiler is
+       case TARGET_ADA is
+          when "" =>
+             null;
+          when others =>
+             VxLink_Required_Switches :=
+                Compiler &apos; Leading_Required_Switches ("C")
+                   &amp; Compiler.TARGET_C_SWITCHES;
+        end case;
+     end Compiler;
+   </config>
+'>
+
+<!ENTITY config_target_vx7r2_llvm_clang_switches
+'
+  <config>
+    package Compiler is
+        case TARGET_C is
+           when "" =>
+              null;
+           when others =>
+              for Leading_Required_Switches ("C") use
+                 Compiler &apos; Leading_Required_Switches ("C")
+                    &amp; Compiler.TARGET_C_SWITCHES;
+        end case;
+     end Compiler;
+   </config>
+'>
+
+<!ENTITY config_target_vx7r2_llvm_ada_switches
 '
   <config>
     package Compiler is
@@ -144,6 +201,19 @@
              null;
        end case;
      end Compiler;
+   </config>
+'>
+
+<!-- The default substituion is -<blah>-libgcc, however there is no
+     libgcc library on llvm, so make it null -->
+
+<!ENTITY config_vx7r2_llvm_binder
+'
+   <config>
+     package Binder is
+        for Bindfile_Option_Substitution ("-static") use ("");
+        for Bindfile_Option_Substitution ("-shared") use ("");
+     end Binder;
    </config>
 '>
 
@@ -164,7 +234,66 @@
           null;
     end case;
     for Required_Switches use
-      Linker &apos; Required_Switches &amp; ("-lllvmcplus", "--vxlink-llvm");
+       Linker &apos; Required_Switches
+         &amp; ("--vxlink-llvm")
+         &amp; ("--vxlink-cargs-begin")
+         &amp; Compiler.VxLink_Required_Switches
+         &amp; ("--vxlink-cargs-end");
+ end Linker;
+   </config>
+'>
+
+<!ENTITY config_llvm_c_dkm_linker
+'
+   <config>
+ package Linker is
+    case TARGET_C is
+       when "aarch64-wrs-vxworks7r2" =>
+          for Required_Switches use
+            Linker &apos; Required_Switches
+            &amp; ("-L" &amp; VSB_Dir &amp; "/krnl/ARMARCH8A/common");
+       when others =>
+          null;
+    end case;
+ end Linker;
+   </config>
+'>
+
+<!-- This is distinguishable from the config_wrs_rtp_base entity in
+     vxworks.ent because it's for linking directly with ld, without
+     going through gcc pre-preprocessing which will strip of the
+     -Wl, prefix. It also contains some miscellaneious switches copied
+     from WorkBench linker command line which may or may not be more
+     appropriately be moved to a separate entity when other languages
+     are supported. -->
+
+<!ENTITY config_llvm_rtp_linker
+'
+   <config>
+ package Linker is
+    WRS_RTP_Base := external ("WRS_RTP_BASE", "&this_wrs_rtp_base;");
+    for Leading_Switches ("Ada") use
+      Linker &apos; Leading_Switches ("Ada")
+      &amp; ("--vxlink-llvm")
+      &amp; ("--defsym", "__wrs_rtp_base=" &amp; WRS_RTP_Base)
+      &amp; ("-u", "__wr_need_frame_add",
+             "-u", "__tls__",
+             "-EL",
+             "-static",
+             "-l:crt0.o");
+    for Required_Switches use
+       Linker &apos; Required_Switches
+         &amp; ("-L" &amp; VSB_Dir &amp; "/usr/ldscripts")
+         &amp; ("-Trtp.ld")
+         &amp; ("-L" &amp; VSB_Dir &amp; "/usr/lib/common")
+         &amp; ("--start-group")
+         &amp; ( "--as-needed")
+         &amp; ("-lc")
+         &amp; ("-lc_internal")
+         &amp; ("-lllvm")
+         &amp; ("-lllvmcplus")
+         &amp; ("-ldl")
+         &amp; ("--end-group");
  end Linker;
    </config>
 '>
@@ -175,24 +304,58 @@
       &if_these_gnat_llvm_compilers;
       &if_this_target;
 
-      &config_target_ada_vx7r2_llvm_switches;
-    </configuration>
-    <configuration>
+      &config_llvm_common_vx7r2_switches;
+   </configuration>
+   <configuration>
+     &if_not_rtp;
+     &if_these_gnat_llvm_compilers;
+     &if_this_target;
+
+     &config_kernel_vx7r2_switches;
+   </configuration>
+   <configuration>
+      &if_these_gnat_llvm_compilers;
+      &if_this_target;
+
+      &config_target_vx7r2_llvm_c_switches;
+   </configuration>
+   <configuration>
+      &if_not_rtp;
+      &if_these_gnat_llvm_compilers;
+      &if_this_target;
+
+      &config_target_vx7r2_llvm_vxlink_switches;
+   </configuration>
+   <configuration>
+      &if_these_gnat_llvm_compilers;
+      &if_this_target;
+
+      &config_target_vx7r2_llvm_ada_switches;
+   </configuration>
+   <configuration>
+      &if_not_rtp;
       &if_these_gnat_llvm_compilers;
       &if_this_target;
 
       &config_llvm_dkm_linker;
-    </configuration>
+   </configuration>
+   <configuration>
+      &if_these_gnat_llvm_compilers;
+      &if_this_target;
+
+      &config_vx7r2_llvm_binder;
+   </configuration>
+   <configuration>
+      &if_rtp;
+      &if_these_gnat_llvm_compilers;
+      &if_this_target;
+
+      &config_llvm_rtp_linker;
+   </configuration>
 '>
 
 <!ENTITY configurations_vx7r2_clang
 '
-   <configuration>
-      &if_these_clang_c_compilers;
-      &if_this_target;
-
-      &config_common_vx7r2_switches;
-   </configuration>
    <configuration>
       &if_these_clang_c_compilers;
       &if_this_target;
@@ -203,14 +366,20 @@
       &if_these_clang_c_compilers;
       &if_this_target;
 
-      &config_target_vx7r2_llvm_switches;
-    </configuration>
+      &config_target_vx7r2_llvm_c_switches;
+   </configuration>
    <configuration>
       &if_these_clang_c_compilers;
       &if_this_target;
 
-      &config_target_ada_vx7r2_llvm_switches;   <!-- Needed for runtime build -->
-    </configuration>
+      &config_target_vx7r2_llvm_clang_switches;
+   </configuration>
+   <configuration>
+      &if_these_clang_c_compilers;
+      &if_this_target;
+
+      &config_target_vx7r2_default_switches;
+   </configuration>
 '>
 
 <!ENTITY configurations_vx7r2_clang_kernel
@@ -227,7 +396,7 @@
      &if_these_clang_c_compilers;
      &if_this_target;
 
-     &config_llvm_dkm_linker;
+     &config_llvm_c_dkm_linker;
    </configuration>
 '>
 
