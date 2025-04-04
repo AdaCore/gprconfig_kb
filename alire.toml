@@ -1,0 +1,12 @@
+name = "gprconfig_kb"
+version = "26.0.0"
+description = "GPRCONFIG Knowledge Database"
+authors = ["AdaCore"]
+licenses = "GPL-3.0-with-GCC-exception"
+maintainers = ["chouteau@adacore.com"]
+maintainers-logins = ["Fabien-Chouteau"]
+project-files = []
+auto-gpr-with = false
+
+[configuration]
+disabled = true
