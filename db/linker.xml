@@ -938,6 +938,18 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^loongarch64-.*linux-gnu$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("loongarch64-linux-gnu-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("loongarch64-linux-gnu-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
   <!-- Do not run ranlib on AIX -->
   <configuration>
     <targets>
@@ -1013,6 +1025,7 @@
       <target name="^.*-qnx[0-9]*$"/>
       <target name="^.*-rtems.*$"/>
       <target name="^cuda$" />
+      <target name="^loongarch(32|64)(-none|-unknown)?-elf$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
@@ -1108,6 +1121,7 @@
        <target name="^c$" />
        <target name="^llvm$" />
        <target name="^.*-rtems.*$"/>
+       <target name="^loongarch(32|64)(-none|-unknown)?-elf$" />
     </targets>
     <config>
    for Library_Support  use "static_only";
@@ -1908,6 +1922,7 @@
        <target name="^.*netbsd.*$" />
        <target name="^.*dragonfly.*$" />
        <target name="^.*-qnx[0-9]*"/>
+       <target name="^loongarch(32|64)(-none|-unknown)?-elf$" />
      </targets>
     <config>
    package Linker is
@@ -1960,6 +1975,7 @@
        <target name="^.*openbsd.*$" />
        <target name="^.*netbsd.*$" />
        <target name="^.*dragonfly.*$" />
+       <target name="^loongarch(32|64)(-none|-unknown)?-elf$" />
      </targets>
     <config>
    package Linker is
@@ -2001,6 +2017,7 @@
        <target name="^.*openbsd.*$" />
        <target name="^.*netbsd.*$" />
        <target name="^.*dragonfly.*$" />
+       <target name="^loongarch(32|64)(-none|-unknown)?-elf$" />
      </targets>
     <config>
    package Linker is
