@@ -296,6 +296,8 @@
   <configuration>
     <compilers>
       <compiler name="^CLANG-.*$" />
+      <compiler name="^GNAT_LLVM$" />
+      <compiler name="^GNAT_LLVM-.*$" />
     </compilers>
     <targets>
       <target name="^aarch64-unknown-linux-gnu$" />
@@ -329,6 +331,10 @@
               ("--sysroot=" &amp; Env_Prefix);
       end case;
    end Compiler;
+   package Linker is
+      for Required_Switches use Linker'Required_Switches &amp;
+        ("--sysroot=" &amp; Env_Prefix);
+   end Linker;
     </config>
   </configuration>
 
