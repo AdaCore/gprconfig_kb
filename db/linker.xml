@@ -396,6 +396,7 @@
     </compilers>
     <targets>
       <target name="^arm(-none)?-eabi$" />
+      <target name=".*lynxos178.*$" />
       <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
     </targets>
@@ -414,6 +415,7 @@
     </compilers>
     <targets>
       <target name="^arm(-none)?-eabi$" />
+      <target name=".*lynxos178.*$" />
       <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
     </targets>
@@ -432,6 +434,7 @@
     </compilers>
     <targets>
       <target name="^arm(-none)?-eabi$" />
+      <target name=".*lynxos178.*$" />
       <target name="^r7-elf$" />
       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
     </targets>
@@ -498,19 +501,6 @@
     <config>
    for Archive_Builder  use ("ar", "crs");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="^powerpc-xcoff-lynxos178$" />
-      <target name="^powerpc-unknown-lynxos178-xcoff$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("powerpc-xcoff-lynxos178-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-xcoff-lynxos178-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -1039,56 +1029,6 @@
    for Archive_Builder  use ("ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <!-- powerpc-elf-lynxos178e, after the previous one
-       to overwrite the attributes -->
-  <configuration>
-    <targets>
-      <target name="^powerpc-elf-lynxos178e$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("powerpc-elf-lynxos178e-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-elf-lynxos178e-ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="^i586-elf-lynxos178e$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("i586-elf-lynxos178e-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("i586-elf-lynxos178e-ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="^i586-elf-lynxos178v111$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("i586-elf-lynxos178v111-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("i586-elf-lynxos178v111-ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="^aarch64-lynx-lynxos178$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("aarch64-lynx-lynxos178-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("aarch64-lynx-lynxos178-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
