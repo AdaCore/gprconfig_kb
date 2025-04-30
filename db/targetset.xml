@@ -301,6 +301,12 @@
     <target>.*aamp.*</target>
   </targetset>
 
+  <!-- aarch64-lynx178 -->
+  <targetset canonical="aarch64-lynx178">
+    <target>aarch64-lynx178</target>
+    <target>aarch64-lynx-lynxos178</target>
+  </targetset>
+
   <!-- ppc-lynx178elf -->
   <targetset canonical="ppc-lynx178elf">
     <target>ppc-lynx178elf</target>

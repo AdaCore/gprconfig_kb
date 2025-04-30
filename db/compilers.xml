@@ -36,7 +36,7 @@
   <!--    GCC for GNAT Pro 3.x & 4.x -->
   <compiler_description>
     <name>GCC_Pro</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*)?gcc</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*|.*-lynxos178.*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
 
@@ -138,7 +138,7 @@
   <!--  Assembler (not for GNAT Pro) -->
   <compiler_description>
     <name>GCC-ASM</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*)?gcc(-\d+)?</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*|.*-lynxos178.*)?gcc(-\d+)?</executable>
     <version>
       <external>$EXEC -v</external>
       <nogrep regexp="for GNAT Pro"></nogrep>
@@ -154,7 +154,7 @@
   <!--  Assembler (for GNAT Pro) -->
   <compiler_description>
     <name>GCC-ASM_Pro</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-.*fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*)?gcc</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-.*fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*|.*-lynxos178.*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^gcc \S+ (\S+) \d+ (\(prerelease\) )?\(?for GNAT Pro" group="1"></grep>
@@ -169,7 +169,7 @@
   <!--  Binary image -->
   <compiler_description>
     <name>LD</name>
-    <executable prefix="1">(.*-wrs.*-|.*-sysgo.*-|.*-elf.*-|.*-eabi.*-|.*-eabispe.*-|avr.*-|.*-elinos-linux.*-|.*-linux-gnu-|.*mingw32.*-|.*-xcoff.*-|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*-|.*-rtems.*-)?ld</executable>
+    <executable prefix="1">(.*-wrs.*-|.*-sysgo.*-|.*-elf.*-|.*-eabi.*-|.*-eabispe.*-|avr.*-|.*-elinos-linux.*-|.*-linux-gnu-|.*mingw32.*-|.*-xcoff.*-|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*-|.*-rtems.*-|.*-lynxos178.*-)?ld</executable>
     <version>
       <external>${PREFIX}ld -v</external>
       <grep regexp="^(GNU ld.*|LLD) (\S+)" group="2"></grep>
@@ -189,7 +189,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*)?gnatls</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*|.*-lynxos178.*)?gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v --version</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
