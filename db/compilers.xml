@@ -24,7 +24,7 @@
     <version>
       <external>$EXEC -v</external>
       <nogrep regexp="for GNAT Pro"></nogrep>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+)" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
@@ -41,7 +41,7 @@
       <external>${PREFIX}gcc -v</external>
 
       <!--  'gcc version 4.7.4 20131104 for GNAT Pro ...' -->
-      <grep regexp="^gcc \S+ (\S+) \d+ (\(prerelease\) )?\(?for GNAT Pro" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+) \d+ (\(prerelease\) )?\(?for GNAT Pro" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
@@ -92,7 +92,7 @@
     <executable>gcc</executable>
     <version>
       <external>gcc -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+)" group="1"></grep>
       <must_match>2\.8\.</must_match>
     </version>
     <languages>C</languages>
@@ -109,7 +109,7 @@
     <version>
       <external>$EXEC -v</external>
       <nogrep regexp="for GNAT Pro"></nogrep>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
@@ -126,7 +126,7 @@
       <external>${PREFIX}g++ -v</external>
 
       <!--  'gcc version 4.7.4 20131104 for GNAT Pro ...' -->
-      <grep regexp="^gcc \S+ (\S+) \d+ \(?for GNAT Pro" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+) \d+ \(?for GNAT Pro" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
@@ -142,7 +142,7 @@
     <version>
       <external>$EXEC -v</external>
       <nogrep regexp="for GNAT Pro"></nogrep>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+)" group="1"></grep>
     </version>
     <languages>Asm,Asm_Cpp,Asm2</languages>
     <target>
@@ -157,7 +157,7 @@
     <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-linux-gnu-|.*mingw32.*|.*-xcoff-.*|.*linux-android.*|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|powerpc-.*-linux.*-|.*-darwin.*-|.*-.*fastos.*|.*-freebsd.*|.*-qnx.*|.*-rtems.*|.*-lynxos178.*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^gcc \S+ (\S+) \d+ (\(prerelease\) )?\(?for GNAT Pro" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+) \d+ (\(prerelease\) )?\(?for GNAT Pro" group="1"></grep>
     </version>
     <languages>Asm,Asm_Cpp,Asm2</languages>
     <target>
@@ -197,11 +197,11 @@
     <languages>Ada</languages>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\S+)" group="1"></grep>
     </variable>
     <variable name="gcc_version_major">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\d+)\.\d+\.\d+" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\d+)\.\d+\.\d+" group="1"></grep>
     </variable>
     <runtimes default="default,kernel,native">
        <directory group="default" >\.\./lib(32|64)?/gcc(-lib)?/$TARGET/($gcc_version|$gcc_version_major)/adalib/</directory>
@@ -227,7 +227,7 @@
     <languages>Ada,C,C++</languages>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,native">
        <directory group="default" >\.\./libexec/codepeer/lib/gcc/.*/$gcc_version/adalib/</directory>
@@ -249,7 +249,7 @@
     <languages>Ada</languages>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,native">
        <directory group="default" >\.\./lib/rts-native/adalib/</directory>
@@ -270,7 +270,7 @@
     <languages>Ada</languages>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,native">
        <directory group="default" >\.\./lib/rts-native/adalib/</directory>
@@ -339,7 +339,7 @@
     <languages>Ada</languages>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,ccg">
        <directory group="default" >\.\./libexec/gnat_ccg/lib/gcc/.*/$gcc_version/adalib/</directory>
@@ -361,7 +361,7 @@
     <languages>Ada</languages>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,ccg">
        <directory group="default" >\.\./lib/rts-ccg/adalib/</directory>
@@ -382,7 +382,7 @@
     <languages>Ada</languages>
     <variable name="gcc_version">
       <external>cuda-gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc[- ]\S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,device-cuda">
        <directory group="default" >\.\./lib/rts-device-cuda/adalib/</directory>
@@ -447,7 +447,7 @@
     <executable>gfortran(-\d+)?</executable>
     <version>
       <external>$EXEC -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^gcc[- ]\S+ (\S+)" group="1"></grep>
     </version>
     <languages>Fortran</languages>
     <target>
