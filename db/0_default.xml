@@ -41,10 +41,10 @@
       for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno", ".su");
 
       for Source_Artifact_Extensions ("C")   use (".gli");
-      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno", ".su");
+      for Object_Artifact_Extensions ("C")   use (".s", ".ci", ".gcno", ".su");
 
       for Source_Artifact_Extensions ("C++") use (".gli");
-      for Object_Artifact_Extensions ("C++") use (".s", "ci", ".gcno", ".su");
+      for Object_Artifact_Extensions ("C++") use (".s", ".ci", ".gcno", ".su");
    end Clean;
 
    package Binder is
