@@ -251,7 +251,13 @@
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
+    <variable name="llvm_target">
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </variable>
     <runtimes default="default,native">
+       <directory group="default" >\.\./lib/gnat-llvm/$llvm_target/rts-native/adalib/</directory>
+       <directory group="1" >\.\./lib/gnat-llvm/$llvm_target/rts-(.*)/adalib/</directory>
        <directory group="default" >\.\./lib/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
     </runtimes>
@@ -259,7 +265,6 @@
   </compiler_description>
 
   <!--  Architecture-specific GNAT-LLVM Ada compiler  -->
-
   <compiler_description>
     <name>GNAT_LLVM</name>
     <executable prefix="1">((.*-elf-|.*-linux-gnu-|.*-xcoff-.*-|.*mingw32.*)?llvm-)gnatls</executable>
@@ -268,14 +273,12 @@
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
     </version>
     <languages>Ada</languages>
-    <variable name="gcc_version">
-      <external>${PREFIX}gcc -v</external>
-      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
-    </variable>
     <runtimes default="default,native">
+       <directory group="default" >\.\./lib/gnat-llvm/$TARGET/rts-native/adalib/</directory>
+       <directory group="1" >\.\./lib/gnat-llvm/$TARGET/rts-(.*)/adalib/</directory>
+       <directory group="2" >\.\./$TARGET/lib(32|64)?/gnat-llvm/(.*)/adalib/</directory>
        <directory group="default" >\.\./lib/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
-       <directory group="2" >\.\./$TARGET/lib(32|64)?/gnat-llvm/(.*)/adalib/</directory>
     </runtimes>
     <target>
       <external>${PREFIX}gcc -dumpmachine</external>
