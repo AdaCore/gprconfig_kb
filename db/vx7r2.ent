@@ -28,8 +28,8 @@
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="kernel,rtp">
-       <directory group="kernel" >\.\./lib/rts-kernel/adalib/</directory>
-       <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
+       <directory group="kernel" >\.\./lib/gnat-llvm/&this_target;/rts-kernel/adalib/</directory>
+       <directory group="1" >\.\./lib/gnat-llvm/&this_target;/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>&this_target;</target>
   </compiler_description>
