@@ -16,8 +16,8 @@
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default,kernel,rtp">
-       <directory group="default" >\.\./lib/rts-kernel/adalib/</directory>
-       <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
+       <directory group="default" >\.\./lib/gnat-llvm/$TARGET/rts-kernel/adalib/</directory>
+       <directory group="1" >\.\./lib/gnat-llvm/$TARGET/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>
       <external>${PREFIX}gcc -dumpmachine</external>

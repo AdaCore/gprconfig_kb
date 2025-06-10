@@ -258,7 +258,7 @@
     <runtimes default="default,native">
        <directory group="default" >\.\./lib/gnat-llvm/$llvm_target/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/gnat-llvm/$llvm_target/rts-(.*)/adalib/</directory>
-       <directory group="default" >\.\./lib/rts-native/adalib/</directory>
+       <directory group="native" >\.\./lib/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>llvm</target>
@@ -277,7 +277,7 @@
        <directory group="default" >\.\./lib/gnat-llvm/$TARGET/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/gnat-llvm/$TARGET/rts-(.*)/adalib/</directory>
        <directory group="2" >\.\./$TARGET/lib(32|64)?/gnat-llvm/(.*)/adalib/</directory>
-       <directory group="default" >\.\./lib/rts-native/adalib/</directory>
+       <directory group="native" >\.\./lib/rts-native/adalib/</directory>
        <directory group="1" >\.\./lib/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>
