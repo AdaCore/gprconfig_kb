@@ -102,6 +102,81 @@
      </config>'
   >
 
+  <!-- Each of the three vxlink configurations below specify the
+       vxlink-rtp switch for a combination of Ada, C and C++.
+       This ensures the switch is applied in multi-language projects
+       regardless of what the main language is. The switch is added
+       only in cases where vxlink is used as the linker driver. --> 
+
+  <!ENTITY config_rtp_linker_ada_vxlink
+    '<config>
+   USE_VXLINK_FOR_RTP := external ("USE_VXLINK_FOR_RTP", "true");
+   package Linker is
+      case USE_VXLINK_FOR_RTP is
+         when "true" =>
+            for Driver use "&this_target;-vxlink";
+            for Leading_Switches ("Ada") use
+              Linker &apos; Leading_Switches ("Ada")
+              &amp; ("--vxlink-rtp");
+            for Leading_Switches ("C") use
+              Linker &apos; Leading_Switches ("C")
+              &amp; ("--vxlink-rtp");
+         when "false" =>
+            for Driver use Compiler &apos; Driver ("Ada");
+         when others =>
+            null;
+      end case;
+   end Linker;
+   for Leading_Library_Options use ("--vxlink-rtp");
+     </config>'
+  >
+
+  <!ENTITY config_rtp_linker_c_vxlink
+    '<config>
+   USE_VXLINK_FOR_RTP := external ("USE_VXLINK_FOR_RTP", "true");
+   package Linker is
+      case USE_VXLINK_FOR_RTP is
+         when "true" =>
+            for Driver use "&this_target;-vxlink";
+            for Leading_Switches ("C") use
+              Linker &apos; Leading_Switches ("C")
+              &amp; ("--vxlink-rtp");
+         when "false" =>
+            for Driver use Compiler &apos; Driver ("C");
+         when others =>
+            null;
+      end case;
+   end Linker;
+   for Leading_Library_Options use ("--vxlink-rtp");
+     </config>'
+  >
+
+  <!ENTITY config_rtp_linker_cpp_vxlink
+    '<config>
+   USE_VXLINK_FOR_RTP := external ("USE_VXLINK_FOR_RTP", "true");
+   package Linker is
+      case USE_VXLINK_FOR_RTP is
+         when "true" =>
+            for Driver use "&this_target;-vxlink";
+            for Leading_Switches ("C++") use
+              Linker &apos; Leading_Switches ("C++")
+              &amp; ("--vxlink-rtp");
+            for Leading_Switches ("Ada") use
+              Linker &apos; Leading_Switches ("Ada")
+              &amp; ("--vxlink-rtp");
+            for Leading_Switches ("C") use
+              Linker &apos; Leading_Switches ("C")
+              &amp; ("--vxlink-rtp");
+         when "false" =>
+            for Driver use Compiler &apos; Driver ("C++");
+         when others =>
+            null;
+      end case;
+   end Linker;
+   for Leading_Library_Options use ("--vxlink-rtp");
+     </config>'
+  >
+
   <!ENTITY if_target_gpp
     '<targets>
        <target name="^.*-wrs-vxworks$" />
@@ -430,6 +505,7 @@
    <configuration>
      &if_cpp;
      &if_rtp;
+     &if_gnat_26_pre;
      &if_this_target;
      <!-- vx6, vx7 and vx6cert -->
 
@@ -440,6 +516,7 @@
      &if_ada;
      &if_no_cpp;
      &if_rtp;
+     &if_gnat_26_pre;
      &if_this_target;
      <!-- vx6, vx7 and vx6cert -->
 
@@ -449,10 +526,42 @@
    <configuration>
      &if_c_only;
      &if_rtp;
+     &if_gnat_26_pre;
      &if_this_target;
      <!-- vx6, vx7 and vx6cert -->
 
      &config_c_linker;
+   </configuration>
+
+   <!-- Use vxlink for linking for RTPs in all cases of Ada,
+        C and C++ from GNAT 26 onwards -->
+
+   <configuration>
+     &if_cpp;
+     &if_rtp;
+     &if_gnat_26_and_later;
+     &if_this_target;
+
+     &config_rtp_linker_cpp_vxlink;
+   </configuration>
+
+   <configuration>
+     &if_ada;
+     &if_no_cpp;
+     &if_rtp;
+     &if_gnat_26_and_later;
+     &if_this_target;
+
+     &config_rtp_linker_ada_vxlink;
+   </configuration>
+
+   <configuration>
+     &if_c_only;
+     &if_rtp;
+     &if_gnat_26_and_later;
+     &if_this_target;
+
+     &config_rtp_linker_c_vxlink;
    </configuration>
 
    <!-- Partial link enabled when generating static libraries -->
