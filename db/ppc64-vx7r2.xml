@@ -43,18 +43,25 @@
 
 <!ENTITY this_wrs_rtp_base '0x40000000'>
 ]>
+
+<!-- The environment entities must be called first to initialize some
+     variables used later.
+
+     Note: See comments in aarch64_vx7r2.xml. -->
+
 <gprconfig>
 
   &environment;
+  &vx7r2_environment;
 
   &configurations_vxworks_gpp;
 
   &configurations_vx7;
 
+  &configurations_vx7r2_gnat_llvm;
   &configurations_vx7r2_clang;
   &configurations_vx7r2_clang_kernel;
   &configurations_vx7r2_clang_rtp;
-  &configurations_vx7r2_gnat_llvm;
 
   &configurations_gnat_ar;
 

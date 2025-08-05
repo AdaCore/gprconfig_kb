@@ -25,4 +25,19 @@
     </target>
   </compiler_description>
 
+  <compiler_description>
+    <name>CLANG-C-VXWORKS-WITH-TOOL-PREFIX</name>
+    <executable prefix="1">((.*-wrs-vxworks7r2-)?)clang</executable>
+    <version>
+      <external>$EXEC -v</external>
+      <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
+    </version>
+    <languages>C</languages>
+    <target>
+      <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+      <must_match>(^.*-wrs-vxworks7r2$)</must_match>
+    </target>
+  </compiler_description>
+
 </gprconfig>

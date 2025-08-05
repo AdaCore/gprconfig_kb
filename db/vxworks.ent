@@ -276,6 +276,22 @@
      </compilers>'
   >
 
+  <!ENTITY if_not_llvm_compiler
+  '
+     <compilers negate="true">
+        <compiler name="^CLANG-C-&this_target;$" />
+        <compiler name="^GNAT_LLVM-&this_target;$" />
+     </compilers>
+  '>
+
+  <!ENTITY if_llvm_compiler
+  '
+     <compilers>
+        <compiler name="^CLANG-C-&this_target;$" />
+        <compiler name="^GNAT_LLVM-&this_target;$" />
+     </compilers>
+  '>
+
   <!ENTITY config_ada_rtp
     '<config>
    package Compiler is
@@ -376,6 +392,14 @@
      </config>'
   >
 
+  <!ENTITY config_llvm_linker
+    '<config>
+   package Linker is
+      for Driver use "&this_target;-ld";
+   end Linker;
+     </config>'
+  >
+
   <!ENTITY config_c_linker
     '<config>
    package Linker is
@@ -432,6 +456,7 @@
 
   <configuration>
     &if_ada_rtp;
+    &if_not_llvm_compiler;
     &if_this_target;
     <!-- vx6, vx7 and vx6cert -->
 
@@ -440,6 +465,7 @@
 
   <configuration>
     &if_rtp;
+    &if_not_llvm_compiler;
     &if_this_target;
     <!-- vx6, vx7 and vx6cert -->
 
@@ -484,6 +510,7 @@
         the language. -->
    <configuration>
      &if_ada;
+     &if_not_llvm_compiler;
      &if_not_rtp;
      &if_gnat_20_pre;
      &if_this_target;
@@ -514,6 +541,7 @@
 
    <configuration>
      &if_ada;
+     &if_not_llvm_compiler;
      &if_no_cpp;
      &if_rtp;
      &if_gnat_26_pre;
@@ -525,6 +553,7 @@
 
    <configuration>
      &if_c_only;
+     &if_not_llvm_compiler;
      &if_rtp;
      &if_gnat_26_pre;
      &if_this_target;
