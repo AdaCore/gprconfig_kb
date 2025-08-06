@@ -18,6 +18,7 @@
 
 <!ENTITY if_these_clang_c_compilers
     '<compilers>
+       <compiler name="CLANG-C-VXWORKS-WITH-TOOL-PREFIX" language="C" />
        <compiler name="^CLANG-C-&this_target;$" />
      </compilers>'>
 
