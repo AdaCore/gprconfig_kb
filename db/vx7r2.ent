@@ -22,7 +22,7 @@
 '
   <compiler_description>
     <name>CLANG-C-&this_target;</name>
-    <executable>clang</executable>
+    <executable prefix="1">(.*-wrs-vxworks7r2-)clang</executable>
     <version>
       <external>$EXEC -v</external>
       <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>

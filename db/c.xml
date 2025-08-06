@@ -65,7 +65,6 @@
 
    <configuration>
      <compilers>
-       <compiler name="CLANG-C-VXWORKS-WITH-TOOL-PREFIX" language="C" />
        <compiler name="CLANG-C" language="C" />
        <compiler name="LLVM" language="C" />
      </compilers>
