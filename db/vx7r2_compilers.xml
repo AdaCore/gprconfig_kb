@@ -25,8 +25,13 @@
     </target>
   </compiler_description>
 
+  <!-- ??? This entity allows the runtime to be compiled with either
+       <target>-clang or just clang. It can probably go away if and
+       when the runtime compiler is changed permanently to
+       <target>-clang. -->
+
   <compiler_description>
-    <name>CLANG-C-VXWORKS-WITH-TOOL-PREFIX</name>
+    <name>CLANG-C-VXWORKS-WITH-OPTIONAL-TOOL-PREFIX</name>
     <executable prefix="1">((.*-wrs-vxworks7r2-)?)clang</executable>
     <version>
       <external>$EXEC -v</external>
