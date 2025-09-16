@@ -102,11 +102,15 @@
      </config>'
   >
 
-  <!-- Each of the three vxlink configurations below specify the
-       vxlink-rtp switch for a combination of Ada, C and C++.
+  <!-- Each of the four vxlink configurations below specify the
+       vxlink-rtp switch for a combination of Ada, C and C++. (Only
+       Ada is supported for the llvm based toolchain at this time).
        This ensures the switch is applied in multi-language projects
        regardless of what the main language is. The switch is added
-       only in cases where vxlink is used as the linker driver. --> 
+       only in cases where vxlink is used as the linker driver.
+
+       The the llvm based toolchain always uses ld as the linker,
+       so it needs its own entity (or set of entities).  --> 
 
   <!ENTITY config_rtp_linker_ada_vxlink
     '<config>
@@ -123,6 +127,34 @@
               &amp; ("--vxlink-rtp");
          when "false" =>
             for Driver use Compiler &apos; Driver ("Ada");
+         when others =>
+            null;
+      end case;
+   end Linker;
+   case USE_VXLINK_FOR_RTP is
+      when "true" =>
+         for Leading_Library_Options use ("--vxlink-rtp");
+      when others =>
+         null;
+   end case;
+     </config>'
+  >
+
+  <!ENTITY config_rtp_linker_llvm_ada_vxlink
+    '<config>
+   USE_VXLINK_FOR_RTP := external ("USE_VXLINK_FOR_RTP", "true");
+   package Linker is
+      case USE_VXLINK_FOR_RTP is
+         when "true" =>
+            for Driver use "&this_target;-vxlink";
+            for Leading_Switches ("Ada") use
+              Linker &apos; Leading_Switches ("Ada")
+              &amp; ("--vxlink-rtp");
+            for Leading_Switches ("C") use
+              Linker &apos; Leading_Switches ("C")
+              &amp; ("--vxlink-rtp");
+         when "false" =>
+            for Driver use "&this_target;-ld";
          when others =>
             null;
       end case;
@@ -591,12 +623,24 @@
 
    <configuration>
      &if_ada;
+     &if_not_llvm_compiler;
      &if_no_cpp;
      &if_rtp;
      &if_gnat_26_and_later;
      &if_this_target;
 
      &config_rtp_linker_ada_vxlink;
+   </configuration>
+
+   <configuration>
+     &if_ada;
+     &if_llvm_compiler;
+     &if_no_cpp;
+     &if_rtp;
+     &if_gnat_26_and_later;
+     &if_this_target;
+
+     &config_rtp_linker_llvm_ada_vxlink;
    </configuration>
 
    <configuration>

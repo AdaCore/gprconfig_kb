@@ -272,9 +272,19 @@
    <config>
  package Linker is
     WRS_RTP_Base := external ("WRS_RTP_BASE", "&this_wrs_rtp_base;");
+    USE_VXLINK_FOR_RTP := external ("USE_VXLINK_FOR_RTP", "true");
+    case USE_VXLINK_FOR_RTP is
+      when "true" =>
+        for Leading_Switches ("Ada") use
+          Linker &apos; Leading_Switches ("Ada")
+          &amp; ("--vxlink-llvm");
+      when "false" =>
+        null;
+      when others =>
+        null;
+    end case;
     for Leading_Switches ("Ada") use
       Linker &apos; Leading_Switches ("Ada")
-      &amp; ("--vxlink-llvm")
       &amp; ("--defsym", "__wrs_rtp_base=" &amp; WRS_RTP_Base)
       &amp; ("-u", "__wr_need_frame_add",
              "-u", "__tls__",
