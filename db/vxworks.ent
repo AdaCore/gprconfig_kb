@@ -127,7 +127,12 @@
             null;
       end case;
    end Linker;
-   for Leading_Library_Options use ("--vxlink-rtp");
+   case USE_VXLINK_FOR_RTP is
+      when "true" =>
+         for Leading_Library_Options use ("--vxlink-rtp");
+      when others =>
+         null;
+   end case;
      </config>'
   >
 
@@ -147,7 +152,12 @@
             null;
       end case;
    end Linker;
-   for Leading_Library_Options use ("--vxlink-rtp");
+   case USE_VXLINK_FOR_RTP is
+      when "true" =>
+         for Leading_Library_Options use ("--vxlink-rtp");
+      when others =>
+         null;
+   end case;
      </config>'
   >
 
@@ -173,7 +183,12 @@
             null;
       end case;
    end Linker;
-   for Leading_Library_Options use ("--vxlink-rtp");
+   case USE_VXLINK_FOR_RTP is
+      when "true" =>
+         for Leading_Library_Options use ("--vxlink-rtp");
+      when others =>
+         null;
+   end case;
      </config>'
   >
 
