@@ -22,9 +22,13 @@
        <compiler name="^CLANG-C-&this_target;$" />
      </compilers>'>
 
+<!-- GNAT_LLVM_VXWORKS needed for compiling runtimes, where the toolchain
+     is not yet prefixed the by target name. -->
+
 <!ENTITY if_these_gnat_llvm_compilers
     '<compilers>
        <compiler name="^GNAT_LLVM-&this_target;$" />
+       <compiler name="^GNAT_LLVM_VXWORKS$" />
      </compilers>'>
 
 <!ENTITY if_these_cpp_compilers
