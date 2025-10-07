@@ -642,6 +642,22 @@
     <target>riscv64-unknown-elf</target>
   </targetset>
 
+  <!-- riscv32c-elf-.*  -->
+  <targetset canonical="riscv32c-elf">
+    <target>riscv32c-elf</target>
+    <target>riscv32c-none-elf</target>
+    <target>riscv32c-unknown-elf</target>
+    <target>riscv32c-unknown-unknown-elf</target>
+  </targetset>
+
+  <!-- riscv64c-elf-.*  -->
+  <targetset canonical="riscv64c-elf">
+    <target>riscv64c-elf</target>
+    <target>riscv64c-none-elf</target>
+    <target>riscv64c-unknown-elf</target>
+    <target>riscv64c-unknown-unknown-elf</target>
+  </targetset>
+
   <!-- x86-elf-.*  -->
   <targetset canonical="x86-elf">
     <target>x86-elf</target>

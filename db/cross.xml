@@ -24,7 +24,7 @@
        <target name="^i686-elf$" />
        <target name="^visium-elf$" />
        <target name="^r7-elf$" />
-       <target name="^riscv(32|64)(-none|-unknown)?-elf$" />
+       <target name="^riscv(32|64)(c)?(-none|-unknown)?-elf$" />
        <target name="^m68020-elf$" />
        <target name="^morello(-unknown-unknown)?-elf$" />
        <target name="^powerpc-elf$" />
