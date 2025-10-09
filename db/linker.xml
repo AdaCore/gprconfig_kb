@@ -1881,8 +1881,6 @@
        <target name="^.*-wrs-linux$" />
        <target name="^.*-pikeos.*$" />
        <target name="^.*mingw.*$" />
-       <!-- LLVM version of the "mingw" triplet -->
-       <target name="^.*windows.*$" />
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
        <target name="^.*openbsd.*$" />
@@ -1893,6 +1891,22 @@
     <config>
    package Linker is
       for Response_File_Format use "GCC_GNU";
+      for Max_Command_Line_Length use "8192";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <compilers>
+      <compiler name="^GNAT_LLVM.*$" />
+    </compilers>
+    <targets>
+      <target name="^.*windows.*$" />
+    </targets>
+    <config>
+   package Linker is
+      for Response_File_Format use "GCC_Object_List";
+      for Response_File_Switches use ("@");
       for Max_Command_Line_Length use "8192";
    end Linker;
     </config>
