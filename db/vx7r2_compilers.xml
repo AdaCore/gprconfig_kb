@@ -45,4 +45,34 @@
     </target>
   </compiler_description>
 
+  <compiler_description>
+    <name>CLANG-CPREP-VXWORKS</name>
+    <executable prefix="1">((.*-wrs-vxworks7r2-)?)clang</executable>
+    <version>
+      <external>$EXEC -v</external>
+      <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
+    </version>
+    <languages>CPREP</languages>
+    <target>
+      <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+      <must_match>(^.*-wrs-vxworks7r2$)</must_match>
+    </target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>GCC-CPREP-VXWORKS</name>
+    <executable prefix="1">((.*-wrs-vxworks7r2-)?)cpp</executable>
+    <version>
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^gcc \S+ (\S+) \d+ (\(prerelease\) )?\(?for GNAT Pro" group="1"></grep>
+    </version>
+    <languages>CPREP</languages>
+    <target>
+      <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+      <must_match>(^.*-wrs-vxworks7r2$)</must_match>
+    </target>
+  </compiler_description>
+
 </gprconfig>

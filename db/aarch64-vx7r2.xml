@@ -10,16 +10,31 @@
 
 <!ENTITY this_target 'aarch64-wrs-vxworks7r2'>
 
+<!ENTITY if_these_c_and_cprep_compilers
+    '<compilers>
+       <compiler name="^GCC_Pro$" />
+       <compiler name="^GCC-CPREP$" language="CPREP" />
+       <compiler name="^LLVMC-AARCH64$" />
+     </compilers>'>
+
 <!ENTITY if_these_c_compilers
     '<compilers>
        <compiler name="^GCC_Pro$" />
        <compiler name="^LLVMC-AARCH64$" />
      </compilers>'>
 
+<!ENTITY if_these_clang_c_and_cprep_compilers
+    '<compilers>
+       <compiler name="^CLANG-C-VXWORKS-WITH-OPTIONAL-TOOL-PREFIX$" language="C" />
+       <compiler name="^CLANG-C-&this_target;$" language="C" />
+       <compiler name="^CLANG-CPREP-VXWORKS$" language="CPREP" />
+       <compiler name="^CLANG-CPREP-&this_target;$" language="CPREP" />
+     </compilers>'>
+
 <!ENTITY if_these_clang_c_compilers
     '<compilers>
        <compiler name="^CLANG-C-VXWORKS-WITH-OPTIONAL-TOOL-PREFIX$" language="C" />
-       <compiler name="^CLANG-C-&this_target;$" />
+       <compiler name="^CLANG-C-&this_target;$" language="C" />
      </compilers>'>
 
 <!-- GNAT_LLVM_VXWORKS needed for compiling runtimes, where the toolchain

@@ -33,6 +33,36 @@
   </compiler_description>
 '>
 
+<!ENTITY compiler_description_clang_cprep
+'
+  <compiler_description>
+    <name>CLANG-CPREP-&this_target;</name>
+    <executable prefix="1">(.*-wrs-vxworks7r2-)clang</executable>
+    <version>
+      <external>$EXEC -v</external>
+      <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
+    </version>
+    &languages_cprep;
+    <runtimes default="kernel,rtp">kernel,rtp</runtimes>
+    <target>&this_target;</target>
+  </compiler_description>
+'>
+
+<!ENTITY compiler_description_cprep
+'
+  <compiler_description>
+    <name>CPREP-&this_target;</name>
+    <executable prefix="1">(.*-wrs-vxworks7r2-)cpp</executable>
+    <version>
+      <external>$EXEC -v</external>
+      <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
+    </version>
+    &languages_cprep;
+    <runtimes default="kernel,rtp">kernel,rtp</runtimes>
+    <target>&this_target;</target>
+  </compiler_description>
+'>
+
 <!ENTITY compiler_description_gnat_llvm
 '
   <compiler_description>
@@ -67,9 +97,8 @@
    <config>
      package Compiler is
        for Dependency_Switches ("C") use ("-MMD", "-MF", "");
-       for Leading_Required_Switches ("C") use
-         Compiler &apos; Leading_Required_Switches ("C")
-         &amp; ("-I" &amp; VSB_Dir &amp; "/h",
+       LLVM_COMMON_SWITCHES :=
+               ("-I" &amp; VSB_Dir &amp; "/h",
                 "-I" &amp; VSB_Dir &amp; "/share/h",
                 "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;",
                 "-D_IS_WRS",
@@ -77,20 +106,31 @@
                 "-D__VXWORKS__",
                 "-DTOOL_FAMILY=llvm",
                 "-DTOOL=llvm");
+       for Leading_Required_Switches ("C") use
+         Compiler &apos; Leading_Required_Switches ("C")
+         &amp; LLVM_COMMON_SWITCHES;
+       for Leading_Required_Switches ("CPREP") use
+         Compiler &apos; Leading_Required_Switches ("CPREP")
+         &amp; LLVM_COMMON_SWITCHES;
      end Compiler;
      </config>
-'>
+' >
 
 <!ENTITY config_kernel_vx7r2_switches
 '
   <config>
     package Compiler is
-      for Leading_Required_Switches ("C") use
-        Compiler &apos; Leading_Required_Switches ("C")
-        &amp; ("-I" &amp; VSB_Dir &amp; "/krnl/h/system",
+      KERNEL_SWITCHES :=
+              ("-I" &amp; VSB_Dir &amp; "/krnl/h/system",
                "-I" &amp; VSB_Dir &amp; "/krnl/h/public",
                "-D_WRS_KERNEL",
                "-D_WRS_KERNEL_SMP");
+      for Leading_Required_Switches ("C") use
+        Compiler &apos; Leading_Required_Switches ("C")
+        &amp; KERNEL_SWITCHES;
+      for Leading_Required_Switches ("CPREP") use
+        Compiler &apos; Leading_Required_Switches ("CPREP")
+        &amp; KERNEL_SWITCHES;
      end Compiler;
   </config>
 '>
@@ -130,6 +170,8 @@
                "-I" &amp; VSB_Dir &amp; "/usr/h",
                "-D__RTP__",
                "-D_WRS_CONFIG_SMP");
+       for Leading_Required_Switches ("CPREP") use
+         Compiler &apos; Leading_Required_Switches ("C");
     end Compiler;
   </config>
 '>
@@ -182,6 +224,14 @@
            when others =>
               for Leading_Required_Switches ("C") use
                  Compiler &apos; Leading_Required_Switches ("C")
+                    &amp; Compiler.TARGET_C_SWITCHES;
+        end case;
+        case TARGET_CPREP is
+           when "" =>
+              null;
+           when others =>
+              for Leading_Required_Switches ("CPREP") use
+                 Compiler &apos; Leading_Required_Switches ("CPREP")
                     &amp; Compiler.TARGET_C_SWITCHES;
         end case;
      end Compiler;
@@ -367,25 +417,25 @@
 <!ENTITY configurations_vx7r2_clang
 '
    <configuration>
-      &if_these_clang_c_compilers;
+      &if_these_clang_c_and_cprep_compilers;
       &if_this_target;
 
       &config_llvm_common_vx7r2_switches;
    </configuration>
    <configuration>
-      &if_these_clang_c_compilers;
+      &if_these_clang_c_and_cprep_compilers;
       &if_this_target;
 
       &config_target_vx7r2_llvm_c_switches;
    </configuration>
    <configuration>
-      &if_these_clang_c_compilers;
+      &if_these_clang_c_and_cprep_compilers;
       &if_this_target;
 
       &config_target_vx7r2_llvm_clang_switches;
    </configuration>
    <configuration>
-      &if_these_clang_c_compilers;
+      &if_these_clang_c_and_cprep_compilers;
       &if_this_target;
 
       &config_target_vx7r2_default_switches;
@@ -396,12 +446,13 @@
 '
    <configuration>
      &if_not_rtp;
-     &if_these_clang_c_compilers;
+     &if_these_clang_c_and_cprep_compilers;
      &if_this_target;
 
      &config_kernel_vx7r2_switches;
    </configuration>
    <configuration>
+     &if_not_cprep;
      &if_not_rtp;
      &if_these_clang_c_compilers;
      &if_this_target;
@@ -414,7 +465,7 @@
 '
    <configuration>
      &if_rtp;
-     &if_these_clang_c_compilers;
+     &if_these_clang_c_and_cprep_compilers;
      &if_this_target;
 
      &config_rtp_vx7r2_switches;

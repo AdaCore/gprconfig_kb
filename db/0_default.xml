@@ -13,6 +13,9 @@
       for Body_Suffix ("Asm2") use ".asm";
       for Body_Suffix ("Asm_Cpp") use ".S";
 
+      for Body_Suffix ("CPREP") use ".cprep";
+      for Body_Suffix ("CPREP") use ".hprep";
+
       for Body_Suffix ("C") use ".c";
       for Spec_Suffix ("C") use ".h";
 
@@ -29,6 +32,7 @@
    end Naming;
 
    for Inherit_Source_Path ("C++") use ("C");
+   for Inherit_Source_Path ("CPREP") use ("C");
    for Inherit_Source_Path ("Asm_Cpp") use ("Asm");
    for Default_Language use "Ada";
 

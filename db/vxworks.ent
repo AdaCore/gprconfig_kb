@@ -327,6 +327,7 @@
   '
      <compilers negate="true">
         <compiler name="^CLANG-C-&this_target;$" />
+        <compiler name="^CLANG-CPREP-&this_target;$" />
         <compiler name="^GNAT_LLVM-&this_target;$" />
      </compilers>
   '>
@@ -335,6 +336,7 @@
   '
      <compilers>
         <compiler name="^CLANG-C-&this_target;$" />
+        <compiler name="^CLANG-CPREP-&this_target;$" />
         <compiler name="^GNAT_LLVM-&this_target;$" />
      </compilers>
   '>
@@ -542,6 +544,7 @@
         care of generating the proper _ctors and _dtors symbols used to
         elaborate DKMs. -->
    <configuration>
+     &if_not_cprep;
      &if_not_rtp;
      &if_gnat_20_and_later;
      &if_this_target;

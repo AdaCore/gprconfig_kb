@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<gprconfig>
+   <!--  This package provides the default standard options for a clang
+         c preprocessor compiler -->
+
+   <configuration>
+     <compilers>
+       <compiler name="^CLANG-CPREP$" language="CPREP" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver ("CPREP") use "${PATH(cprep)}${PREFIX(cprep)}clang";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="^CLANG-CPREP$" language="CPREP" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("CPREP") use
+        Compiler'Leading_Required_Switches ("CPREP") &amp; ("-E");
+      for Include_Switches        ("CPREP") use ("-I");
+      for Max_Command_Line_Length use "8192";
+      for Response_File_Format    ("CPREP") use "GCC_GNU";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="^GCC-CPREP$" language="CPREP" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver ("CPREP") use "${PATH(cprep)}${PREFIX(cprep)}cpp";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="^GCC-CPREP$" language="CPREP" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("CPREP") use
+        Compiler'Leading_Required_Switches ("CPREP") &amp; ("-dM");
+      for Include_Switches        ("CPREP") use ("-I");
+      for Max_Command_Line_Length use "8192";
+      for Response_File_Format    ("CPREP") use "GCC_GNU";
+   end Compiler;
+     </config>
+   </configuration>
+</gprconfig>

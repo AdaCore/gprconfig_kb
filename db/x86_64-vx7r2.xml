@@ -16,10 +16,18 @@
        <compiler name="^LLVMC-X86_64$" />
      </compilers>'>
 
+<!ENTITY if_these_clang_c_and_cprep_compilers
+    '<compilers>
+       <compiler name="^CLANG-C-VXWORKS-WITH-OPTIONAL-TOOL-PREFIX$" language="C" />
+       <compiler name="^CLANG-C-&this_target;$" language="C" />
+       <compiler name="^CLANG-CPREP-VXWORKS$" language="CPREP" />
+       <compiler name="^CLANG-CPREP-&this_target;$" language="CPREP" />
+     </compilers>'>
+
 <!ENTITY if_these_clang_c_compilers
     '<compilers>
        <compiler name="^CLANG-C-VXWORKS-WITH-OPTIONAL-TOOL-PREFIX$" language="C" />
-       <compiler name="^CLANG-C-&this_target;$" />
+       <compiler name="^CLANG-C-&this_target;$" language="C" />
      </compilers>'>
 
 <!ENTITY if_these_gnat_llvm_compilers

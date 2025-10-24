@@ -4,6 +4,9 @@
    <!ENTITY languages_cpp
     '<languages>C++</languages>'
    >
+   <!ENTITY languages_cprep
+    '<languages>CPREP</languages>'
+   >
 
    <!ENTITY if_no_ada
    '<compilers negate="true" >
@@ -52,6 +55,12 @@
     </compilers>'
    >
 
+  <!ENTITY if_not_cprep
+   '<compilers negate="true">
+       <compiler language="CPREP" />
+    </compilers>'
+   >
+
    <!ENTITY if_this_target
     '<targets>
        <target name="^&this_target;$" />
@@ -68,6 +77,7 @@
 
    <!ENTITY configurations_gnat_ar
     '<configuration>
+     &if_not_cprep;
      &if_this_target;
 
      &config_gnat_ar;
@@ -100,6 +110,7 @@
       <compiler name="^GCC_Pro$" language="C" version="([8-9]|1[0-9]).*" />
       <compiler name="^G\+\+_Pro$" language="C++" version="([8-9]|1[0-9]).*" />
       <compiler name="^CLANG-C-&this_target;$" />
+      <compiler name="^CLANG-CPREP-&this_target;$" />
       <compiler name="^GNAT-LLVM-&this_target;$" />'
   >
 

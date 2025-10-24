@@ -8,5 +8,6 @@
 ]>
 <gprconfig>
   &compiler_description_clang_c;
+  &compiler_description_clang_cprep;
   &compiler_description_gnat_llvm;
 </gprconfig>
