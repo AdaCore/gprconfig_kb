@@ -121,7 +121,7 @@
   <!--  G++ compilers for GNAT Pro  -->
   <compiler_description>
     <name>G++_Pro</name>
-    <executable prefix="1">(.*-elf-.*|.*-eabi-.*|.*-wrs-.*|.*-fastos.*|.*-freebsd.*|.*-linux-gnu.*-|.*-linux-android.*|.*-rtems.*)?g\+\+</executable>
+    <executable prefix="1">(.*-elf-.*|.*-eabi-.*|.*-wrs-.*|.*-fastos.*|.*-freebsd.*|.*-linux-gnu.*-|.*-linux-android.*|.*-rtems.*|.*-qnx.*)?g\+\+</executable>
     <version>
       <external>${PREFIX}g++ -v</external>
 
