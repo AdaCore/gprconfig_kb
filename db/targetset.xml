@@ -737,6 +737,20 @@
     <target>i.86-.*-pikeos</target>
   </targetset>
 
+  <!-- loongarch32-elf-.*  -->
+  <targetset canonical="loongarch32-elf">
+    <target>loongarch32-elf</target>
+    <target>loongarch32-none-elf</target>
+    <target>loongarch32-unknown-elf</target>
+  </targetset>
+
+  <!-- loongarch64-elf-.*  -->
+  <targetset canonical="loongarch64-elf">
+    <target>loongarch64-elf</target>
+    <target>loongarch64-none-elf</target>
+    <target>loongarch64-unknown-elf</target>
+  </targetset>
+
   <!-- C  -->
   <targetset canonical="c">
     <target>c</target>
