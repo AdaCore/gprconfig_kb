@@ -1082,6 +1082,16 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^c$" />
+      <target name="jvm" />
+    </targets>
+    <config>
+      for Disable_Linking use "true";
+    </config>
+  </configuration>
+
   <!-- DOTNET -->
   <configuration>
     <targets>
