@@ -269,6 +269,24 @@
      </config>
    </configuration>
 
+   <!-- Clang on x86-windows needs -fno-omit-frame-pointer -->
+
+   <configuration>
+     <compilers>
+       <compiler name="^CLANG-C" language="C" />
+     </compilers>
+     <targets>
+       <target name="^i686-pc-windows-gnu$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-fno-omit-frame-pointer");
+   end Compiler;
+     </config>
+   </configuration>
+
    <!-- VxWorks 7.x C support using the WRS compilers  -->
 
    <configuration>
