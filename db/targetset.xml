@@ -492,6 +492,12 @@
     <target>aarch64-thales-fastos</target>
   </targetset>
 
+  <!-- x86_64-fastos  -->
+  <targetset canonical="x86_64-fastos">
+    <target>x86_64-fastos</target>
+    <target>x86_64-thales-fastos</target>
+  </targetset>
+
   <!-- aarch64-qnx  -->
   <targetset canonical="aarch64-qnx">
     <target>aarch64-qnx</target>

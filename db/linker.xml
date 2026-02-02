@@ -325,6 +325,21 @@
 
   <configuration>
     <targets>
+      <target name="^x86_64-thales-fastos$" />
+    </targets>
+    <config>
+   for Object_Lister use ("x86_64-thales-fastos-nm", "-g");
+   for Object_Lister_Matcher use " [TDRBS] (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^arm-nto-qnx$" />
     </targets>
     <config>
@@ -697,6 +712,18 @@
    for Archive_Builder  use ("aarch64-thales-fastos-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("aarch64-thales-fastos-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^x86_64-thales-fastos$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("x86_64-thales-fastos-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("x86_64-thales-fastos-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
