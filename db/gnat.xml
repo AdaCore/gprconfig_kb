@@ -391,4 +391,26 @@
    </config>
   </configuration>
 
+  <!-- GNAT LLVM needs to emit the .debug_aranges section on most targets
+       because the runtime relies on it to produce symbolic backtraces;
+       don't emit it on VxWorks because wrdbg doesn't like it. -->
+
+  <configuration>
+   <compilers>
+     <compiler name="^GNAT_LLVM.*$" />
+     <compiler name="^CLANG_C$" />
+   </compilers>
+   <targets negate="true">
+     <target name="^.*vxworks7r2.*$" />
+   </targets>
+   <config>
+   package Compiler is
+      for Leading_Required_Switches ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("-gdwarf-aranges");
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C") &amp; ("-gdwarf-aranges");
+   end Compiler;
+   </config>
+  </configuration>
+
 </gprconfig>
