@@ -398,7 +398,6 @@
   <configuration>
    <compilers>
      <compiler name="^GNAT_LLVM.*$" />
-     <compiler name="^CLANG_C$" />
    </compilers>
    <targets negate="true">
      <target name="^.*vxworks7r2.*$" />
@@ -407,8 +406,6 @@
    package Compiler is
       for Leading_Required_Switches ("Ada") use
         Compiler'Leading_Required_Switches ("Ada") &amp; ("-gdwarf-aranges");
-      for Leading_Required_Switches ("C") use
-        Compiler'Leading_Required_Switches ("C") &amp; ("-gdwarf-aranges");
    end Compiler;
    </config>
   </configuration>
