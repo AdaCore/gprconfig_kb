@@ -640,6 +640,7 @@
     <target>riscv64-elf</target>
     <target>riscv64-none-elf</target>
     <target>riscv64-unknown-elf</target>
+    <target>riscv64-unknown-unknown-elf</target>
   </targetset>
 
   <!-- riscv32c-elf-.*  -->
