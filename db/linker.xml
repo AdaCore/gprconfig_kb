@@ -178,10 +178,10 @@
   <configuration>
     <!-- aarch64-linux - native compiler. -->
     <targets>
-      <target name="^aarch64-linux-gnu$" />
+      <target name="^aarch64(-.+)?-linux(-gnu)?$" />
     </targets>
     <hosts>
-      <host name="^aarch64-linux-gnu$" />
+      <host name="^aarch64(-.+)?-linux(-gnu)?$" />
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
@@ -711,10 +711,10 @@
   <configuration>
     <!-- aarch64-linux - native compiler. -->
     <targets>
-      <target name="^aarch64-linux-gnu$" />
+      <target name="^aarch64(-.+)?-linux(-gnu)?$" />
     </targets>
     <hosts>
-      <host name="^aarch64-linux-gnu$" />
+      <host name="^aarch64(-.+)?-linux(-gnu)?$" />
     </hosts>
     <config>
    for Archive_Builder  use ("ar", "cr");
