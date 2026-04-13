@@ -51,6 +51,7 @@
        <target name="^e500v2-gnu-linux" />
        <target name="^.*-netbsd.*$" />
        <target name="^.*-dragonfly.*$" />
+       <target name="^loongarch(32|64)(-none|-unknown)?-elf$" />
      </targets>
      <config>
    package Builder is
