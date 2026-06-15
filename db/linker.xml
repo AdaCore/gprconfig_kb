@@ -42,6 +42,8 @@
   <configuration>
     <targets>
       <target name="^i686-pc-mingw32$" />
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^i686-.*-windows-gnu$" />
     </targets>
     <hosts negate="true">
       <host name="^i686-.*-mingw32$" />
@@ -98,7 +100,29 @@
 
   <configuration>
     <targets>
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^x86_64-.*-windows-gnu$" />
+    </targets>
+    <hosts negate="true">
+      <host name="^i686-.*-mingw32$" />
+      <host name="^x86_64-.*-mingw32$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("x86_64-w64-mingw32-nm", "-g", "--no-demangle");
+   for Object_Lister_Matcher use " [TDRB] (.*)";
+
+   package Linker is
+      for Export_File_Format use "DEF";
+      for Export_File_Switch use "-Wl,";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^i686-pc-mingw32$" />
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^i686-.*-windows-gnu$" />
     </targets>
     <hosts>
       <host name="^i686-.*-mingw32$" />
@@ -118,8 +142,6 @@
   <configuration>
     <targets>
       <target name="^x86_64-.*-mingw32$" />
-      <!-- LLVM version of the mingw32 triplet -->
-      <target name="^x86_64-.*-windows-gnu$" />
     </targets>
     <hosts>
       <host name="^i686-.*-mingw32$" />
@@ -132,6 +154,26 @@
    package Linker is
       for Export_File_Format use "GNU";
       for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^x86_64-.*-windows-gnu$" />
+    </targets>
+    <hosts>
+      <host name="^i686-.*-mingw32$" />
+      <host name="^x86_64-.*-mingw32$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("nm", "-g", "--no-demangle");
+   for Object_Lister_Matcher use " [TDRB] (.*)";
+
+   package Linker is
+      for Export_File_Format use "DEF";
+      for Export_File_Switch use "-Wl,";
    end Linker;
     </config>
   </configuration>
