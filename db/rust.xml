@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<gprconfig>
+  <!--  This package provides the default standard options for a Cargo
+        (Rust) compiler  -->
+
+  <configuration>
+    <compilers>
+      <compiler name="^GNAT_RUST$" language="Rust" />
+    </compilers>
+    <config>
+  package Compiler is
+     for Driver ("Rust") use "${PATH(rust)}${EXEC(rust)}";
+  end Compiler;
+    </config>
+  </configuration>
+
+</gprconfig>

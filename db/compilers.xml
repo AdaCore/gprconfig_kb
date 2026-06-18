@@ -596,4 +596,18 @@
     </target>
   </compiler_description>
 
+  <compiler_description>
+    <name>GNAT_RUST</name>
+    <!--  Detect cargo wrappers that support -dumpmachine -->
+    <executable prefix="1">(.*)-cargo</executable>
+    <version>
+      <external>$EXEC --version</external>
+      <grep regexp="^cargo (\S+)" group="1"></grep>
+    </version>
+    <languages>Rust</languages>
+    <target>
+      <external>$EXEC -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
 </gprconfig>
