@@ -273,7 +273,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="^CLANG-C" language="C" />
+       <compiler name="^CLANG-C$" language="C" />
      </compilers>
      <targets>
        <target name="^i686-pc-windows-gnu$" />
