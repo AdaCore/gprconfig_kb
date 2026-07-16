@@ -1470,9 +1470,7 @@
     </compilers>
     <targets>
        <target name="^.*-fastos.*$" />
-       <!-- The Android exception was added in OA23-038 due to a conflict with
-            -pie; is it still valid? -->
-       <target name="linux" except="androideabi" />
+       <target name="linux" />
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
        <target name="mingw" />
@@ -1494,9 +1492,7 @@
     </compilers>
     <targets>
        <target name="^.*-fastos.*$" />
-       <!-- The Android exception was added in OA23-038 due to a conflict with
-            -pie; is it still valid? -->
-       <target name="linux" except="androideabi" />
+       <target name="linux" />
        <target name="^.*qnx[0-9]*$" />
        <target name="darwin" />
        <target name="mingw" />
