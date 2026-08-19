@@ -245,6 +245,8 @@
      <targets negate="true">
        <target name="^.*LynxOS.*$" />
        <target name="^.*mingw.*$" />
+       <!-- LLVM version of the mingw32 triplet -->
+       <target name="^.*-windows-gnu$" />
        <target name="^.*cygwin.*$" />
        <target name="^.*dec-osf.*$" />
        <target name="^.*wrs-vxworks.*$" />
