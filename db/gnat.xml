@@ -231,6 +231,8 @@
    <targets negate="true">
       <target name="^.*lynxos.*$" />
       <target name="^.*mingw.*$" />
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^.*-windows-gnu$" />
       <target name="^.*dec-osf.*$" />
       <target name="^.*vms.*$" />
       <target name="^.*dotnet.*$" />
@@ -248,6 +250,8 @@
    &filter_gnat;
    <targets>
       <target name="^.*mingw.*$" />
+      <!-- LLVM version of the mingw32 triplet -->
+      <target name="^.*-windows-gnu$" />
       <target name="^.*linux.*$" />
       <target name="^.*sunos.*$" />
       <target name="^sparc-.*solaris.*$"/>
