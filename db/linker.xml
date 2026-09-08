@@ -1610,6 +1610,8 @@
       <target name="^.*mingw.*$" />
       <!-- LLVM version of the mingw32 triplet -->
       <target name="^.*-windows-gnu$" />
+      <!-- AdaCore platform names, as reported by the Cargo wrapper -->
+      <target name="^x86(_64)?-windows[0-9]*$" />
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
