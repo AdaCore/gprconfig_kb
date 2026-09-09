@@ -37,7 +37,7 @@
    end Compiler;
 
    package Clean is
-      for Source_Artifact_Extensions ("Ada") use (".dg", ".rep");
+      for Source_Artifact_Extensions ("Ada") use (".dg", ".rep", ".prep");
       for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno", ".su", ".sid");
 
       for Source_Artifact_Extensions ("C")   use (".gli");
