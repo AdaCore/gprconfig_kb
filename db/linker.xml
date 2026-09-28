@@ -1328,6 +1328,10 @@
    for Library_Version_Switches use ("-Wl,-soname,");
 
    for Shared_Library_Suffix use ".so";
+
+   for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
+   for Run_Path_Origin use "$$ORIGIN";
+   for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
     </config>
   </configuration>
 
