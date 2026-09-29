@@ -1675,9 +1675,15 @@
        <target name="codepeer" />
     </targets>
     <config>
+   for Disable_Linking use "true";
    for Library_Support use "full";
    for Library_Auto_Init_Supported use "true";
    for Library_Builder use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
+
+   package Binder is
+      for Required_Switches ("Ada") use
+        Binder'Required_Switches ("Ada") &amp; ("-P");
+   end Binder;
     </config>
   </configuration>
 
