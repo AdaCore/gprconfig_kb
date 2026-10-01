@@ -1015,7 +1015,6 @@
       for Max_Command_Line_Length use "15000";
       for Response_File_Format    use "object_list";
       for Response_File_Switches  use ("-Wl,-f,");
-      for Map_File_Option         use "-Wl,-Map,";
    end Linker;
     </config>
   </configuration>
@@ -1226,7 +1225,6 @@
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
 
    package Linker is
-      for Map_File_Option         use "-Wl,-map,";
       for Max_Command_Line_Length use "128000";
       for Response_File_Format    use "object_list";
       for Response_File_Switches  use ("-Wl,-filelist,");
@@ -1375,10 +1373,6 @@
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
-
-   package Linker is
-      for Map_File_Option         use "-Wl,-Map,";
-   end Linker;
     </config>
   </configuration>
 
@@ -1398,10 +1392,6 @@
    for Run_Path_Option  use ("-Wl,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
-
-   package Linker is
-      for Map_File_Option         use "-Wl,-Map,";
-   end Linker;
     </config>
   </configuration>
 
@@ -1624,10 +1614,6 @@
    for Shared_Library_Suffix use ".dll";
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
    for Library_Auto_Init_Supported use "true";
-
-   package Linker is
-      for Map_File_Option         use "-Wl,-Map,";
-   end Linker;
     </config>
   </configuration>
 
@@ -1831,17 +1817,26 @@
     </config>
   </configuration>
 
-  <!-- cross targets that use GNU ld -->
+  <!-- GNAT-LLVM is calling GNU ld through VxLink instead of a driver such as
+       gcc binary. Therfore "-Wl," are unsupported.
+       TODO: merge all configuration together once gnat-llvm#445 has been
+       resolved. -->
+  <configuration>
+    &if_llvm_compiler;
+    <targets>
+       <target name="^.*-vxworks.*$" />
+    </targets>
+    <config>
+     package Linker is
+        for Map_File_Option use "-Map=";
+     end Linker;
+    </config>
+  </configuration>
+
   <configuration>
     &if_not_llvm_compiler;
     <targets>
        <target name="^.*-vxworks.*$" />
-       <target name="^.*-lynxos.*$" />
-       <target name="^.*-pikeos.*$" />
-       <target name="^.*-elf$" />
-       <target name="^.*-eabispe$" />
-       <target name="^.*-eabi$" />
-       <target name="^avr$" />
     </targets>
     <config>
      package Linker is
@@ -1850,14 +1845,14 @@
     </config>
   </configuration>
 
+  <!-- All targets but VxWorks due to above special case. -->
   <configuration>
-    &if_llvm_compiler;
-    <targets>
-       <target name="^.*-vxworks7r2$" />
+    <targets negate="true">
+       <target name="^.*-vxworks.*$" />
     </targets>
     <config>
      package Linker is
-        for Map_File_Option use "-Map,";
+        for Map_File_Option use "-Wl,-Map,";
      end Linker;
     </config>
   </configuration>
