@@ -1323,13 +1323,49 @@
    for Library_Support  use "full";
    for Shared_Library_Prefix use "lib";
    for Shared_Library_Minimum_Switches use ("-shared", "-mrtp");
-   for Library_Version_Switches use ("-Wl,-soname,");
 
    for Shared_Library_Suffix use ".so";
 
-   for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
+    </config>
+  </configuration>
+
+  <!-- GNAT-LLVM is calling GNU ld through VxLink instead of a driver such as
+       gcc binary. Therefore "-Wl," are unsupported.
+       TODO: merge both configuration above once gnat-llvm#445 has been
+       resolved. -->
+  <configuration>
+    &if_not_llvm_compiler;
+    <compilers>
+       <compiler runtime="^rtp$" />
+    </compilers>
+    <targets>
+       <target name="^powerpc64-wrs-vxworks7r2" />
+       <target name="^aarch64-wrs-vxworks7r2" />
+       <target name="^morello-wrs-vxworks7r2" />
+       <target name="^x86_64-wrs-vxworks7r2" />
+    </targets>
+    <config>
+   for Library_Version_Switches use ("-Wl,-soname,");
+   for Run_Path_Option use ("-Wl,-z,origin,-rpath,");
+    </config>
+  </configuration>
+
+  <configuration>
+    &if_llvm_compiler;
+    <compilers>
+       <compiler runtime="^rtp$" />
+    </compilers>
+    <targets>
+       <target name="^powerpc64-wrs-vxworks7r2" />
+       <target name="^aarch64-wrs-vxworks7r2" />
+       <target name="^morello-wrs-vxworks7r2" />
+       <target name="^x86_64-wrs-vxworks7r2" />
+    </targets>
+    <config>
+   for Library_Version_Switches use ("-soname=");
+   for Run_Path_Option use ("-z", "origin", "-rpath=");
     </config>
   </configuration>
 
@@ -1818,7 +1854,7 @@
   </configuration>
 
   <!-- GNAT-LLVM is calling GNU ld through VxLink instead of a driver such as
-       gcc binary. Therfore "-Wl," are unsupported.
+       gcc binary. Therefore "-Wl," are unsupported.
        TODO: merge all configuration together once gnat-llvm#445 has been
        resolved. -->
   <configuration>
