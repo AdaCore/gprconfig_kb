@@ -29,3 +29,17 @@ linux_gpr2_kb_tests:
     - testgpr2_result.xml
     reports:
       junit: testgpr2_result.xml
+
+
+linux_gprconfig_tests:
+  extends: .gpr2_test_template
+  needs: []
+  script:
+  - exec anod build gpr2
+  - run_testsuite gprconfig "" test_gprconfig
+  artifacts:
+    when: always
+    paths:
+    - testgprconfig_result.xml
+    reports:
+      junit: testgprconfig_result.xml
