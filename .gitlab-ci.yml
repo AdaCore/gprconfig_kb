@@ -35,8 +35,28 @@ linux_gprconfig_tests:
   extends: .gpr2_test_template
   needs: []
   script:
-  - exec anod build gpr2
+  - exec anod build gpr2 # Rebuild gprconfig with the new KB
   - run_testsuite gprconfig "" test_gprconfig
+  artifacts:
+    when: always
+    paths:
+    - testgprconfig_result.xml
+    reports:
+      junit: testgprconfig_result.xml
+
+linux_gprbuild_tests:
+  extends: .gpr2_test_template
+  needs: []
+  script:
+  - exec anod install gprname
+    # libadalang depends on gprname that depends on libgpr2.
+    # because the build of libadalang is long, and that we do
+    # test the KB and not the libadalang behavior here, we do provide gprname
+    # to avoid a libadalang build.
+  - exec anod build libgpr2
+  - exec anod build gpr2
+  - exec anod build gprbuild
+  - run_testsuite gprbuild "-Qgpr2build" test_gprbuild
   artifacts:
     when: always
     paths:
