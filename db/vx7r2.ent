@@ -265,7 +265,15 @@
      -Wl, prefix. It also contains some miscellaneious switches copied
      from WorkBench linker command line which may or may not be more
      appropriately be moved to a separate entity when other languages
-     are supported. -->
+     are supported.
+
+     Regarding the switches below: They are gleaned from those used by
+     Workbench. In particular:
+        -z norelro
+        --no-rosegment
+        -z noseparate-code
+     are switches need by lld to make it conform to the default
+     behavior of gld. -->
 
 <!ENTITY config_llvm_rtp_linker
 '
@@ -290,6 +298,9 @@
              "-u", "__tls__",
              "-EL",
              "-static",
+             "-z", "norelro",
+             "--no-rosegment",
+             "-z", "noseparate-code",
              "-l:crt0.o");
     for Required_Switches use
        Linker &apos; Required_Switches
