@@ -1,4 +1,7 @@
 include:
+- component: $CI_SERVER_FQDN/it/gitlab-templates/gitleaks@~latest
+  inputs:
+    stage: build
 - project: eng/gpr/gpr-issues
   file: /.gitlab/.gitlab-ci-shared.yml
 
