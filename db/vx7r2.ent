@@ -270,7 +270,8 @@
      Regarding the switches below: They are gleaned from those used by
      Workbench. In particular:
         -z norelro
-        --no-rosegment
+        - -no-rosegment
+        (XML comment can not contain two consecutive dashes)
         -z noseparate-code
      are switches need by lld to make it conform to the default
      behavior of gld. -->
