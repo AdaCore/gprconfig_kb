@@ -293,7 +293,7 @@
     <executable prefix="1">((.*-elf-|.*-linux-gnu-|.*-xcoff-.*-|.*mingw32.*)?llvm-)gcc</executable>
     <version>
       <external>$EXEC -v</external>
-      <grep regexp="^llvm-.*gcc.+GNAT Pro (\S+)" group="1"></grep>
+      <grep regexp="^.*llvm-gcc.+GNAT Pro (\S+)" group="1"></grep>
     </version>
     <languages>Asm,Asm_Cpp,Asm2</languages>
     <target>
